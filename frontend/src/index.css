@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+/* MwaniMlinzi design tokens — ocean-inspired, calm, high-contrast risk states. */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --color-ocean-50: #eef8fb;
+  --color-ocean-100: #d5eef5;
+  --color-ocean-200: #aee0ec;
+  --color-ocean-300: #78cadd;
+  --color-ocean-400: #3eaac5;
+  --color-ocean-500: #1f8daa;
+  --color-ocean-600: #16718c;
+  --color-ocean-700: #0b4f6c;
+  --color-ocean-800: #0a3f56;
+  --color-ocean-900: #082f40;
+
+  --color-seaweed-50: #effaf5;
+  --color-seaweed-100: #d6f3e5;
+  --color-seaweed-500: #1f9d6b;
+  --color-seaweed-600: #177f56;
+  --color-seaweed-700: #136545;
+
+  --color-sand-50: #faf8f4;
+  --color-sand-100: #f3efe6;
+  --color-sand-200: #e6dfcf;
+
+  --color-risk-low: #15803d;
+  --color-risk-low-bg: #dcfce7;
+  --color-risk-medium: #a16207;
+  --color-risk-medium-bg: #fef3c7;
+  --color-risk-high: #c2410c;
+  --color-risk-high-bg: #ffedd5;
+  --color-risk-critical: #b91c1c;
+  --color-risk-critical-bg: #fee2e2;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+body { @apply bg-sand-50 text-slate-800 antialiased; }
+
+/* Leaflet */
+.leaflet-container { font: inherit; border-radius: 0.75rem; z-index: 0; }
+.leaflet-popup-content { margin: 12px 14px; }
+
+@layer components {
+  .input { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 shadow-sm outline-none transition focus:border-ocean-500 focus:ring-2 focus:ring-ocean-200 disabled:bg-slate-100; }
+  .label { @apply mb-1 block text-sm font-medium text-slate-700; }
+}
