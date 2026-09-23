@@ -1,0 +1,1202 @@
+// MwaniMlinzi AI — PostgreSQL schema (managed with Prisma, inspectable in pgAdmin)
+// Table names are snake_case (@@map) so they read naturally in pgAdmin.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────── Enums ───────────────────────────────
+
+enum RoleName {
+  FARMER
+  COOPERATIVE_ADMIN
+  EXTENSION_OFFICER
+  BUYER
+  ADMIN
+}
+
+enum Language {
+  en
+  sw
+}
+
+enum FarmingMethod {
+  OFF_BOTTOM
+  LONG_LINE
+  RAFT
+  FLOATING_LINE
+}
+
+enum FarmExposure {
+  SHELTERED
+  MODERATE
+  EXPOSED
+}
+
+enum AnchoringMethod {
+  WOODEN_STAKES
+  CONCRETE_BLOCKS
+  SAND_BAGS
+  ROCKS
+}
+
+enum FarmStatus {
+  ACTIVE
+  FALLOW
+  INACTIVE
+}
+
+enum CycleStatus {
+  ACTIVE
+  HARVESTED
+  FAILED
+}
+
+enum CropCondition {
+  GOOD
+  FAIR
+  POOR
+}
+
+enum GrowthCondition {
+  NORMAL
+  SLOW
+  UNUSUAL
+}
+
+enum WaterAppearance {
+  CLEAR
+  TURBID
+  DISCOLORED
+}
+
+enum GearCondition {
+  GOOD
+  LOOSE
+  BROKEN
+  MISSING
+}
+
+enum ConfidenceLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum DataChannel {
+  APP
+  SMS
+  USSD
+  EXTENSION
+  SEED
+}
+
+enum ReviewStatus {
+  PENDING
+  REVIEWED
+  FLAGGED
+}
+
+enum DiseaseType {
+  ICE_ICE
+  EPIPHYTES
+  GRAZING
+  OTHER
+}
+
+enum DataSource {
+  LIVE
+  CACHED
+  DEMO
+  SIMULATION
+}
+
+enum RiskType {
+  HEAT_ICE_ICE
+  STORM_LINE_DAMAGE
+  POOR_GROWTH
+  HARVEST_WINDOW
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ModelType {
+  RULE
+  ML
+  HYBRID
+}
+
+enum PredictionTrigger {
+  SCHEDULED
+  OBSERVATION
+  MANUAL
+  SIMULATION
+  SEED
+}
+
+enum CropStage {
+  ANY
+  EARLY
+  GROWING
+  MATURING
+  HARVEST_READY
+}
+
+enum Urgency {
+  ROUTINE
+  SOON
+  URGENT
+  IMMEDIATE
+}
+
+enum RecommendationStatus {
+  PENDING
+  ACKNOWLEDGED
+  COMPLETED
+  DISMISSED
+  SUPERSEDED
+}
+
+enum OutcomeType {
+  NO_LOSS
+  MINOR_LOSS
+  MAJOR_LOSS
+  TOTAL_LOSS
+  HARVESTED
+}
+
+enum QuantityUnit {
+  KG_DRY
+  KG_WET
+}
+
+enum QualityGrade {
+  A
+  B
+  C
+  REJECT
+}
+
+enum DryingMethod {
+  RACK
+  TARPAULIN
+  ROPE_HANGING
+  GROUND
+}
+
+enum LossCause {
+  ICE_ICE
+  STORM
+  EPIPHYTES
+  GRAZING
+  THEFT
+  POOR_GROWTH
+  OTHER
+}
+
+enum AlertType {
+  HEAT_HIGH
+  HEAT_CRITICAL
+  STORM_HIGH
+  STORM_CRITICAL
+  POOR_GROWTH
+  HARVEST_WINDOW
+  MISSING_REPORT
+  RISK_CHANGE
+}
+
+enum AlertStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum NotificationChannel {
+  IN_APP
+  SMS
+  EMAIL
+}
+
+enum DeliveryStatus {
+  SENT
+  SIMULATED
+  FAILED
+  SKIPPED
+}
+
+enum ModelStatus {
+  TRAINED
+  ACTIVE
+  RETIRED
+}
+
+enum FeedbackType {
+  CORRECT
+  FALSE_POSITIVE
+  FALSE_NEGATIVE
+  FLAGGED
+}
+
+enum DemandStatus {
+  OPEN
+  FULFILLED
+  CANCELLED
+}
+
+// ───────────────────────── Identity & access ─────────────────────────
+
+model User {
+  id                String    @id @default(uuid()) @db.Uuid
+  email             String    @unique
+  passwordHash      String    @map("password_hash")
+  fullName          String    @map("full_name")
+  phone             String?   @unique
+  preferredLanguage Language  @default(sw) @map("preferred_language")
+  isActive          Boolean   @default(true) @map("is_active")
+  isDemo            Boolean   @default(false) @map("is_demo")
+  consentGiven      Boolean   @default(false) @map("consent_given")
+  consentAt         DateTime? @map("consent_at")
+  lastLoginAt       DateTime? @map("last_login_at")
+  // Staff scoping: cooperative admins (and optionally extension officers) belong to one cooperative
+  cooperativeId     String?   @map("cooperative_id") @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  cooperative          Cooperative?          @relation("CooperativeStaff", fields: [cooperativeId], references: [id], onDelete: SetNull)
+  roles                UserRole[]
+  farmer               Farmer?
+  buyer                Buyer?
+  observations         FarmObservation[]     @relation("ObservationReporter")
+  reviewedObservations FarmObservation[]     @relation("ObservationReviewer")
+  farmerActions        FarmerAction[]
+  notifications        Notification[]
+  auditLogs            AuditLog[]
+  modelFeedback        ModelFeedback[]
+  extensionNotes       ExtensionNote[]
+  uploadedFiles        UploadedFile[]
+  validatedActions     ActionLibrary[]       @relation("ActionValidator")
+  reviewedRecs         ActionRecommendation[] @relation("RecommendationReviewer")
+  flaggedPredictions   RiskPrediction[]      @relation("PredictionFlagger")
+  acknowledgedAlerts   Alert[]               @relation("AlertAcknowledger")
+
+  @@index([cooperativeId])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Role {
+  id          String           @id @default(uuid()) @db.Uuid
+  name        RoleName         @unique
+  description String?
+  users       UserRole[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(uuid()) @db.Uuid
+  key         String           @unique
+  description String?
+  roles       RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String     @map("role_id") @db.Uuid
+  permissionId String     @map("permission_id") @db.Uuid
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  userId    String   @map("user_id") @db.Uuid
+  roleId    String   @map("role_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+// ─────────────────────── Farmers & cooperatives ───────────────────────
+
+model Farmer {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @unique @map("user_id") @db.Uuid
+  farmerCode      String   @unique @map("farmer_code")
+  village         String?
+  district        String?
+  region          String?
+  yearsExperience Int?     @map("years_experience")
+  isDemo          Boolean  @default(false) @map("is_demo")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  farms        Farm[]
+  memberships  CooperativeMember[]
+
+  @@index([createdAt])
+  @@map("farmers")
+}
+
+model Cooperative {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  name        String
+  district    String
+  region      String
+  description String?
+  isDemo      Boolean  @default(false) @map("is_demo")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  members   CooperativeMember[]
+  farms     Farm[]
+  staff     User[]              @relation("CooperativeStaff")
+  alerts    Alert[]
+  forecasts HarvestForecast[]
+
+  @@map("cooperatives")
+}
+
+model CooperativeMember {
+  id            String      @id @default(uuid()) @db.Uuid
+  cooperativeId String      @map("cooperative_id") @db.Uuid
+  farmerId      String      @map("farmer_id") @db.Uuid
+  joinedAt      DateTime    @default(now()) @map("joined_at")
+  isActive      Boolean     @default(true) @map("is_active")
+  cooperative   Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
+  farmer        Farmer      @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+
+  @@unique([cooperativeId, farmerId])
+  @@index([farmerId])
+  @@index([cooperativeId])
+  @@map("cooperative_members")
+}
+
+// ──────────────────────────── Farms ────────────────────────────
+
+model SeaweedSpecies {
+  id                String  @id @default(uuid()) @db.Uuid
+  code              String  @unique
+  scientificName    String  @map("scientific_name")
+  commonName        String  @map("common_name")
+  commonNameSw      String  @map("common_name_sw")
+  typicalCycleDays  Int     @map("typical_cycle_days")
+  optimalSstMin     Float   @map("optimal_sst_min")
+  optimalSstMax     Float   @map("optimal_sst_max")
+  heatSensitivity   Float   @map("heat_sensitivity") // 0..1, higher = more sensitive to ice-ice
+  yieldKgDryPerLine Float   @map("yield_kg_dry_per_line")
+  farms             Farm[]
+  demand            BuyerDemand[]
+
+  @@map("seaweed_species")
+}
+
+model Farm {
+  id              String          @id @default(uuid()) @db.Uuid
+  farmCode        String          @unique @map("farm_code")
+  name            String
+  farmerId        String          @map("farmer_id") @db.Uuid
+  cooperativeId   String?         @map("cooperative_id") @db.Uuid
+  speciesId       String          @map("species_id") @db.Uuid
+  farmingMethod   FarmingMethod   @default(OFF_BOTTOM) @map("farming_method")
+  exposure        FarmExposure    @default(MODERATE)
+  anchoringMethod AnchoringMethod @default(WOODEN_STAKES) @map("anchoring_method")
+  areaHectares    Float?          @map("area_hectares")
+  lineCount       Int             @default(0) @map("line_count")
+  status          FarmStatus      @default(ACTIVE)
+  notes           String?
+  demoScenario    String?         @map("demo_scenario") // NORMAL | HEAT | STORM | NEAR_HARVEST | POOR_GROWTH (demo only)
+  isDemo          Boolean         @default(false) @map("is_demo")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  farmer            Farmer                  @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  cooperative       Cooperative?            @relation(fields: [cooperativeId], references: [id], onDelete: SetNull)
+  species           SeaweedSpecies          @relation(fields: [speciesId], references: [id])
+  location          FarmLocation?
+  plantingCycles    PlantingCycle[]
+  observations      FarmObservation[]
+  diseaseObs        DiseaseObservation[]
+  environment       EnvironmentalObservation[]
+  predictions       RiskPrediction[]
+  recommendations   ActionRecommendation[]
+  farmerActions     FarmerAction[]
+  outcomes          ActionOutcome[]
+  harvests          HarvestRecord[]
+  losses            LossRecord[]
+  qualityRecords    QualityRecord[]
+  dryingRecords     DryingRecord[]
+  forecasts         HarvestForecast[]
+  alerts            Alert[]
+  extensionNotes    ExtensionNote[]
+
+  @@index([farmerId])
+  @@index([cooperativeId])
+  @@index([createdAt])
+  @@index([status])
+  @@map("farms")
+}
+
+model FarmLocation {
+  id           String  @id @default(uuid()) @db.Uuid
+  farmId       String  @unique @map("farm_id") @db.Uuid
+  latitude     Float
+  longitude    Float
+  locationName String  @map("location_name")
+  district     String
+  region       String
+  waterDepthM  Float?  @map("water_depth_m")
+  farm         Farm    @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([district])
+  @@map("farm_locations")
+}
+
+model PlantingCycle {
+  id                  String      @id @default(uuid()) @db.Uuid
+  farmId              String      @map("farm_id") @db.Uuid
+  plantingDate        DateTime    @map("planting_date") @db.Date
+  expectedHarvestDate DateTime    @map("expected_harvest_date") @db.Date
+  linesPlanted        Int         @map("lines_planted")
+  seedQuantityKg      Float?      @map("seed_quantity_kg")
+  status              CycleStatus @default(ACTIVE)
+  notes               String?
+  isDemo              Boolean     @default(false) @map("is_demo")
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+
+  farm         Farm              @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  observations FarmObservation[]
+  predictions  RiskPrediction[]
+  harvests     HarvestRecord[]
+  losses       LossRecord[]
+
+  @@index([farmId])
+  @@index([plantingDate])
+  @@index([expectedHarvestDate])
+  @@index([status])
+  @@map("planting_cycles")
+}
+
+// ─────────────────────────── Observations ───────────────────────────
+
+model FarmObservation {
+  id              String           @id @default(uuid()) @db.Uuid
+  farmId          String           @map("farm_id") @db.Uuid
+  plantingCycleId String?          @map("planting_cycle_id") @db.Uuid
+  reporterId      String?          @map("reporter_id") @db.Uuid
+  observedAt      DateTime         @default(now()) @map("observed_at")
+  cropCondition   CropCondition    @map("crop_condition")
+  whitening       Boolean          @default(false)
+  breakage        Boolean          @default(false)
+  epiphytes       Boolean          @default(false)
+  diseaseSymptoms Boolean          @default(false) @map("disease_symptoms")
+  unusualGrowth   Boolean          @default(false) @map("unusual_growth")
+  growthCondition GrowthCondition? @map("growth_condition")
+  waterAppearance WaterAppearance? @map("water_appearance")
+  lineCondition   GearCondition?   @map("line_condition")
+  anchorCondition GearCondition?   @map("anchor_condition")
+  percentAffected Float?           @map("percent_affected")
+  notes           String?
+  confidence      ConfidenceLevel  @default(MEDIUM)
+  channel         DataChannel      @default(APP)
+  imageFileId     String?          @map("image_file_id") @db.Uuid
+  reviewStatus    ReviewStatus     @default(PENDING) @map("review_status")
+  reviewedById    String?          @map("reviewed_by_id") @db.Uuid
+  reviewNote      String?          @map("review_note")
+  reviewedAt      DateTime?        @map("reviewed_at")
+  isDemo          Boolean          @default(false) @map("is_demo")
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  farm          Farm                 @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  plantingCycle PlantingCycle?       @relation(fields: [plantingCycleId], references: [id], onDelete: SetNull)
+  reporter      User?                @relation("ObservationReporter", fields: [reporterId], references: [id], onDelete: SetNull)
+  reviewedBy    User?                @relation("ObservationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  image         UploadedFile?        @relation(fields: [imageFileId], references: [id], onDelete: SetNull)
+  diseases      DiseaseObservation[]
+
+  @@index([farmId])
+  @@index([createdAt])
+  @@index([observedAt])
+  @@index([reviewStatus])
+  @@map("farm_observations")
+}
+
+model DiseaseObservation {
+  id              String          @id @default(uuid()) @db.Uuid
+  observationId   String          @map("observation_id") @db.Uuid
+  farmId          String          @map("farm_id") @db.Uuid
+  diseaseType     DiseaseType     @map("disease_type")
+  severity        ConfidenceLevel @default(MEDIUM)
+  percentAffected Float?          @map("percent_affected")
+  notes           String?
+  createdAt       DateTime        @default(now()) @map("created_at")
+  observation     FarmObservation @relation(fields: [observationId], references: [id], onDelete: Cascade)
+  farm            Farm            @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([farmId])
+  @@index([createdAt])
+  @@map("disease_observations")
+}
+
+model UploadedFile {
+  id           String            @id @default(uuid()) @db.Uuid
+  originalName String            @map("original_name")
+  storedName   String            @unique @map("stored_name")
+  mimeType     String            @map("mime_type")
+  sizeBytes    Int               @map("size_bytes")
+  storage      String            @default("LOCAL")
+  uploadedById String?           @map("uploaded_by_id") @db.Uuid
+  createdAt    DateTime          @default(now()) @map("created_at")
+  uploadedBy   User?             @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  observations FarmObservation[]
+
+  @@map("uploaded_files")
+}
+
+// ───────────────────────── Environmental data ─────────────────────────
+
+model WeatherObservation {
+  id               String     @id @default(uuid()) @db.Uuid
+  latitude         Float
+  longitude        Float
+  observedAt       DateTime   @map("observed_at")
+  source           DataSource
+  provider         String
+  airTemperatureC  Float?     @map("air_temperature_c")
+  rainfallMm       Float?     @map("rainfall_mm")
+  windSpeedKmh     Float?     @map("wind_speed_kmh")
+  windDirectionDeg Float?     @map("wind_direction_deg")
+  humidityPct      Float?     @map("humidity_pct")
+  condition        String?
+  isDemo           Boolean    @default(false) @map("is_demo")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  environmental    EnvironmentalObservation[]
+
+  @@index([createdAt])
+  @@index([latitude, longitude])
+  @@map("weather_observations")
+}
+
+model OceanObservation {
+  id                 String     @id @default(uuid()) @db.Uuid
+  latitude           Float
+  longitude          Float
+  observedAt         DateTime   @map("observed_at")
+  source             DataSource
+  provider           String
+  seaSurfaceTempC    Float?     @map("sea_surface_temp_c")
+  sstAnomalyC        Float?     @map("sst_anomaly_c")
+  waveHeightM        Float?     @map("wave_height_m")
+  currentVelocityMs  Float?     @map("current_velocity_ms")
+  salinityPsu        Float?     @map("salinity_psu")
+  chlorophyllMgM3    Float?     @map("chlorophyll_mg_m3")
+  isDemo             Boolean    @default(false) @map("is_demo")
+  createdAt          DateTime   @default(now()) @map("created_at")
+  environmental      EnvironmentalObservation[]
+
+  @@index([createdAt])
+  @@index([latitude, longitude])
+  @@map("ocean_observations")
+}
+
+// Combined per-farm snapshot used as risk-engine input
+model EnvironmentalObservation {
+  id                   String     @id @default(uuid()) @db.Uuid
+  farmId               String     @map("farm_id") @db.Uuid
+  observedAt           DateTime   @map("observed_at")
+  source               DataSource
+  weatherSource        DataSource @map("weather_source")
+  oceanSource          DataSource @map("ocean_source")
+  weatherObservationId String?    @map("weather_observation_id") @db.Uuid
+  oceanObservationId   String?    @map("ocean_observation_id") @db.Uuid
+  seaSurfaceTempC      Float?     @map("sea_surface_temp_c")
+  sstAnomalyC          Float?     @map("sst_anomaly_c")
+  sstAnomalyDays       Int?       @map("sst_anomaly_days")
+  waveHeightM          Float?     @map("wave_height_m")
+  currentVelocityMs    Float?     @map("current_velocity_ms")
+  salinityPsu          Float?     @map("salinity_psu")
+  chlorophyllMgM3      Float?     @map("chlorophyll_mg_m3")
+  airTemperatureC      Float?     @map("air_temperature_c")
+  rainfallMm           Float?     @map("rainfall_mm")
+  windSpeedKmh         Float?     @map("wind_speed_kmh")
+  windDirectionDeg     Float?     @map("wind_direction_deg")
+  humidityPct          Float?     @map("humidity_pct")
+  weatherCondition     String?    @map("weather_condition")
+  isDemo               Boolean    @default(false) @map("is_demo")
+  createdAt            DateTime   @default(now()) @map("created_at")
+
+  farm        Farm                @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  weather     WeatherObservation? @relation(fields: [weatherObservationId], references: [id], onDelete: SetNull)
+  ocean       OceanObservation?   @relation(fields: [oceanObservationId], references: [id], onDelete: SetNull)
+  predictions RiskPrediction[]
+
+  @@index([farmId, observedAt])
+  @@index([createdAt])
+  @@map("environmental_observations")
+}
+
+// ─────────────────────────── AI / risk ───────────────────────────
+
+model RiskPrediction {
+  id                    String            @id @default(uuid()) @db.Uuid
+  farmId                String            @map("farm_id") @db.Uuid
+  plantingCycleId       String?           @map("planting_cycle_id") @db.Uuid
+  environmentalObsId    String?           @map("environmental_obs_id") @db.Uuid
+  riskType              RiskType          @map("risk_type")
+  probability           Float
+  riskLevel             RiskLevel         @map("risk_level")
+  confidence            Float
+  forecastHorizonHours  Int               @default(72) @map("forecast_horizon_hours")
+  modelType             ModelType         @map("model_type")
+  modelVersion          String            @map("model_version")
+  ruleProbability       Float             @map("rule_probability")
+  mlProbability         Float?            @map("ml_probability")
+  features              Json
+  explanation           String
+  explanationSw         String            @map("explanation_sw")
+  dataSource            DataSource        @map("data_source")
+  trigger               PredictionTrigger @default(MANUAL)
+  isSimulation          Boolean           @default(false) @map("is_simulation")
+  isDemo                Boolean           @default(false) @map("is_demo")
+  flagged               Boolean           @default(false)
+  flagReason            String?           @map("flag_reason")
+  flaggedById           String?           @map("flagged_by_id") @db.Uuid
+  createdAt             DateTime          @default(now()) @map("created_at")
+
+  farm             Farm                     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  plantingCycle    PlantingCycle?           @relation(fields: [plantingCycleId], references: [id], onDelete: SetNull)
+  environmentalObs EnvironmentalObservation? @relation(fields: [environmentalObsId], references: [id], onDelete: SetNull)
+  flaggedBy        User?                    @relation("PredictionFlagger", fields: [flaggedById], references: [id], onDelete: SetNull)
+  factors          RiskFactor[]
+  recommendations  ActionRecommendation[]
+  outcomes         ActionOutcome[]
+  alerts           Alert[]
+  modelPredictions ModelPrediction[]
+  feedback         ModelFeedback[]
+
+  @@index([farmId, riskType, createdAt])
+  @@index([createdAt])
+  @@index([riskLevel])
+  @@map("risk_predictions")
+}
+
+model RiskFactor {
+  id           String         @id @default(uuid()) @db.Uuid
+  predictionId String         @map("prediction_id") @db.Uuid
+  code         String
+  label        String
+  labelSw      String         @map("label_sw")
+  value        String?
+  contribution Float
+  direction    String         // INCREASES | DECREASES
+  prediction   RiskPrediction @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+
+  @@index([predictionId])
+  @@map("risk_factors")
+}
+
+model ActionLibrary {
+  id                   String    @id @default(uuid()) @db.Uuid
+  code                 String    @unique
+  riskType             RiskType  @map("risk_type")
+  minimumRiskLevel     RiskLevel @map("minimum_risk_level")
+  maximumRiskLevel     RiskLevel? @map("maximum_risk_level")
+  cropStage            CropStage @default(ANY) @map("crop_stage")
+  conditions           Json?     // [{ feature, op, value }] all must hold
+  action               String
+  actionSw             String    @map("action_sw")
+  explanation          String
+  explanationSw        String    @map("explanation_sw")
+  urgency              Urgency   @default(ROUTINE)
+  urgencyHours         Int       @default(72) @map("urgency_hours")
+  priority             Int       @default(0)
+  source               String
+  validated            Boolean   @default(false)
+  validatedById        String?   @map("validated_by_id") @db.Uuid
+  validatedAt          DateTime? @map("validated_at")
+  validationNote       String?   @map("validation_note")
+  enabled              Boolean   @default(true)
+  escalateToExtension  Boolean   @default(false) @map("escalate_to_extension")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  validatedBy     User?                  @relation("ActionValidator", fields: [validatedById], references: [id], onDelete: SetNull)
+  recommendations ActionRecommendation[]
+
+  @@index([riskType, minimumRiskLevel])
+  @@map("action_library")
+}
+
+model ActionRecommendation {
+  id              String               @id @default(uuid()) @db.Uuid
+  farmId          String               @map("farm_id") @db.Uuid
+  predictionId    String?              @map("prediction_id") @db.Uuid
+  actionLibraryId String               @map("action_library_id") @db.Uuid
+  status          RecommendationStatus @default(PENDING)
+  dueBy           DateTime             @map("due_by")
+  reviewStatus    ReviewStatus         @default(PENDING) @map("review_status")
+  reviewedById    String?              @map("reviewed_by_id") @db.Uuid
+  reviewNote      String?              @map("review_note")
+  reviewedAt      DateTime?            @map("reviewed_at")
+  isSimulation    Boolean              @default(false) @map("is_simulation")
+  isDemo          Boolean              @default(false) @map("is_demo")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  farm          Farm            @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  prediction    RiskPrediction? @relation(fields: [predictionId], references: [id], onDelete: SetNull)
+  actionLibrary ActionLibrary   @relation(fields: [actionLibraryId], references: [id])
+  reviewedBy    User?           @relation("RecommendationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  farmerActions FarmerAction[]
+  outcomes      ActionOutcome[]
+
+  @@index([farmId, status])
+  @@index([createdAt])
+  @@map("action_recommendations")
+}
+
+model FarmerAction {
+  id               String                @id @default(uuid()) @db.Uuid
+  farmId           String                @map("farm_id") @db.Uuid
+  recommendationId String?               @map("recommendation_id") @db.Uuid
+  userId           String?               @map("user_id") @db.Uuid
+  actionTaken      Boolean               @map("action_taken")
+  description      String
+  performedAt      DateTime              @default(now()) @map("performed_at")
+  notes            String?
+  channel          DataChannel           @default(APP)
+  isDemo           Boolean               @default(false) @map("is_demo")
+  createdAt        DateTime              @default(now()) @map("created_at")
+
+  farm           Farm                  @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  recommendation ActionRecommendation? @relation(fields: [recommendationId], references: [id], onDelete: SetNull)
+  user           User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  outcomes       ActionOutcome[]
+
+  @@index([farmId])
+  @@index([createdAt])
+  @@map("farmer_actions")
+}
+
+model ActionOutcome {
+  id               String                @id @default(uuid()) @db.Uuid
+  farmId           String                @map("farm_id") @db.Uuid
+  farmerActionId   String?               @map("farmer_action_id") @db.Uuid
+  recommendationId String?               @map("recommendation_id") @db.Uuid
+  predictionId     String?               @map("prediction_id") @db.Uuid
+  outcomeType      OutcomeType           @map("outcome_type")
+  lossPercent      Float?                @map("loss_percent")
+  outcomeDate      DateTime              @default(now()) @map("outcome_date")
+  riskMaterialized Boolean?              @map("risk_materialized") // did the predicted risk actually happen?
+  notes            String?
+  isDemo           Boolean               @default(false) @map("is_demo")
+  createdAt        DateTime              @default(now()) @map("created_at")
+
+  farm           Farm                  @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  farmerAction   FarmerAction?         @relation(fields: [farmerActionId], references: [id], onDelete: SetNull)
+  recommendation ActionRecommendation? @relation(fields: [recommendationId], references: [id], onDelete: SetNull)
+  prediction     RiskPrediction?       @relation(fields: [predictionId], references: [id], onDelete: SetNull)
+
+  @@index([farmId])
+  @@index([createdAt])
+  @@map("action_outcomes")
+}
+
+// ─────────────────────── Harvest, loss, quality ───────────────────────
+
+model HarvestRecord {
+  id                  String        @id @default(uuid()) @db.Uuid
+  farmId              String        @map("farm_id") @db.Uuid
+  plantingCycleId     String?       @map("planting_cycle_id") @db.Uuid
+  buyerId             String?       @map("buyer_id") @db.Uuid
+  harvestDate         DateTime      @map("harvest_date") @db.Date
+  estimatedQuantity   Float?        @map("estimated_quantity")
+  actualQuantity      Float         @map("actual_quantity")
+  unit                QuantityUnit  @default(KG_DRY)
+  qualityGrade        QualityGrade? @map("quality_grade")
+  dryingMethod        DryingMethod? @map("drying_method")
+  dryingDurationDays  Float?        @map("drying_duration_days")
+  pricePerKg          Float?        @map("price_per_kg") // TZS
+  totalValue          Float?        @map("total_value")
+  differenceQuantity  Float?        @map("difference_quantity")
+  lossPercent         Float?        @map("loss_percent")
+  notes               String?
+  channel             DataChannel   @default(APP)
+  isDemo              Boolean       @default(false) @map("is_demo")
+  createdAt           DateTime      @default(now()) @map("created_at")
+
+  farm          Farm            @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  plantingCycle PlantingCycle?  @relation(fields: [plantingCycleId], references: [id], onDelete: SetNull)
+  buyer         Buyer?          @relation(fields: [buyerId], references: [id], onDelete: SetNull)
+  quality       QualityRecord[]
+  drying        DryingRecord[]
+
+  @@index([farmId])
+  @@index([harvestDate])
+  @@index([createdAt])
+  @@map("harvest_records")
+}
+
+model LossRecord {
+  id              String         @id @default(uuid()) @db.Uuid
+  farmId          String         @map("farm_id") @db.Uuid
+  plantingCycleId String?        @map("planting_cycle_id") @db.Uuid
+  lossDate        DateTime       @map("loss_date") @db.Date
+  cause           LossCause
+  quantityKg      Float?         @map("quantity_kg")
+  percentLost     Float          @map("percent_lost")
+  notes           String?
+  isDemo          Boolean        @default(false) @map("is_demo")
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  farm          Farm           @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  plantingCycle PlantingCycle? @relation(fields: [plantingCycleId], references: [id], onDelete: SetNull)
+
+  @@index([farmId])
+  @@index([createdAt])
+  @@map("loss_records")
+}
+
+model QualityRecord {
+  id               String        @id @default(uuid()) @db.Uuid
+  farmId           String        @map("farm_id") @db.Uuid
+  harvestRecordId  String        @map("harvest_record_id") @db.Uuid
+  grade            QualityGrade
+  moisturePercent  Float?        @map("moisture_percent")
+  impurityPercent  Float?        @map("impurity_percent")
+  colour           String?
+  notes            String?
+  createdAt        DateTime      @default(now()) @map("created_at")
+  farm             Farm          @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  harvestRecord    HarvestRecord @relation(fields: [harvestRecordId], references: [id], onDelete: Cascade)
+
+  @@index([farmId])
+  @@map("quality_records")
+}
+
+model DryingRecord {
+  id              String        @id @default(uuid()) @db.Uuid
+  farmId          String        @map("farm_id") @db.Uuid
+  harvestRecordId String        @map("harvest_record_id") @db.Uuid
+  method          DryingMethod
+  startDate       DateTime      @map("start_date") @db.Date
+  durationDays    Float?        @map("duration_days")
+  groundContact   Boolean       @default(false) @map("ground_contact")
+  rainDuringDrying Boolean      @default(false) @map("rain_during_drying")
+  notes           String?
+  createdAt       DateTime      @default(now()) @map("created_at")
+  farm            Farm          @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  harvestRecord   HarvestRecord @relation(fields: [harvestRecordId], references: [id], onDelete: Cascade)
+
+  @@index([farmId])
+  @@map("drying_records")
+}
+
+// ───────────────────────── Buyers & forecasts ─────────────────────────
+
+model Buyer {
+  id          String        @id @default(uuid()) @db.Uuid
+  userId      String?       @unique @map("user_id") @db.Uuid
+  companyName String        @map("company_name")
+  contactName String?       @map("contact_name")
+  phone       String?
+  district    String?
+  isDemo      Boolean       @default(false) @map("is_demo")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  demand      BuyerDemand[]
+  harvests    HarvestRecord[]
+
+  @@map("buyers")
+}
+
+model BuyerDemand {
+  id                 String          @id @default(uuid()) @db.Uuid
+  buyerId            String          @map("buyer_id") @db.Uuid
+  speciesId          String?         @map("species_id") @db.Uuid
+  quantityKg         Float           @map("quantity_kg")
+  pricePerKg         Float?          @map("price_per_kg")
+  neededBy           DateTime        @map("needed_by") @db.Date
+  minimumGrade       QualityGrade?   @map("minimum_grade")
+  status             DemandStatus    @default(OPEN)
+  notes              String?
+  createdAt          DateTime        @default(now()) @map("created_at")
+  buyer              Buyer           @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  species            SeaweedSpecies? @relation(fields: [speciesId], references: [id], onDelete: SetNull)
+
+  @@index([buyerId])
+  @@index([neededBy])
+  @@map("buyer_demand")
+}
+
+model HarvestForecast {
+  id                     String       @id @default(uuid()) @db.Uuid
+  farmId                 String       @map("farm_id") @db.Uuid
+  cooperativeId          String?      @map("cooperative_id") @db.Uuid
+  plantingCycleId        String?      @map("planting_cycle_id") @db.Uuid
+  district               String
+  expectedHarvestDate    DateTime     @map("expected_harvest_date") @db.Date
+  expectedQuantityKg     Float        @map("expected_quantity_kg")
+  riskAdjustedQuantityKg Float        @map("risk_adjusted_quantity_kg")
+  lowQuantityKg          Float        @map("low_quantity_kg")
+  highQuantityKg         Float        @map("high_quantity_kg")
+  confidence             Float
+  expectedGrade          QualityGrade? @map("expected_grade")
+  method                 String
+  inputs                 Json
+  isCurrent              Boolean      @default(true) @map("is_current")
+  isDemo                 Boolean      @default(false) @map("is_demo")
+  createdAt              DateTime     @default(now()) @map("created_at")
+  farm                   Farm         @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  cooperative            Cooperative? @relation(fields: [cooperativeId], references: [id], onDelete: SetNull)
+
+  @@index([farmId])
+  @@index([cooperativeId])
+  @@index([expectedHarvestDate])
+  @@index([isCurrent])
+  @@map("harvest_forecasts")
+}
+
+// ───────────────────────── Alerts & notifications ─────────────────────────
+
+model Alert {
+  id               String       @id @default(uuid()) @db.Uuid
+  farmId           String       @map("farm_id") @db.Uuid
+  cooperativeId    String?      @map("cooperative_id") @db.Uuid
+  predictionId     String?      @map("prediction_id") @db.Uuid
+  type             AlertType
+  severity         RiskLevel
+  title            String
+  titleSw          String       @map("title_sw")
+  message          String
+  messageSw        String       @map("message_sw")
+  status           AlertStatus  @default(ACTIVE)
+  acknowledgedById String?      @map("acknowledged_by_id") @db.Uuid
+  acknowledgedAt   DateTime?    @map("acknowledged_at")
+  isSimulation     Boolean      @default(false) @map("is_simulation")
+  isDemo           Boolean      @default(false) @map("is_demo")
+  createdAt        DateTime     @default(now()) @map("created_at")
+
+  farm           Farm            @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  cooperative    Cooperative?    @relation(fields: [cooperativeId], references: [id], onDelete: SetNull)
+  prediction     RiskPrediction? @relation(fields: [predictionId], references: [id], onDelete: SetNull)
+  acknowledgedBy User?           @relation("AlertAcknowledger", fields: [acknowledgedById], references: [id], onDelete: SetNull)
+  notifications  Notification[]
+
+  @@index([farmId])
+  @@index([cooperativeId])
+  @@index([createdAt])
+  @@index([severity])
+  @@index([status])
+  @@map("alerts")
+}
+
+model Notification {
+  id        String              @id @default(uuid()) @db.Uuid
+  userId    String              @map("user_id") @db.Uuid
+  alertId   String?             @map("alert_id") @db.Uuid
+  channel   NotificationChannel
+  title     String
+  body      String
+  readAt    DateTime?           @map("read_at")
+  createdAt DateTime            @default(now()) @map("created_at")
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  alert     Alert?              @relation(fields: [alertId], references: [id], onDelete: SetNull)
+  logs      NotificationLog[]
+
+  @@index([userId, readAt])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model NotificationLog {
+  id             String              @id @default(uuid()) @db.Uuid
+  notificationId String?             @map("notification_id") @db.Uuid
+  channel        NotificationChannel
+  provider       String
+  recipient      String
+  status         DeliveryStatus
+  providerRef    String?             @map("provider_ref")
+  error          String?
+  createdAt      DateTime            @default(now()) @map("created_at")
+  notification   Notification?       @relation(fields: [notificationId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@map("notification_logs")
+}
+
+// ─────────────────────────── ML lifecycle ───────────────────────────
+
+model MlModel {
+  id              String            @id @default(uuid()) @db.Uuid
+  name            String
+  version         String
+  riskType        RiskType          @map("risk_type")
+  algorithm       String
+  status          ModelStatus       @default(TRAINED)
+  trainedAt       DateTime          @map("trained_at")
+  trainingRecords Int               @map("training_records")
+  testRecords     Int               @map("test_records")
+  syntheticData   Boolean           @map("synthetic_data")
+  featureNames    Json              @map("feature_names")
+  filePath        String            @map("file_path")
+  notes           String?
+  createdAt       DateTime          @default(now()) @map("created_at")
+  metrics         ModelMetric[]
+  predictions     ModelPrediction[]
+  feedback        ModelFeedback[]
+
+  @@unique([riskType, version])
+  @@map("ml_models")
+}
+
+model ModelPrediction {
+  id               String         @id @default(uuid()) @db.Uuid
+  modelId          String         @map("model_id") @db.Uuid
+  riskPredictionId String         @map("risk_prediction_id") @db.Uuid
+  probability      Float
+  createdAt        DateTime       @default(now()) @map("created_at")
+  model            MlModel        @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  riskPrediction   RiskPrediction @relation(fields: [riskPredictionId], references: [id], onDelete: Cascade)
+
+  @@index([modelId])
+  @@index([createdAt])
+  @@map("model_predictions")
+}
+
+model ModelFeedback {
+  id               String         @id @default(uuid()) @db.Uuid
+  riskPredictionId String         @map("risk_prediction_id") @db.Uuid
+  modelId          String?        @map("model_id") @db.Uuid
+  userId           String?        @map("user_id") @db.Uuid
+  feedbackType     FeedbackType   @map("feedback_type")
+  notes            String?
+  createdAt        DateTime       @default(now()) @map("created_at")
+  riskPrediction   RiskPrediction @relation(fields: [riskPredictionId], references: [id], onDelete: Cascade)
+  model            MlModel?       @relation(fields: [modelId], references: [id], onDelete: SetNull)
+  user             User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([riskPredictionId])
+  @@index([createdAt])
+  @@map("model_feedback")
+}
+
+model ModelMetric {
+  id        String   @id @default(uuid()) @db.Uuid
+  modelId   String   @map("model_id") @db.Uuid
+  dataset   String   // TEST (held-out synthetic) | FIELD (real outcomes)
+  metric    String
+  value     Float
+  details   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  model     MlModel  @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  @@index([modelId])
+  @@map("model_metrics")
+}
+
+// ───────────────────────── Operations & audit ─────────────────────────
+
+model ExtensionNote {
+  id            String    @id @default(uuid()) @db.Uuid
+  farmId        String    @map("farm_id") @db.Uuid
+  authorId      String?   @map("author_id") @db.Uuid
+  note          String
+  visitPriority RiskLevel? @map("visit_priority")
+  visitBy       DateTime? @map("visit_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  farm          Farm      @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  author        User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([farmId])
+  @@index([createdAt])
+  @@map("extension_notes")
+}
+
+model UssdSession {
+  id          String   @id @default(uuid()) @db.Uuid
+  sessionId   String   @unique @map("session_id")
+  phoneNumber String   @map("phone_number")
+  lastInput   String   @default("") @map("last_input")
+  lastState   String   @default("MAIN") @map("last_state")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([phoneNumber])
+  @@map("ussd_sessions")
+}
+
+model SmsMessage {
+  id          String   @id @default(uuid()) @db.Uuid
+  direction   String   // INBOUND | OUTBOUND
+  phoneNumber String   @map("phone_number")
+  body        String
+  command     String?
+  simulated   Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([phoneNumber])
+  @@index([createdAt])
+  @@map("sms_messages")
+}
+
+model JobRun {
+  id          String    @id @default(uuid()) @db.Uuid
+  jobName     String    @map("job_name")
+  trigger     String    // CRON | MANUAL
+  status      String    // RUNNING | SUCCESS | FAILED
+  startedAt   DateTime  @default(now()) @map("started_at")
+  finishedAt  DateTime? @map("finished_at")
+  summary     Json?
+  error       String?
+
+  @@index([jobName, startedAt])
+  @@map("job_runs")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  details    Json?
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model SystemSetting {
+  key         String   @id
+  value       Json
+  description String?
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
