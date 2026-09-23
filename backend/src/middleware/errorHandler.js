@@ -23,6 +23,7 @@ export function errorHandler(err, req, res, _next) {
   } else if (err instanceof Prisma.PrismaClientKnownRequestError) {
     if (err.code === 'P2002') { status = 409; code = 'CONFLICT'; message = `A record with this ${err.meta?.target || 'value'} already exists`; }
     else if (err.code === 'P2025') { status = 404; code = 'NOT_FOUND'; message = 'Record not found'; }
+    else if (err.code === 'P2023') { status = 404; code = 'NOT_FOUND'; message = 'Record not found'; } // malformed id
     else if (err.code === 'P2003') { status = 400; code = 'VALIDATION_ERROR'; message = 'Related record does not exist'; }
     else if (['P1001', 'P1002', 'P1017'].includes(err.code)) { status = 503; code = 'DATABASE_UNAVAILABLE'; message = 'Database is unavailable. Please try again shortly.'; }
   } else if (err instanceof Prisma.PrismaClientInitializationError) {
