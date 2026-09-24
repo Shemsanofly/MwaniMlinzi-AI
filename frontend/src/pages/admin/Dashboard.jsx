@@ -213,7 +213,7 @@ export default function AdminDashboard() {
             icon={Cpu}
             title={t('admin.dashboard.models')}
             subtitle={activeModels.length ? t('admin.dashboard.activeModels', { n: activeModels.length }) : t('admin.dashboard.ruleOnly')}
-            action={<Link to="/admin/models" className="text-sm font-semibold text-ocean-700 hover:text-ocean-900">{t('actions.viewDetails')}</Link>}
+            action={<Link to="/admin/models" className="shrink-0 whitespace-nowrap text-sm font-semibold text-ocean-700 hover:text-ocean-900">{t('actions.viewDetails')}</Link>}
           />
           <div className="p-4 sm:p-5">
             {data.models.length ? (
