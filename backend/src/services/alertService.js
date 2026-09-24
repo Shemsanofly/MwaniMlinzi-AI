@@ -37,7 +37,6 @@ async function isDuplicate(farmId, type) {
 function buildMessage(farm, prediction, action, kind) {
   const risk = RISK_LABELS[prediction.riskType];
   const lvl = LEVEL_LABELS[prediction.riskLevel];
-  const pct = Math.round(prediction.probability * 100);
   if (kind === 'HARVEST_WINDOW') {
     return {
       title: `Harvest window — ${farm.farmCode}`,
@@ -50,15 +49,15 @@ function buildMessage(farm, prediction, action, kind) {
     return {
       title: `Risk increased — ${risk.en} ${lvl.en.toUpperCase()} (${farm.farmCode})`,
       titleSw: `Hatari imeongezeka — ${risk.sw}: ${lvl.sw} (${farm.farmCode})`,
-      message: `${farm.name}: ${risk.en} risk rose to ${lvl.en.toUpperCase()} (${pct}%). ${action ? `Action: ${action.action}` : ''}`.trim(),
-      messageSw: `${farm.name}: hatari ya ${risk.sw} imepanda hadi ${lvl.sw} (${pct}%). ${action ? `Hatua: ${action.actionSw}` : ''}`.trim(),
+      message: `${farm.name}: ${risk.en} risk rose to ${lvl.en.toUpperCase()}. ${action ? `Action: ${action.action}` : ''}`.trim(),
+      messageSw: `${farm.name}: hatari ya ${risk.sw} imepanda hadi ${lvl.sw}. ${action ? `Hatua: ${action.actionSw}` : ''}`.trim(),
     };
   }
   return {
     title: `${lvl.en.toUpperCase()} ${risk.en} risk — ${farm.farmCode}`,
     titleSw: `${lvl.sw}: ${risk.sw} — ${farm.farmCode}`,
-    message: `${farm.name}: ${risk.en} risk is ${lvl.en.toUpperCase()} (${pct}%) for the next ${prediction.forecastHorizonHours / 24} days. ${action ? `Action: ${action.action}` : ''}`.trim(),
-    messageSw: `${farm.name}: ${lvl.sw} ya ${risk.sw} (${pct}%) kwa siku ${prediction.forecastHorizonHours / 24} zijazo. ${action ? `Hatua: ${action.actionSw}` : ''}`.trim(),
+    message: `${farm.name}: ${risk.en} risk is ${lvl.en.toUpperCase()} for the next ${prediction.forecastHorizonHours / 24} days. ${action ? `Action: ${action.action}` : ''}`.trim(),
+    messageSw: `${farm.name}: ${lvl.sw} ya ${risk.sw} kwa siku ${prediction.forecastHorizonHours / 24} zijazo. ${action ? `Hatua: ${action.actionSw}` : ''}`.trim(),
   };
 }
 

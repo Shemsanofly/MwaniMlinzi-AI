@@ -2,7 +2,7 @@
 
 ```
 ┌──────────────────────────── Browser (mobile-first React SPA) ────────────────────────────┐
-│ Farmer app · Cooperative · Extension · Buyer · Admin · Demo (simulation, SMS, USSD)       │
+│ Farmer app · Cooperative · Extension · Buyer · Admin · Demo (AI simulation)               │
 │ React Router · TanStack Query · Axios · Tailwind · Recharts · Leaflet/OpenStreetMap        │
 │ i18n (Kiswahili default / English)                                                         │
 └───────────────────────────────▲──────────────────────────────────────────────────────────┘
@@ -14,7 +14,7 @@
 │                                                                                            │
 │  FarmService  RecordService  FarmContextService  EnvironmentService  RiskService           │
 │  AlertService NotificationService  HarvestForecastService  AssistantService                │
-│  ChannelService (SMS commands, USSD state machine)  ModelMonitoringService  Settings       │
+│  SMSService · UssdService (AT state machine) · ChannelService (SMS) · ModelMonitoring      │
 │                                                                                            │
 │  AI:  RiskEngine = RiskRuleEngine (rules/riskRules.js) + MLRiskProvider (logistic reg.)    │
 │       ExplanationEngine · ActionEngine (Action Library) · LLMProvider (optional)           │
@@ -67,7 +67,7 @@ mwanimlinzi/
 │   ├── src/
 │   │   ├── ai/                riskEngine, riskRuleEngine, mlRiskProvider, actionEngine, explanationEngine, ml/
 │   │   ├── rules/             riskRules.js (named, explainable rule terms)
-│   │   ├── providers/         weather, ocean, environmental (fallback), llm, sms, ussd, email, demo profiles
+│   │   ├── providers/         weather, ocean, environmental (fallback), llm, africastalking/ (SMS client), email, demo profiles
 │   │   ├── services/          business logic
 │   │   ├── controllers/       HTTP handlers
 │   │   ├── routes/            routers + role guards
@@ -92,8 +92,8 @@ mwanimlinzi/
 - **Rules first, ML optional** — the rule engine is always available and explainable; ML is only blended in when an admin
   activates a trained model, and every prediction records which model produced it.
 - **Action Library as the single source of advice** — the LLM, assistant, SMS and USSD all read the same approved actions.
-- **Providers with demo twins** — the whole system runs offline for demos and degrades gracefully when live APIs fail.
+- **Providers with demo twins** — environmental data and the LLM run offline for demos and degrade gracefully when live APIs fail. SMS and USSD have no demo twin: they are real Africa's Talking channels and report `NOT_CONFIGURED` honestly.
 - **Simulations are first-class but isolated** — stored and auditable, never shown as real risk.
-- **Stateless USSD** — Africa's Talking sends the full input path each time, so the state machine derives state from `text`;
-  sessions are logged for auditing.
+- **Persisted USSD sessions** — the menu position, language, selected farm and temporary input are stored in `ussd_sessions`,
+  so each Africa's Talking request consumes only the newest input; retries return the stored reply (no duplicate records).
 - **No Docker** — plain `npm` scripts, PostgreSQL and PM2.

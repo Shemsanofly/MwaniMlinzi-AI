@@ -323,7 +323,7 @@ async function main() {
     '',
     ...['farmer', 'cooperative', 'extension', 'buyer', 'admin'].map((r) => `${r.padEnd(12)} ${r}@${DEMO_DOMAIN}`),
     '',
-    'Demo farmer phone (SMS/USSD simulators): +255777000001  farms: FARM001 (heat risk), FARM002 (near harvest)',
+    "Demo farmer phone (login, Africa's Talking sandbox SMS/USSD): +255777000001  farms: FARM001 (heat risk), FARM002 (near harvest)",
   ].join('\n');
   if (!env.isTest) fs.writeFileSync(path.join(here, '..', 'DEMO_CREDENTIALS.local.txt'), `${creds}\n`, { mode: 0o600 });
   console.log(`\n${creds}\n`);

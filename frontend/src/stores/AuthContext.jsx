@@ -5,6 +5,9 @@ import { setUnauthorizedHandler, tokenStore } from '../api/client.js';
 import { useI18n } from '../i18n/I18nProvider.jsx';
 
 const AuthContext = createContext(null);
+const USER_KEY = 'mwanimlinzi.user';
+const cachedUser = () => { try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); } catch { return null; } };
+const saveUser = (u) => { try { localStorage.setItem(USER_KEY, JSON.stringify(u)); } catch { /* storage unavailable */ } };
 
 export const HOME_FOR_ROLE = {
   FARMER: '/farmer/dashboard',
@@ -26,16 +29,26 @@ export function AuthProvider({ children }) {
     setUser(null);
     setStatus('anonymous');
     queryClient.clear();
-    try { localStorage.removeItem('mwanimlinzi.cache'); } catch { /* storage unavailable */ }
+    try { localStorage.removeItem('mwanimlinzi.cache'); localStorage.removeItem(USER_KEY); } catch { /* storage unavailable */ }
   }, [queryClient]);
 
   const loadMe = useCallback(async () => {
     try {
       const data = await authApi.me();
       setUser(data.user);
+      saveUser({ user: data.user, cooperative: data.cooperative, memberships: data.memberships || [] });
       setExtra({ cooperative: data.cooperative, memberships: data.memberships || [] });
       setStatus('authenticated');
-    } catch {
+    } catch (err) {
+      // Only an invalid/expired session logs the user out. With no connection (or a server error)
+      // the last known profile is kept so saved farm information stays usable offline.
+      const cached = cachedUser();
+      if (err?.status !== 401 && err?.status !== 403 && cached?.user) {
+        setUser((u) => u || cached.user);
+        setExtra((x) => (x.memberships.length || x.cooperative ? x : { cooperative: cached.cooperative, memberships: cached.memberships || [] }));
+        setStatus('authenticated');
+        return;
+      }
       clear();
     }
   }, [clear]);

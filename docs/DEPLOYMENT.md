@@ -43,9 +43,14 @@ OCEAN_PROVIDER=open-meteo-marine
 # optional
 LLM_PROVIDER=
 LLM_API_KEY=
-SMS_PROVIDER=
-SMS_API_KEY=
-SMS_USERNAME=
+# Africa's Talking (SMS + USSD) — see docs/AFRICASTALKING.md
+AT_USERNAME=
+AT_API_KEY=
+AT_ENVIRONMENT=production
+AT_SMS_SENDER_ID=
+AT_USSD_SERVICE_CODE=
+AT_CALLBACK_SECRET=
+PUBLIC_API_URL=https://api.example.org
 UPLOAD_DIR=/var/lib/mwanimlinzi/uploads
 MAX_UPLOAD_MB=5
 ```
@@ -128,8 +133,8 @@ case `VITE_API_URL` can stay empty (defaults to `/api`).
 | `DEMO_MODE` | `true` | `false` |
 | Weather | demo provider | `WEATHER_PROVIDER=open-meteo` (no key) or `openweathermap` + `WEATHER_API_KEY` |
 | Ocean | demo provider | `OCEAN_PROVIDER=open-meteo-marine` (no key) or `stormglass` + `OCEAN_API_KEY` |
-| SMS | simulated (logged) | `SMS_PROVIDER=africastalking`, `SMS_API_KEY`, `SMS_USERNAME`, optional `SMS_SENDER_ID` |
-| USSD | `/demo/ussd` simulator | `USSD_PROVIDER=africastalking`; register `https://api.example.org/api/ussd/callback?key=<USSD_API_KEY>` as the callback URL |
+| SMS | not simulated: without credentials every attempt is logged `NOT_CONFIGURED` | `AT_USERNAME`, `AT_API_KEY`, `AT_ENVIRONMENT` (`sandbox` first, then `production`), optional `AT_SMS_SENDER_ID` |
+| USSD | not simulated: callbacks are refused without a secret | `AT_CALLBACK_SECRET`, `AT_USSD_SERVICE_CODE`; register `https://api.example.org/api/integrations/africastalking/ussd?secret=<AT_CALLBACK_SECRET>` in AT (plus `/sms` and `/sms/delivery`, see [AFRICASTALKING.md](AFRICASTALKING.md)) |
 | LLM | templates | `LLM_PROVIDER=anthropic` (or `openai`), `LLM_API_KEY`, optional `LLM_MODEL` |
 
 Restart the API after changing `.env` (`pm2 restart mwanimlinzi-api`). Check **Admin → Settings → System** or

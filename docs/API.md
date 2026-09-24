@@ -45,16 +45,16 @@ admins see all farms; buyers never see farm-level data (only anonymised aggregat
 | GET | `/health` | `{ status, database, demoMode, providers{weather,ocean,llm,sms,ussd}, time }` (503 if DB down) |
 | GET | `/species` | Seaweed species |
 | GET | `/cooperatives/public` | `[{ code, name, district }]` for registration |
-| POST | `/ussd/callback` | Live USSD gateway callback (Africa's Talking form fields). 404 unless `USSD_PROVIDER` configured and `DEMO_MODE=false`; requires `?key=USSD_API_KEY` (or `X-USSD-Key` header), 503 if no key is configured |
 
 ## Auth
 
 | Method | Path | Body / notes |
 |---|---|---|
-| POST | `/auth/register` | `{ email, password (≥8, letter+digit), fullName, phone?, role: FARMER\|BUYER, preferredLanguage: sw\|en, cooperativeCode?, companyName?, village?, district?, consent: true }` → `{ token, user }` |
-| POST | `/auth/login` | `{ email, password }` → `{ token, user{ id, email, fullName, phone, roles[], primaryRole, farmerId, buyerId, cooperativeId, preferredLanguage } }` |
+| POST | `/auth/register` | `{ fullName, phone (Tanzanian mobile in any format: +255…, 255…, 07…, 06…; stored as +255XXXXXXXXX, unique), password (≥8, letter+digit), preferredLanguage: sw\|en, consent: true, email?, role?: FARMER\|BUYER, cooperativeCode?, companyName?, village?, district?, smsEnabled? }` → `{ token, user }` |
+| POST | `/auth/login` | `{ identifier (phone in any format, or email), password }` (`{ email, password }` still accepted) → `{ token, user{ id, email, fullName, phone, roles[], primaryRole, farmerId, buyerId, cooperativeId, preferredLanguage, smsEnabled, notifyRiskAlerts, notifyHarvest, notifySystem } }` |
 | GET | `/auth/me` | `{ user, cooperative, memberships[] }` |
-| PATCH | `/auth/me` | `{ fullName?, phone?, preferredLanguage? }` |
+| PATCH | `/auth/me` | `{ fullName?, phone?, email?, preferredLanguage?, smsEnabled?, notifyRiskAlerts?, notifyHarvest?, notifySystem? }` |
+| POST | `/auth/change-password` | `{ currentPassword, newPassword }` (400 `WRONG_PASSWORD` if the current one is wrong) |
 | POST | `/auth/logout` | audit only |
 
 ## Farms (FARMER, COOPERATIVE_ADMIN, EXTENSION_OFFICER, ADMIN)
@@ -163,25 +163,21 @@ Intents: `WHY_RISK`, `WHAT_TO_DO`, `HARVEST`, `ENVIRONMENT`, `HISTORY`, `RISK_ST
 `observationDraft` to confirm via `POST /farms/:id/observations`), `TREATMENT` (safety response), `GREETING`, `UNKNOWN`.
 `GET /ai/status` → risk model status and LLM provider.
 
-## SMS / USSD simulators
+## Africa's Talking callbacks
 
-The simulators run exactly the logic a live gateway would. Farmers may only simulate from their own registered phone; staff may use any number.
+Called by Africa's Talking, not by the web app. They are form-urlencoded, mounted outside the normal API rate limit,
+with their own limit of 300/min. Every URL must carry `?secret=<AT_CALLBACK_SECRET>` (or the `X-Callback-Secret` header):
+a missing or wrong secret → 403, and no secret configured → 503. Each call is logged in `integration_events`.
+Full setup: [AFRICASTALKING.md](AFRICASTALKING.md).
 
-`POST /sms/simulate` `{ from: "+255777000001", message: "RISK FARM001" }` → `{ reply, command, provider, simulated }`
+| Method | Path | Body (from AT) | Response |
+|---|---|---|---|
+| POST | `/integrations/africastalking/ussd` | `sessionId, serviceCode, phoneNumber, networkCode, text` | `text/plain` `CON …` / `END …`. The state machine is stored in `ussd_sessions`; a retried request returns the stored reply. |
+| POST | `/integrations/africastalking/sms` | `from, to, text, id, linkId?, date` | `OK` (the reply is sent as a separate real SMS) or `DUPLICATE` |
+| POST | `/integrations/africastalking/sms/delivery` | `id, status, phoneNumber, networkCode, failureReason?` | `OK` / `DUPLICATE` / `ALREADY_FINAL` / `UNKNOWN_MESSAGE` (always 200) |
 
-| Command | Meaning |
-|---|---|
-| `RISK <FARM>` / `HATARI <FARM>` | Current risk + approved action |
-| `USHAURI <FARM>` / `ACTION <FARM>` | Approved next action |
-| `RIPOTI <FARM> WEUPE KUKATIKA UCHAFU MBAYA NZURI 20%` / `REPORT …` | Records an observation (re-runs risk) |
-| `MAVUNO <FARM> <kg>` / `HARVEST …` | Records a harvest (kg dry) |
-| `MSAADA` / `HELP` | Help |
-
-`GET /sms/messages?phone=` → conversation log (includes system ALERT SMS).
-
-`POST /ussd/simulate` `{ sessionId, phoneNumber, text }` (Africa's Talking protocol: `text` is all inputs joined by `*`) →
-`{ response: "CON …" | "END …", end, state }`. Menu: `1 Angalia Hatari`, `2 Ripoti Dalili` (condition → whitening → breakage →
-unusual growth), `3 Rekodi Mavuno` (kg), `4 Ushauri`, `5 Historia`; farmers with several farms choose the farm first.
+SMS commands: `HATARI`/`RISK`, `USHAURI`/`ACTION`, `RIPOTI`/`REPORT <words>`, `MAVUNO`/`HARVEST <kg>`, `MSAADA`/`HELP`,
+with an optional farm code after the command.
 
 ## Uploads
 
@@ -202,3 +198,5 @@ farm the observation belongs to.
 | GET | `/admin/audit?action&entityType&userId&page` | Audit log |
 | GET / POST | `/admin/jobs`, `/admin/jobs/:name/run` | Scheduled jobs; **Run now** |
 | GET | `/admin/notification-logs` | SMS/email delivery log |
+| GET | `/admin/integrations/africastalking` | Environment, SMS/USSD configured, connection (`CONNECTED`/`NOT_CONFIGURED`/`ERROR`/`UNKNOWN`), callback URLs (placeholders only), last 7 days of SMS by status, recent SMS and callback events. Never includes the API key or secret. |
+| POST | `/admin/integrations/africastalking/test-sms` | `{ phone, message? }` sends one real SMS and returns the provider result: `{ status: QUEUED\|SENT\|FAILED\|UNKNOWN\|NOT_CONFIGURED, providerRef, reason }` |

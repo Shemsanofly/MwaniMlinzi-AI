@@ -14,7 +14,7 @@ export const ExplanationEngine = {
     if (lang === 'sw') {
       const head = `${risk}: ${lvl} (${pct}%).`;
       const why = reasons.length ? ` Sababu kuu: ${reasons.join('; ')}.` : ' Hakuna dalili kubwa za hatari kwa sasa.';
-      const warn = insufficientData ? ' Tahadhari: taarifa hazitoshi kwa utabiri wa uhakika.' : '';
+      const warn = insufficientData ? ' Tahadhari: data haitoshi kwa utabiri wa kuaminika.' : '';
       return head + why + warn;
     }
     const head = `${risk} risk: ${LEVEL_LABELS[level].en.toUpperCase()} (${pct}%).`;

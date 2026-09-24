@@ -48,7 +48,7 @@ export default function FarmerLayout() {
             {MORE.map(({ to, key, icon: Icon }) => (
               <NavLink key={to} to={to} onClick={() => setMenu(false)} className="flex items-center gap-3 rounded-lg px-2 py-2 text-base font-medium text-slate-800 hover:bg-slate-100"><Icon className="h-5 w-5 text-ocean-700" />{t(`nav.${key}`)}</NavLink>
             ))}
-            <button type="button" onClick={async () => { await logout(); navigate('/login'); }} className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-base font-medium text-red-700 hover:bg-red-50"><LogOut className="h-5 w-5" />{t('actions.logout')}</button>
+            <button type="button" onClick={async () => { navigate('/login', { replace: true }); await logout(); }} className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-base font-medium text-red-700 hover:bg-red-50"><LogOut className="h-5 w-5" />{t('actions.logout')}</button>
           </div>
         )}
       </header>

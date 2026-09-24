@@ -58,14 +58,14 @@ async function logEvent(data) {
 }
 
 /** Common guard: configured + secret. Returns true when the request was already answered. */
-function rejectUnauthorized(req, res, kind, { ussd = false } = {}) {
+async function rejectUnauthorized(req, res, kind, { ussd = false } = {}) {
   if (!atConfig().callbackSecret) {
-    logEvent({ kind, status: 'REJECTED', error: 'AT_CALLBACK_SECRET not configured' });
+    await logEvent({ kind, status: 'REJECTED', error: 'AT_CALLBACK_SECRET not configured' });
     res.status(503).type('text/plain').send(ussd ? 'END Service is not configured. Please try again later.' : 'NOT_CONFIGURED');
     return true;
   }
   if (!secretOk(req)) {
-    logEvent({ kind, status: 'REJECTED', error: 'Invalid callback secret' });
+    await logEvent({ kind, status: 'REJECTED', error: 'Invalid callback secret' });
     res.status(403).type('text/plain').send(ussd ? 'END Access denied.' : 'FORBIDDEN');
     return true;
   }
@@ -76,7 +76,7 @@ function rejectUnauthorized(req, res, kind, { ussd = false } = {}) {
 
 export async function ussd(req, res) {
   const started = Date.now();
-  if (rejectUnauthorized(req, res, 'USSD', { ussd: true })) return;
+  if (await rejectUnauthorized(req, res, 'USSD', { ussd: true })) return;
   const parsed = ussdSchema.safeParse(req.body || {});
   if (!parsed.success) {
     await logEvent({ kind: 'USSD', status: 'REJECTED', error: 'Invalid USSD payload', payload: { fields: Object.keys(req.body || {}) } });
@@ -109,7 +109,7 @@ export async function ussd(req, res) {
 
 export async function smsInbound(req, res) {
   const started = Date.now();
-  if (rejectUnauthorized(req, res, 'SMS_INBOUND')) return;
+  if (await rejectUnauthorized(req, res, 'SMS_INBOUND')) return;
   const parsed = smsInboundSchema.safeParse(req.body || {});
   if (!parsed.success) {
     await logEvent({ kind: 'SMS_INBOUND', status: 'REJECTED', error: 'Invalid SMS payload', payload: { fields: Object.keys(req.body || {}) } });
@@ -135,7 +135,7 @@ export async function smsInbound(req, res) {
 /* ───────────── Delivery reports ───────────── */
 
 export async function smsDelivery(req, res) {
-  if (rejectUnauthorized(req, res, 'SMS_DELIVERY')) return;
+  if (await rejectUnauthorized(req, res, 'SMS_DELIVERY')) return;
   const parsed = deliverySchema.safeParse(req.body || {});
   if (!parsed.success) {
     await logEvent({ kind: 'SMS_DELIVERY', status: 'REJECTED', error: 'Invalid delivery report', payload: { fields: Object.keys(req.body || {}) } });

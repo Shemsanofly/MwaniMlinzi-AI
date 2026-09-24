@@ -31,10 +31,13 @@ Everything in that loop is real backend logic stored in PostgreSQL — no mock U
 - **AI risk engine:** four risks — Heat/Ice-Ice, Storm/Line damage, Poor growth, Harvest window — each with probability, level (thresholds stored in PostgreSQL), confidence, horizon and **structured, explainable factors**.
 - **Hybrid ML:** training pipeline (`ai/scripts`) on synthetic demo data (+ recorded field outcomes); models are registered in PostgreSQL with held-out precision/recall/F1/confusion matrix and are only used when an admin activates them. The UI always shows *Rule-based baseline* or *ML model vN (trained on synthetic data)*.
 - **Action Engine:** recommendations come **only** from the curated, bilingual Action Library (validated by extension officers). The LLM can never invent farming actions.
-- **Alerts & notifications:** high/critical heat and storm, poor growth, harvest window, risk increases, missing reports → in-app, SMS (simulated or Africa's Talking) and email abstraction, with delivery logs.
+- **Alerts & notifications:** high/critical heat and storm, poor growth, harvest window, risk increases, missing reports → in-app notifications, plus **real SMS through Africa's Talking** for important events only (HIGH/CRITICAL risk, harvest reminders), respecting each user's SMS preferences. Every SMS is logged with provider status (QUEUED/SENT/DELIVERED/FAILED/NOT_CONFIGURED) and delivery reports.
 - **Feedback loop:** prediction → recommendation → farmer action → outcome → automatic model-feedback label → field evaluation metrics and future training data.
 - **Dashboards:** mobile-first farmer app (English/Kiswahili), cooperative dashboard with risk map and forecasts, extension review workflow and visit prioritisation, buyer supply forecasts (7/14/30 days, with uncertainty ranges, anonymised), admin console (users, action library, models, settings, audit log, jobs).
-- **AI assistant** grounded in the farmer's own records, **SMS simulator**, **USSD simulator (`*123#`)** with a real backend state machine, and an **AI simulation** page that re-runs the full pipeline with modified conditions.
+- **SMS & USSD (Africa's Talking):** a real USSD application (risk, symptom reports, harvest, advice, language) with sessions stored in PostgreSQL, and incoming SMS commands. Sandbox first; see [docs/AFRICASTALKING.md](docs/AFRICASTALKING.md). There are no web simulators.
+- **English | Kiswahili** everywhere (web, SMS, USSD). The choice is saved in the browser and in the user's profile. Farmers register and log in with their phone number (any Tanzanian format).
+- **Simple farmer dashboard:** current risk in words + icon + colour, plain-language reasons, the next action and when to do it; technical values stay under *See details / Angalia maelezo*. Works on low connectivity: the last saved information stays visible offline.
+- **AI assistant** grounded in the farmer's own records, and an **AI simulation** page that re-runs the full pipeline with modified conditions.
 
 ## Quick start (development)
 
@@ -70,9 +73,11 @@ npm run dev                     # app on http://localhost:5173
 
 Created by `npm run seed`. All use **one demo password**: the value of `DEMO_PASSWORD` in `backend/.env`, or — if empty — a random password generated and printed by the seed and saved to `backend/DEMO_CREDENTIALS.local.txt` (git-ignored).
 
+Log in with the email or the phone number.
+
 | Role | Email |
 |---|---|
-| Farmer | `farmer@demo.mwanimlinzi.local` (phone `+255777000001`, farms FARM001 & FARM002) |
+| Farmer | `farmer@demo.mwanimlinzi.local` (phone `0777 000 001` / `+255777000001`, farms FARM001 & FARM002) |
 | Cooperative admin | `cooperative@demo.mwanimlinzi.local` |
 | Extension officer | `extension@demo.mwanimlinzi.local` |
 | Buyer | `buyer@demo.mwanimlinzi.local` |
@@ -97,7 +102,7 @@ Demo scenario farms: **FARM001** heat/ice-ice HIGH · **FARM002** near harvest �
 
 ## Demo mode vs live mode
 
-`DEMO_MODE=true` (default) uses deterministic demo environmental data, a simulated SMS gateway and the USSD simulator — the app works fully offline. Set `DEMO_MODE=false` and configure providers to go live:
+`DEMO_MODE=true` (default) uses deterministic demo environmental data. SMS and USSD are never simulated: they work only when Africa's Talking is configured, and otherwise every SMS attempt is logged as `NOT_CONFIGURED`. Set `DEMO_MODE=false` and configure providers to go live:
 
 ```ini
 DEMO_MODE=false
@@ -105,7 +110,11 @@ WEATHER_PROVIDER=open-meteo          # free, no key (or openweathermap + WEATHER
 OCEAN_PROVIDER=open-meteo-marine     # free, no key (or stormglass + OCEAN_API_KEY)
 LLM_PROVIDER=anthropic               # or openai; optional
 LLM_API_KEY=...
-SMS_PROVIDER=africastalking          # optional; SMS_API_KEY + SMS_USERNAME
+AT_USERNAME=sandbox                  # Africa's Talking (SMS + USSD), see docs/AFRICASTALKING.md
+AT_API_KEY=...
+AT_ENVIRONMENT=sandbox               # or production
+AT_USSD_SERVICE_CODE=*384*1234#
+AT_CALLBACK_SECRET=<long random string>
 ```
 
 If a live provider fails, the backend falls back to cached live data, then to demo data, and labels the source. Details: [docs/AI.md](docs/AI.md) and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
@@ -113,6 +122,7 @@ If a live provider fails, the backend falls back to cached live data, then to de
 ## Documentation
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — components, data flow, folder structure
+- [docs/AFRICASTALKING.md](docs/AFRICASTALKING.md) — SMS/USSD setup (sandbox first), USSD menu, SMS rules, test plan
 - [docs/DATABASE.md](docs/DATABASE.md) — PostgreSQL + pgAdmin setup, schema, migrations, seeding
 - [docs/API.md](docs/API.md) — REST endpoints, auth, response format
 - [docs/AI.md](docs/AI.md) — risk engine, ML pipeline, action engine, LLM, explainability, data honesty

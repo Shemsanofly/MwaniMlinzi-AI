@@ -19,7 +19,7 @@ Optional — show the ML pipeline: `npm run ai:dataset && npm run ai:train` then
 
 | Role | Email | Notes |
 |---|---|---|
-| Farmer | farmer@demo.mwanimlinzi.local | Mwanaisha Haji, phone +255777000001, farms FARM001 & FARM002 (Paje) |
+| Farmer | farmer@demo.mwanimlinzi.local or phone `0777 000 001` | Mwanaisha Haji, phone +255777000001, farms FARM001 & FARM002 (Paje) |
 | Cooperative | cooperative@demo.mwanimlinzi.local | Paje Demo Seaweed Cooperative |
 | Extension officer | extension@demo.mwanimlinzi.local | sees all farms |
 | Buyer | buyer@demo.mwanimlinzi.local | anonymised supply only |
@@ -40,14 +40,15 @@ Farms without a recent report generate **missing report** alerts.
 ## Walkthrough (≈10 minutes)
 
 1. **Open the app** — http://localhost:5173. The landing page explains Monitor → Predict → Act → Learn. Click *Try Demo*.
-2. **Login as farmer** (`farmer@…`). The app defaults to Kiswahili; switch EN/SW at the top.
-3. **Dashboard** — "Habari, Mwanaisha", farm FARM001, crop age 39 days, current risks, **HATUA INAYOFUATA** with *Why?*
-   reasons from the backend factors, environment snapshot labelled **Demo environmental data**, model status *Rule-based baseline*.
+2. **Login as farmer** with phone `0777 000 001` (or `farmer@…`). The app defaults to Kiswahili; switch with **English | Kiswahili** at the top (saved to the profile).
+3. **Dashboard** — "Habari, Mwanaisha", farm FARM001, crop age 39 days, expected harvest, **Hatari ya sasa: Hatari kubwa** (icon + words + colour)
+   with plain-language reasons, **Hatua inayofuata** with when to do it, the most important alert and the last report. Press
+   **Angalia maelezo** to see probabilities, model status (*Rule-based baseline*) and the environment snapshot labelled **Demo environmental data**.
 4. **Risk page** — all four risks with probability, confidence, 72 h horizon, factors (↑/↓) and risk history chart.
 5. **Record observation** — wizard: condition *Poor* → whitening *Yes* → breakage *No* → unusual growth *No* → details: disease
    symptoms, 30% affected → (optional photo) → submit. The backend saves it and **re-runs the AI**: heat risk becomes
    **CRITICAL**, the recommendation changes to *escalate to an extension officer*, and a **HEAT_CRITICAL alert** is created
-   (bell icon; SMS logged as simulated).
+   (bell icon). The farmer's HIGH/CRITICAL SMS is sent through Africa's Talking if configured; otherwise it is logged as `NOT_CONFIGURED`.
 6. **Record action** — on the dashboard press *I did this* on the next action (stored as a farmer action linked to the recommendation).
 7. **Record outcome / harvest** — History page → *Record outcome* (e.g. Minor loss 5%) → stored and auto-labelled as model
    feedback. Harvest page → record a harvest: the difference and loss % vs. the forecast are computed.
@@ -62,10 +63,11 @@ Farms without a recent report generate **missing report** alerts.
 12. **AI simulation** (`/demo/simulation`, any staff or the farmer) — choose FARM005, apply the *Storm* or *Marine heatwave*
     preset, **RUN AI** → before/after risk, new factors, new recommendation and simulation alerts (stored as simulations, never
     shown as real risk).
-13. **USSD simulator** (`/demo/ussd`) — dial `*123#` → `1` (Angalia Hatari) → choose farm → risk + action; `2` walks the symptom report.
-14. **SMS simulator** (`/demo/sms`) — send `RISK FARM001` → *"FARM001: Shamba lako lina hatari … Hatua: …"*; try
-    `RIPOTI FARM001 WEUPE 20%`, `MAVUNO FARM002 120`, `MSAADA`.
+13. **Settings** (menu → *Mipangilio*) — language, phone, SMS alerts (risk alerts, harvest reminders, system messages) and password.
+14. **USSD & SMS** — these are real Africa's Talking channels (no web simulator). With the AT sandbox configured
+    ([AFRICASTALKING.md](AFRICASTALKING.md)), open AT's phone simulator as `+255777000001`, dial your USSD code → `1` → `1`
+    (risk + action), `2` (report symptoms), `3` (harvest), `5` (language), or send `HATARI FARM001` / `MAVUNO FARM002 120` by SMS.
 15. **Admin** — dashboard (system health, jobs **Run now**), users & roles, action library, **models** (metrics, confusion matrix,
-    field evaluation from outcomes, SYNTHETIC badge), settings (risk thresholds stored in PostgreSQL), **audit log** of everything above.
+    field evaluation from outcomes, SYNTHETIC badge), settings (risk thresholds stored in PostgreSQL; **Africa's Talking** status and a real **Test SMS**), **audit log** of everything above.
 16. **pgAdmin** — open `mwanimlinzi` → `risk_predictions`, `risk_factors`, `action_recommendations`, `farmer_actions`,
     `action_outcomes`, `model_feedback` to see the stored loop (queries in [DATABASE.md](DATABASE.md)).

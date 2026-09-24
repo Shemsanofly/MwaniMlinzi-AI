@@ -131,7 +131,7 @@ export default function AppLayout() {
             <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
               <LanguageSwitch />
               <NotificationBell />
-              <button type="button" onClick={async () => { await logout(); navigate('/login'); }} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100">
+              <button type="button" onClick={async () => { navigate('/login', { replace: true }); await logout(); }} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100">
                 <LogOut className="h-4 w-4" aria-hidden /><span className="hidden sm:inline">{t('actions.logout')}</span>
               </button>
             </div>

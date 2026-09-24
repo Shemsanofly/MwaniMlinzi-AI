@@ -189,8 +189,8 @@ function DashboardBody({ ff }) {
         )}
       </Card>
 
-      {/* Current risk + why */}
-      <SectionTitle>{t('farmer.dashboard.currentRisk')}</SectionTitle>
+      {/* Current risk + why (the card carries its own heading) */}
+      <div className="mt-4" />
       {risksQ.isLoading ? <div className="flex justify-center p-6"><Spinner /></div>
         : risksQ.error ? <ErrorState error={risksQ.error} onRetry={risksQ.refetch} compact />
         : <CurrentRiskCard risk={risk} />}
