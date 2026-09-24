@@ -90,7 +90,7 @@ export default function DemoHome() {
 
   return (
     <div>
-      <PublicHero eyebrow={t('nav.demo')} title={t('public.demo.title')} subtitle={t('public.demo.subtitle')} />
+      <PublicHero wide eyebrow={t('nav.demo')} title={t('public.demo.title')} subtitle={t('public.demo.subtitle')} />
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1.4fr_1fr]">
         <div className="space-y-8">
           <Card>

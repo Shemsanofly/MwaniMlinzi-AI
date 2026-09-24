@@ -11,7 +11,7 @@ export function PortfolioStats({ cards, onNavigate }) {
   const { t } = useI18n();
   const [low, high] = cards.expectedHarvestRange30d || [];
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <StatCard label={t('extension.shared.stats.totalFarmers')} value={num(cards.totalFarmers, 0)} icon={Users} />
       <StatCard label={t('extension.shared.stats.activeFarms')} value={num(cards.activeFarms, 0)} icon={Tractor} tone="green" onClick={onNavigate?.farms} />
       <StatCard label={t('extension.shared.stats.highRiskFarms')} value={num(cards.highRiskFarms, 0)} icon={AlertTriangle} tone={cards.highRiskFarms ? 'orange' : 'slate'} onClick={onNavigate?.farms} />
@@ -82,9 +82,9 @@ export function MissingReportsList({ farms = [], base }) {
   return (
     <ul className="divide-y divide-slate-100">
       {farms.map((f) => (
-        <li key={f.id} className="flex items-center justify-between gap-2 py-2 text-sm">
-          <Link to={`${base}/farms/${f.id}`} className="min-w-0 truncate font-medium text-ocean-700 hover:underline">{f.farmCode} · {f.name}</Link>
-          <span className="shrink-0 text-xs text-slate-500">{f.farmer || '—'} · {f.lastObservation ? date(f.lastObservation, lang) : t('extension.shared.never')}</span>
+        <li key={f.id} className="py-2 text-sm">
+          <Link to={`${base}/farms/${f.id}`} className="block font-medium text-ocean-700 hover:underline">{f.farmCode} · {f.name}</Link>
+          <span className="text-xs text-slate-500">{f.farmer || '—'} · {f.lastObservation ? date(f.lastObservation, lang) : t('extension.shared.never')}</span>
         </li>
       ))}
     </ul>

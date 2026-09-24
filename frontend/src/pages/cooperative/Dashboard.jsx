@@ -99,7 +99,7 @@ export default function CooperativeDashboard() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Section title={t('coop.perf.title')} subtitle={t('coop.perf.subtitle')} icon={TrendingUp} bodyClassName="p-0 sm:p-0">
-          <Table columns={perfColumns} rows={d.performance || []} rowKey="farmId" empty={<div className="p-4"><EmptyState title={t('coop.perf.empty')} /></div>} />
+          <Table columns={perfColumns} rows={(d.performance || []).slice(0, 10)} rowKey="farmId" empty={<div className="p-4"><EmptyState title={t('coop.perf.empty')} /></div>} />
         </Section>
         <Section title={t('coop.outcomes.title')} subtitle={t('coop.outcomes.subtitle')} icon={Target} bodyClassName="p-0 sm:p-0">
           <Table columns={outcomeColumns} rows={(d.outcomes || []).slice(0, 12)} empty={<div className="p-4"><EmptyState title={t('coop.outcomes.empty')} /></div>} />

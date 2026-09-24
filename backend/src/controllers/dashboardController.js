@@ -41,7 +41,7 @@ async function portfolio(farmWhere) {
   const since30 = addDays(new Date(), -30);
   const missingDays = Number(await getSetting('alerts.missingReportDays')) || 14;
   const [alerts, observations, losses, forecasts, actions] = await Promise.all([
-    prisma.alert.findMany({ where: { farmId: { in: ids }, isSimulation: false, createdAt: { gte: since30 } }, orderBy: { createdAt: 'desc' }, include: { farm: { select: { farmCode: true, name: true } } } }),
+    prisma.alert.findMany({ where: { farmId: { in: ids }, isSimulation: false, createdAt: { gte: since30 } }, orderBy: { createdAt: 'desc' }, include: { farm: { select: { id: true, farmCode: true, name: true } } } }),
     prisma.farmObservation.findMany({ where: { farmId: { in: ids }, observedAt: { gte: since30 } }, select: { observedAt: true, whitening: true, breakage: true, epiphytes: true, diseaseSymptoms: true, cropCondition: true } }),
     prisma.lossRecord.findMany({ where: { farmId: { in: ids }, lossDate: { gte: addDays(new Date(), -180) } } }),
     HarvestForecastService.list({ where: { farmId: { in: ids } } }),
@@ -120,8 +120,13 @@ export async function cooperativeDashboard(req, res) {
 }
 
 export async function myCooperativeDashboard(req, res) {
-  if (!req.user.cooperativeId) throw forbidden('Your account is not linked to a cooperative');
-  req.params.id = req.user.cooperativeId;
+  let coopId = req.user.cooperativeId;
+  // Admins / extension officers without a cooperative get the first one (or ?cooperativeId=) so the view is usable.
+  if (!coopId && hasRole(req.user, ROLES.ADMIN, ROLES.EXTENSION_OFFICER)) {
+    coopId = isUuid(req.query.cooperativeId) ? req.query.cooperativeId : (await prisma.cooperative.findFirst({ orderBy: { name: 'asc' }, select: { id: true } }))?.id;
+  }
+  if (!coopId) throw forbidden('Your account is not linked to a cooperative');
+  req.params.id = coopId;
   return cooperativeDashboard(req, res);
 }
 
@@ -153,7 +158,7 @@ export async function extensionDashboard(_req, res) {
   const [pendingObservations, diseaseObservations, pendingRecs, notes] = await Promise.all([
     prisma.farmObservation.findMany({ where: { reviewStatus: 'PENDING' }, orderBy: { observedAt: 'desc' }, take: 30, include: { farm: { select: { id: true, farmCode: true, name: true } }, reporter: { select: { fullName: true } }, image: { select: { id: true } } } }),
     prisma.diseaseObservation.findMany({ orderBy: { createdAt: 'desc' }, take: 20, include: { farm: { select: { id: true, farmCode: true, name: true } } } }),
-    prisma.actionRecommendation.findMany({ where: { reviewStatus: 'PENDING', isSimulation: false, status: { in: ['PENDING', 'ACKNOWLEDGED'] }, prediction: { riskLevel: { in: ['HIGH', 'CRITICAL'] } } }, orderBy: { createdAt: 'desc' }, take: 30, include: { actionLibrary: true, farm: { select: { id: true, farmCode: true, name: true } }, prediction: { select: { riskType: true, riskLevel: true, probability: true, explanation: true } } } }),
+    prisma.actionRecommendation.findMany({ where: { reviewStatus: 'PENDING', isSimulation: false, status: { in: ['PENDING', 'ACKNOWLEDGED'] }, prediction: { riskLevel: { in: ['HIGH', 'CRITICAL'] } } }, orderBy: { createdAt: 'desc' }, take: 30, include: { actionLibrary: true, farm: { select: { id: true, farmCode: true, name: true } }, prediction: { select: { id: true, riskType: true, riskLevel: true, probability: true, explanation: true, explanationSw: true } } } }),
     prisma.extensionNote.findMany({ orderBy: { createdAt: 'desc' }, take: 200, select: { farmId: true, createdAt: true } }),
   ]);
   const lastVisit = {};
@@ -201,7 +206,7 @@ export async function extensionRecommendations(req, res) {
     where: { isSimulation: false, ...(status ? { reviewStatus: status } : {}) },
     orderBy: { createdAt: 'desc' },
     take: 100,
-    include: { actionLibrary: true, farm: { select: { id: true, farmCode: true, name: true } }, prediction: { select: { id: true, riskType: true, riskLevel: true, probability: true, explanation: true, flagged: true } }, reviewedBy: { select: { fullName: true } } },
+    include: { actionLibrary: true, farm: { select: { id: true, farmCode: true, name: true } }, prediction: { select: { id: true, riskType: true, riskLevel: true, probability: true, explanation: true, explanationSw: true, flagged: true } }, reviewedBy: { select: { fullName: true } } },
   });
   return ok(res, { recommendations: recs });
 }

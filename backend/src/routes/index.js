@@ -56,7 +56,7 @@ api.patch('/notifications/:id/read', core.readNotification);
 api.get('/cooperatives', dash.listCooperatives);
 api.post('/cooperatives', authorize('ADMIN'), validate(s.cooperativeSchema), admin.createCooperative);
 api.patch('/cooperatives/:id', authorize('ADMIN'), validate(s.cooperativeSchema.partial()), admin.updateCooperative);
-api.get('/cooperatives/mine/dashboard', authorize('COOPERATIVE_ADMIN'), dash.myCooperativeDashboard);
+api.get('/cooperatives/mine/dashboard', authorize(...STAFF), dash.myCooperativeDashboard);
 api.get('/cooperatives/:id/dashboard', authorize(...STAFF), dash.cooperativeDashboard);
 api.get('/cooperatives/:id/farmers', authorize(...STAFF), dash.cooperativeFarmers);
 

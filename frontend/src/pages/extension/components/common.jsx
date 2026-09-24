@@ -17,7 +17,7 @@ export function useStaffBase() {
 /** Card with a header and padded body. */
 export function Section({ title, subtitle, icon, action, children, className, bodyClassName }) {
   return (
-    <Card className={className}>
+    <Card className={cx('min-w-0', className)}>
       <CardHeader title={title} subtitle={subtitle} icon={icon} action={action} />
       <div className={cx('p-4 sm:p-5', bodyClassName)}>{children}</div>
     </Card>

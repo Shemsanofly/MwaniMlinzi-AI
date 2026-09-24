@@ -14,7 +14,7 @@ export default {
   },
   perf: {
     title: 'Utendaji wa mashamba',
-    subtitle: 'Mavuno yaliyorekodiwa kwa kila shamba (mwani mkavu)',
+    subtitle: 'Mashamba 10 bora kwa mavuno yaliyorekodiwa (mwani mkavu)',
     harvests: 'Mavuno',
     totalKg: 'Jumla',
     avgKg: 'Wastani / mavuno',

@@ -14,7 +14,7 @@ export default {
   },
   perf: {
     title: 'Farm performance',
-    subtitle: 'Recorded harvests per farm (dried seaweed)',
+    subtitle: 'Top 10 farms by recorded harvest (dried seaweed)',
     harvests: 'Harvests',
     totalKg: 'Total',
     avgKg: 'Avg / harvest',

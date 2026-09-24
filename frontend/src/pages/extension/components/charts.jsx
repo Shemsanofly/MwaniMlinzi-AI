@@ -9,6 +9,7 @@ import { date, num } from '../../../utils/format.js';
 export const SERIES = { primary: '#16718c', secondary: '#8b5cf6', range: '#0a3f56' };
 const AXIS = { tick: { fontSize: 12, fill: '#64748b' }, axisLine: { stroke: '#cbd5e1' }, tickLine: false };
 const GRID = <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />;
+const legendText = (v) => <span style={{ color: '#334155' }}>{v}</span>;
 const TOOLTIP_STYLE = { contentStyle: { borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }, cursor: { fill: 'rgba(22,113,140,0.06)' } };
 
 /** Fixed-height chart frame; ResponsiveContainer handles the width. */
@@ -50,7 +51,7 @@ export function RiskByTypeChart({ data = [], height = 240 }) {
         <XAxis type="number" allowDecimals={false} {...AXIS} />
         <YAxis type="category" dataKey="label" width={118} {...AXIS} />
         <Tooltip {...TOOLTIP_STYLE} />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <Legend wrapperStyle={{ fontSize: 12 }} formatter={legendText} itemSorter={(item) => RISK_LEVELS.indexOf(item.dataKey)} />
         {RISK_LEVELS.map((l) => (
           <Bar key={l} dataKey={l} name={t(`risk.level.${l}`)} stackId="lvl" fill={riskStyle(l).hex} stroke="#ffffff" strokeWidth={1} maxBarSize={28} />
         ))}
@@ -104,7 +105,7 @@ export function HarvestWeeklyChart({ data = [], unit = 'kg', height = 280 }) {
         <XAxis dataKey="label" {...AXIS} />
         <YAxis {...AXIS} tickFormatter={(v) => num(v, unit === 't' ? 1 : 0)} label={{ value: unitLabel, angle: -90, position: 'insideLeft', offset: 18, fontSize: 11, fill: '#64748b' }} />
         <Tooltip content={<HarvestTooltip unitLabel={unitLabel} fmt={fmt} />} cursor={TOOLTIP_STYLE.cursor} />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <Legend wrapperStyle={{ fontSize: 12 }} formatter={legendText} />
         <Bar dataKey="ra" name={t('extension.shared.charts.riskAdjustedRange')} fill={SERIES.primary} radius={[4, 4, 0, 0]} maxBarSize={48}>
           <ErrorBar dataKey="err" width={8} strokeWidth={2} stroke={SERIES.range} direction="y" />
         </Bar>
@@ -125,7 +126,7 @@ export function ActivityChart({ data = [], height = 240 }) {
         <XAxis dataKey="label" {...AXIS} interval="preserveStartEnd" minTickGap={24} />
         <YAxis allowDecimals={false} {...AXIS} />
         <Tooltip {...TOOLTIP_STYLE} />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <Legend wrapperStyle={{ fontSize: 12 }} formatter={legendText} />
         <Bar dataKey="count" name={t('extension.shared.charts.observationsSeries')} fill={SERIES.primary} radius={[3, 3, 0, 0]} />
         <Bar dataKey="actions" name={t('extension.shared.charts.actionsSeries')} fill={SERIES.secondary} radius={[3, 3, 0, 0]} />
       </BarChart>
@@ -171,7 +172,7 @@ export function EnvLineChart({ data = [], dataKey, name, unit, color = SERIES.pr
       <LineChart data={rows} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
         {GRID}
         <XAxis dataKey="label" {...AXIS} interval="preserveStartEnd" minTickGap={20} />
-        <YAxis {...AXIS} domain={referenceZero ? [(min) => Math.min(0, Math.floor(min)), 'auto'] : ['auto', 'auto']} tickFormatter={(v) => num(v, 1)} />
+        <YAxis {...AXIS} domain={referenceZero ? [(min) => Math.min(0, Math.floor(min)), 'auto'] : ['auto', 'auto']} tickFormatter={(v) => num(v, 2)} />
         <Tooltip {...TOOLTIP_STYLE} formatter={(v) => [`${num(v, 2)} ${unit}`, name]} />
         <Line dataKey={dataKey} name={name} stroke={color} strokeWidth={2} dot={{ r: 2.5 }} activeDot={{ r: 5 }} type="monotone" />
       </LineChart>
