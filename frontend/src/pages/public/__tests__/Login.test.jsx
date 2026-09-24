@@ -30,10 +30,20 @@ describe('Login page', () => {
     auth.login.mockReset();
   });
 
+  test('logs in with a phone number', async () => {
+    auth.login.mockResolvedValue({ id: 'u0', primaryRole: 'BUYER' });
+    renderAt('/login');
+    await userEvent.type(screen.getByLabelText(/Phone number or email/), '0777 000 001');
+    await userEvent.type(screen.getByLabelText(/Password/), 'Secret123');
+    await userEvent.click(screen.getByRole('button', { name: /Log in/ }));
+    expect(auth.login).toHaveBeenCalledWith('0777 000 001', 'Secret123');
+    expect(await screen.findByText('BUYER HOME')).toBeInTheDocument();
+  });
+
   test('prefills the email from ?email=, submits and navigates to the home of the user role', async () => {
     auth.login.mockResolvedValue({ id: 'u1', primaryRole: 'BUYER' });
     renderAt('/login?email=buyer%40demo.mwanimlinzi.local');
-    const email = screen.getByLabelText(/Email/);
+    const email = screen.getByLabelText(/Phone number or email/);
     expect(email).toHaveValue('buyer@demo.mwanimlinzi.local');
     await userEvent.type(screen.getByLabelText(/Password/), 'Secret123');
     await userEvent.click(screen.getByRole('button', { name: /Log in/ }));
@@ -49,13 +59,13 @@ describe('Login page', () => {
     expect(await screen.findByText('ADMIN USERS')).toBeInTheDocument();
   });
 
-  test('shows the backend error message and stays on the page', async () => {
-    auth.login.mockRejectedValue(Object.assign(new Error('Incorrect email or password'), { status: 401 }));
+  test('shows a translated error and stays on the page', async () => {
+    auth.login.mockRejectedValue(Object.assign(new Error('Incorrect phone/email or password'), { status: 401, code: 'INVALID_CREDENTIALS' }));
     renderAt('/login');
-    await userEvent.type(screen.getByLabelText(/Email/), 'x@y.tz');
+    await userEvent.type(screen.getByLabelText(/Phone number or email/), '0777000001');
     await userEvent.type(screen.getByLabelText(/Password/), 'wrong');
     await userEvent.click(screen.getByRole('button', { name: /Log in/ }));
-    expect(await screen.findByText('Incorrect email or password')).toBeInTheDocument();
+    expect(await screen.findByText('Wrong phone/email or password.')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole('button', { name: /Log in/ })).toBeEnabled());
   });
 });

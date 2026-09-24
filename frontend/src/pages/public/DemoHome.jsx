@@ -35,8 +35,7 @@ const STEPS = [
   { key: 'extension', to: '/extension/reviews' },
   { key: 'buyer', to: '/buyer/forecast' },
   { key: 'simulation', to: '/demo/simulation' },
-  { key: 'ussd', to: '/demo/ussd' },
-  { key: 'sms', to: '/demo/sms' },
+  { key: 'atChannels' },
 ];
 
 function ProviderRow({ label, value, live }) {
@@ -50,8 +49,11 @@ function ProviderRow({ label, value, live }) {
   );
 }
 
+const isConfigured = (v) => !!v && v !== 'NOT_CONFIGURED';
+
 function HealthCard() {
   const { t } = useI18n();
+  const channelLabel = (v) => (isConfigured(v) ? v : t('public.demo.notConfigured'));
   const { data, isLoading, error, refetch } = useQuery({ queryKey: ['health'], queryFn: metaApi.health, retry: false });
   return (
     <Card>
@@ -72,8 +74,8 @@ function HealthCard() {
               <ProviderRow label={t('public.demo.weather')} value={data.providers?.weather?.live || data.providers?.weather?.demo || '—'} live={!!data.providers?.weather?.live} />
               <ProviderRow label={t('public.demo.ocean')} value={data.providers?.ocean?.live || data.providers?.ocean?.demo || '—'} live={!!data.providers?.ocean?.live} />
               <ProviderRow label={t('public.demo.llm')} value={data.providers?.llm || '—'} live={data.providers?.llm && data.providers.llm !== 'template'} />
-              <ProviderRow label="SMS" value={data.providers?.sms || '—'} live={data.providers?.sms && !String(data.providers.sms).startsWith('simulated')} />
-              <ProviderRow label="USSD" value={data.providers?.ussd || '—'} live={data.providers?.ussd && !String(data.providers.ussd).startsWith('simulated')} />
+              <ProviderRow label="SMS" value={channelLabel(data.providers?.sms)} live={isConfigured(data.providers?.sms)} />
+              <ProviderRow label="USSD" value={channelLabel(data.providers?.ussd)} live={isConfigured(data.providers?.ussd)} />
             </div>
             <p className="pt-3 text-xs text-slate-500">{t('public.demo.providerLegend')}</p>
           </div>
@@ -86,7 +88,7 @@ function HealthCard() {
 export default function DemoHome() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const chooseAccount = (email) => navigate(`/login?email=${encodeURIComponent(email)}`, { state: { email } });
+  const chooseAccount = (email) => navigate(`/login?email=${encodeURIComponent(email)}`, { state: { identifier: email } });
 
   return (
     <div>
@@ -158,8 +160,6 @@ export default function DemoHome() {
           </Card>
           <div className="flex flex-wrap gap-2">
             <Link to="/demo/simulation" className="rounded-lg bg-ocean-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-ocean-800">{t('nav.simulation')}</Link>
-            <Link to="/demo/ussd" className="rounded-lg px-4 py-2.5 text-sm font-semibold text-ocean-800 ring-1 ring-inset ring-ocean-200 hover:bg-ocean-50">{t('nav.ussd')}</Link>
-            <Link to="/demo/sms" className="rounded-lg px-4 py-2.5 text-sm font-semibold text-ocean-800 ring-1 ring-inset ring-ocean-200 hover:bg-ocean-50">{t('nav.sms')}</Link>
           </div>
         </div>
       </div>

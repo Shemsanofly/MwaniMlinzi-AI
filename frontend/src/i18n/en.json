@@ -14,7 +14,7 @@
       "LOW": "Low risk",
       "MEDIUM": "Medium risk",
       "HIGH": "High risk",
-      "CRITICAL": "Critical risk"
+      "CRITICAL": "Very high risk"
     },
     "type": {
       "HEAT_ICE_ICE": "Heat / Ice-Ice",
@@ -111,13 +111,12 @@
     "settings": "Settings",
     "audit": "Audit log",
     "simulation": "AI simulation",
-    "ussd": "USSD simulator",
-    "sms": "SMS simulator",
     "notifications": "Notifications",
     "home": "Home",
     "about": "About",
     "howItWorks": "How it works",
-    "demo": "Demo"
+    "demo": "Demo",
+    "account": "Settings"
   },
   "roles": {
     "FARMER": "Farmer",
@@ -178,7 +177,8 @@
       "UPLOAD_ERROR": "The file could not be uploaded. Please try again.",
       "PAYLOAD_TOO_LARGE": "The file or data is too large.",
       "NOT_CONFIGURED": "This feature is not set up yet.",
-      "PROVIDER_ERROR": "An outside service did not respond. Please try again later."
+      "PROVIDER_ERROR": "An outside service did not respond. Please try again later.",
+      "WRONG_PASSWORD": "The current password is not correct."
     }
   },
   "demoNotice": "Demo mode: farms, farmers and environmental data are illustrative demo data, not real measurements.",
@@ -220,7 +220,27 @@
       "calculated": "Calculated {time}",
       "recalculated": "Risk recalculated.",
       "environment": "Sea and weather now",
-      "alerts": "Alerts for this farm"
+      "alerts": "Alerts for this farm",
+      "currentRisk": "Current risk",
+      "insufficient": "Not enough data to give reliable advice.",
+      "keepChecking": "No special action needed. Keep checking your farm.",
+      "when": "When",
+      "before": "before {date}",
+      "about": "about {kg}",
+      "importantAlert": "Important alert",
+      "recentObservation": "Last farm report",
+      "noObservation": "No report yet.",
+      "condition": {
+        "good": "Seaweed looks good",
+        "fair": "Some problems seen",
+        "poor": "Seaweed looks bad"
+      },
+      "symptom": {
+        "whitening": "whitening",
+        "breakage": "breakage",
+        "epiphytes": "dirt on seaweed"
+      },
+      "details": "See details"
     },
     "risk": {
       "title": "Farm risk",
@@ -1413,15 +1433,51 @@
         "UploadedFile": "Uploaded file",
         "Assistant": "AI assistant"
       }
+    },
+    "at": {
+      "title": "Africa's Talking (SMS & USSD)",
+      "subtitle": "Status of the SMS and USSD connection. The API key is never shown.",
+      "connection": {
+        "CONNECTED": "Connected",
+        "NOT_CONFIGURED": "Not configured",
+        "ERROR": "Error",
+        "UNKNOWN": "No messages sent yet"
+      },
+      "environment": "Environment",
+      "username": "Username",
+      "apiKey": "API key",
+      "set": "Set",
+      "notSet": "Not set",
+      "default": "Default",
+      "configured": "Configured",
+      "notConfigured": "Not configured",
+      "serviceCode": "USSD code",
+      "senderId": "Sender ID",
+      "lastSend": "Last SMS attempt",
+      "lastError": "Last error",
+      "last7": "SMS in the last 7 days",
+      "callbacks": "Callback URLs to enter in Africa's Talking",
+      "callbacksHint": "Replace the placeholders with your public API address and the callback secret from the server settings.",
+      "callback": {
+        "ussd": "USSD callback",
+        "smsInbound": "Incoming SMS callback",
+        "smsDelivery": "Delivery reports callback"
+      },
+      "noSecret": "AT_CALLBACK_SECRET is not set: USSD and SMS callbacks are refused until it is configured.",
+      "testPhone": "Test SMS to",
+      "testHint": "Sends one real SMS through Africa's Talking.",
+      "testSend": "Send test SMS",
+      "result": {
+        "QUEUED": "Accepted by Africa's Talking for {to}. Delivery will be confirmed by a delivery report.",
+        "SENT": "Sent to the network for {to}.",
+        "DELIVERED": "Delivered to {to}.",
+        "FAILED": "Not sent to {to}.",
+        "UNKNOWN": "Unclear answer from Africa's Talking for {to}.",
+        "NOT_CONFIGURED": "Not sent: Africa's Talking is not configured (AT_USERNAME / AT_API_KEY)."
+      }
     }
   },
   "demo": {
-    "simulated": "Simulated",
-    "clear": "Clear",
-    "phoneLabel": "Phone number",
-    "farmerOwnNumber": "Farmers can only use their own registered number.",
-    "staffNumber": "Staff can simulate any registered farmer number. Demo farmer: +255777000001.",
-    "badPhone": "Use 9–15 digits, e.g. +255777000001.",
     "sim": {
       "title": "AI simulation",
       "subtitle": "Change the ocean and weather conditions for a farm and see how the risk engine and action engine respond.",
@@ -1488,99 +1544,6 @@
         "alert": "Checked alert rules",
         "alertDetail": "{n} simulation alert(s) generated"
       }
-    },
-    "ussd": {
-      "title": "USSD simulator",
-      "subtitle": "The *123# menu that works on any phone, using the Africa's Talking protocol.",
-      "screen": "Phone screen",
-      "input": "Phone input",
-      "reply": "Reply…",
-      "dialHint": "Dial *123# and press Send",
-      "running": "Connecting…",
-      "unknownCode": "Unknown USSD code. Dial *123#.",
-      "badPhone": "Enter a valid phone number first.",
-      "ended": "Session ended — press OK to start again",
-      "send": "Send",
-      "ok": "OK",
-      "delete": "Delete",
-      "cancel": "Cancel",
-      "key": "Key",
-      "setupTitle": "How to use",
-      "how1": "Type *123# on the keypad (or keyboard) and press Send.",
-      "how2": "Reply with the number of a menu option and press Send.",
-      "how3": "Each reply is sent with the full path so far, e.g. \"2*1*1\" (Africa's Talking protocol).",
-      "session": "Session",
-      "menuTitle": "Menu map",
-      "menuSubtitle": "Main menu (in Kiswahili, as farmers see it)",
-      "menu": {
-        "1": {
-          "label": "1. Angalia Hatari",
-          "text": "Check risk — current risk levels and the next action."
-        },
-        "2": {
-          "label": "2. Ripoti Dalili",
-          "text": "Report symptoms — crop condition, whitening, breakage, unusual growth. Risk is recalculated."
-        },
-        "3": {
-          "label": "3. Rekodi Mavuno",
-          "text": "Record harvest — kilograms of dry seaweed."
-        },
-        "4": {
-          "label": "4. Ushauri",
-          "text": "Advice — the approved next action for the farm."
-        },
-        "5": {
-          "label": "5. Historia",
-          "text": "History — crop age, last report and last harvest."
-        }
-      },
-      "multiFarm": "Farmers with more than one farm are asked to choose the farm after picking an option.",
-      "logTitle": "Request / response log",
-      "logSubtitle": "Raw exchange with the backend",
-      "logEmpty": "No requests yet."
-    },
-    "sms": {
-      "title": "SMS simulator",
-      "subtitle": "Send SMS commands as a farmer and see the replies and alert messages the system sends.",
-      "simulatedSms": "Simulated SMS",
-      "from": "From",
-      "conversation": "SMS conversation",
-      "empty": "No messages for this number yet. Try a quick command.",
-      "alert": "Alert",
-      "message": "Message",
-      "placeholder": "Type a command, e.g. RISK FARM001",
-      "send": "Send SMS",
-      "setupTitle": "Sender",
-      "quick": "Quick commands",
-      "chipHint": "Tap a command to put it in the message box, then send.",
-      "lastReply": "Last reply",
-      "provider": "Provider",
-      "reload": "Reload conversation",
-      "commandsTitle": "SMS commands",
-      "commandsSubtitle": "English words also work: RISK, ACTION, REPORT, HARVEST, HELP",
-      "commands": {
-        "RISK": {
-          "syntax": "RISK <FARM>",
-          "text": "Current risk and next action (also HATARI)."
-        },
-        "USHAURI": {
-          "syntax": "USHAURI <FARM>",
-          "text": "The approved next action (also ACTION)."
-        },
-        "RIPOTI": {
-          "syntax": "RIPOTI <FARM> WEUPE|KUKATIKA|UCHAFU|NZURI|MBAYA <n>%",
-          "text": "Report symptoms; risk is recalculated (also REPORT)."
-        },
-        "MAVUNO": {
-          "syntax": "MAVUNO <FARM> <KG>",
-          "text": "Record a harvest in kg of dry seaweed (also HARVEST)."
-        },
-        "MSAADA": {
-          "syntax": "MSAADA",
-          "text": "Help — list of commands (also HELP)."
-        }
-      },
-      "alertsNote": "Messages marked \"Alert\" were sent automatically by the system when a farm's risk rose."
     }
   },
   "public": {
@@ -1591,7 +1554,7 @@
       "tryDemo": "Try demo",
       "channelWeb": "Web app",
       "channelSms": "SMS",
-      "channelUssd": "USSD *123#"
+      "channelUssd": "USSD"
     },
     "preview": {
       "aria": "Example of the farmer screen",
@@ -1795,7 +1758,7 @@
         },
         "ussd": {
           "title": "USSD",
-          "text": "Dial *123# on any phone: check risk, report symptoms, record harvests, get advice and history."
+          "text": "Dial the MwaniMlinzi USSD code on any phone: check risk, report symptoms, record harvests, get advice and change language."
         }
       },
       "rolesTitle": "Roles",
@@ -1862,13 +1825,9 @@
           "title": "AI simulation",
           "text": "Change sea temperature, waves or rain and see how risk and the recommended action change."
         },
-        "ussd": {
-          "title": "USSD simulator",
-          "text": "Dial *123# as +255777000001 and walk through the menu."
-        },
-        "sms": {
-          "title": "SMS simulator",
-          "text": "Send RISK FARM001 and see the reply and alert messages."
+        "atChannels": {
+          "title": "SMS and USSD",
+          "text": "Real SMS and USSD go through Africa's Talking. Use the Africa's Talking sandbox simulator with a registered phone number (see docs/AFRICASTALKING.md)."
         }
       },
       "healthTitle": "Backend status",
@@ -1879,7 +1838,7 @@
       "weather": "Weather provider",
       "ocean": "Ocean provider",
       "llm": "Language model",
-      "providerLegend": "Green = live provider, purple = demo / simulated provider.",
+      "providerLegend": "Green = live provider, purple = demo provider. SMS and USSD are never simulated: they work only when Africa's Talking is configured.",
       "scenariosTitle": "Scenario farms",
       "scenariosSubtitle": "Seeded demo farms, each showing a different situation.",
       "scenarios": {
@@ -1904,7 +1863,8 @@
           "text": "Calm conditions — low risk, routine monitoring. Good for simulations."
         }
       },
-      "scenarioNote": "Risk levels shown here describe the seeded scenario; the app always shows the latest calculated value."
+      "scenarioNote": "Risk levels shown here describe the seeded scenario; the app always shows the latest calculated value.",
+      "notConfigured": "Not configured"
     },
     "form": {
       "email": "Email",
@@ -1916,16 +1876,18 @@
       "cooperative": "Cooperative",
       "village": "Village",
       "district": "District",
-      "companyName": "Company name"
+      "companyName": "Company name",
+      "phoneOrEmail": "Phone number or email"
     },
     "login": {
       "title": "Log in",
       "subtitle": "Welcome back to MwaniMlinzi AI.",
-      "missing": "Enter your email and password.",
+      "missing": "Enter your phone number (or email) and password.",
       "signingIn": "Logging in…",
       "noAccount": "No account yet?",
       "demoHint": "Just exploring?",
-      "demoLink": "Open the demo guide"
+      "demoLink": "Open the demo guide",
+      "identifierHint": "Use the phone number you registered with, e.g. 0777 123 456."
     },
     "register": {
       "title": "Create an account",
@@ -1935,7 +1897,7 @@
         "FARMER": "Get risk alerts and advice for my farm",
         "BUYER": "See anonymised supply forecasts"
       },
-      "phoneHint": "Format +2557… — used for SMS and USSD. Optional.",
+      "phoneHint": "Your mobile number, e.g. 0777 123 456. Used to log in and for SMS/USSD.",
       "passwordHint": "At least 8 characters, with a letter and a number.",
       "coopHint": "Your cooperative can then see your farm and help you.",
       "noCoop": "No cooperative / choose later",
@@ -1947,12 +1909,16 @@
       "errors": {
         "required": "This field is required.",
         "email": "Enter a valid email address.",
-        "phone": "Use 9–15 digits, e.g. +255777123456.",
+        "phone": "Enter a valid Tanzanian mobile number, e.g. 0777 123 456.",
         "passwordLength": "Password must be at least 8 characters.",
         "passwordMix": "Password must contain a letter and a number.",
         "passwordMatch": "Passwords do not match.",
         "consent": "You must agree to data use to create an account."
-      }
+      },
+      "emailHint": "Optional.",
+      "optionalTitle": "More details (optional)",
+      "smsOptIn": "Send me SMS alerts about my farm",
+      "smsOptInHint": "Only important messages. You can change this later in Settings."
     },
     "notFound": {
       "title": "Page not found",
@@ -1975,5 +1941,44 @@
   "languageName": {
     "en": "English",
     "sw": "Kiswahili"
+  },
+  "a11y": {
+    "mainNav": "Main navigation",
+    "closeMenu": "Close menu",
+    "openMenu": "Open menu",
+    "menu": "Menu",
+    "farmerNav": "Farmer navigation",
+    "language": "Language",
+    "publicNav": "Site navigation",
+    "mapCredit": "Map data © OpenStreetMap contributors"
+  },
+  "offline": {
+    "banner": "You are offline. You are seeing the last saved information. New records need a connection."
+  },
+  "account": {
+    "title": "Settings",
+    "subtitle": "Your language, phone number, SMS alerts and password.",
+    "languageTitle": "Language",
+    "languageText": "The app, SMS and USSD will use this language.",
+    "contactTitle": "Phone number",
+    "contactText": "Your phone number is used to log in and to receive SMS and USSD.",
+    "smsTitle": "SMS alerts",
+    "smsText": "Choose which important messages we send to your phone. You always see all alerts in the app.",
+    "prefs": {
+      "smsEnabled": "Send me SMS",
+      "smsEnabledText": "Turn off to stop all SMS from MwaniMlinzi.",
+      "risk": "Risk alerts",
+      "riskText": "Only high and very high risk on your farm.",
+      "harvest": "Harvest reminders",
+      "harvestText": "When your seaweed is ready to harvest.",
+      "system": "Important system messages",
+      "systemText": "For example account or service changes."
+    },
+    "noPhone": "Add a phone number to receive SMS.",
+    "passwordTitle": "Change password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "changePassword": "Change password",
+    "saved": "Saved"
   }
 }

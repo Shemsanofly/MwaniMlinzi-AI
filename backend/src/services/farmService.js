@@ -39,7 +39,7 @@ export function serializeFarm(farm, { cycle = null, latestRisks = null, lastObse
     expectedHarvestDate: c?.expectedHarvestDate || null,
     cropAgeDays: age,
     latestRisks,
-    lastObservation: lastObservation ? { id: lastObservation.id, observedAt: lastObservation.observedAt, cropCondition: lastObservation.cropCondition, whitening: lastObservation.whitening, breakage: lastObservation.breakage } : null,
+    lastObservation: lastObservation ? { id: lastObservation.id, observedAt: lastObservation.observedAt, cropCondition: lastObservation.cropCondition, whitening: lastObservation.whitening, breakage: lastObservation.breakage, epiphytes: lastObservation.epiphytes } : null,
     forecast: forecast ? { expectedHarvestDate: forecast.expectedHarvestDate, riskAdjustedQuantityKg: forecast.riskAdjustedQuantityKg, lowQuantityKg: forecast.lowQuantityKg, highQuantityKg: forecast.highQuantityKg, confidence: forecast.confidence } : null,
   };
 }

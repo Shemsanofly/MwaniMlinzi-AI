@@ -8,6 +8,7 @@ import { RISK_STYLE } from '../../utils/risk.js';
 import { dateTime } from '../../utils/format.js';
 import { ProviderList, YesNo } from './components/shared.jsx';
 import { thresholdError } from './components/thresholds.js';
+import AfricasTalkingCard from './components/AfricasTalkingCard.jsx';
 
 const SPEC = {
   'risk.thresholds': { type: 'thresholds' },
@@ -214,15 +215,18 @@ export default function AdminSettings() {
             <Notice tone="info">{t('admin.settings.unknownKeys', { keys: data.settings.filter((s) => !known.has(s.key)).map((s) => s.key).join(', ') })}</Notice>
           )}
         </div>
+        <div className="space-y-6">
         <Card className="h-fit">
           <CardHeader icon={Server} title={t('admin.system.title')} subtitle={t('admin.system.readOnly')} />
           <div className="space-y-3 p-4 sm:p-5">
             <div className="flex items-center justify-between text-sm"><span className="text-slate-600">{t('admin.system.demoMode')}</span>{sys.demoMode ? <Badge className="bg-violet-50 text-violet-800 ring-violet-300">DEMO_MODE=true</Badge> : <YesNo value={false} />}</div>
             <div className="flex items-center justify-between text-sm"><span className="text-slate-600">{t('admin.system.jobsEnabled')}</span><YesNo value={sys.jobsEnabled} /></div>
             <div className="border-t border-slate-100 pt-2"><ProviderList providers={sys.providers} /></div>
-            <Notice tone="info" icon={KeyRound}>{sys.note || t('admin.system.envNote')}</Notice>
+            <Notice tone="info" icon={KeyRound}>{t('admin.system.envNote')}</Notice>
           </div>
         </Card>
+        <AfricasTalkingCard />
+        </div>
       </div>
     </div>
   );

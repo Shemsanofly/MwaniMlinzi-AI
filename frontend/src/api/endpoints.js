@@ -10,7 +10,8 @@ const qs = (params = {}) => {
 };
 
 export const authApi = {
-  login: (email, password) => unwrap(http.post('/auth/login', { email, password })),
+  login: (identifier, password) => unwrap(http.post('/auth/login', { identifier, password })),
+  changePassword: (currentPassword, newPassword) => unwrap(http.post('/auth/change-password', { currentPassword, newPassword })),
   register: (body) => unwrap(http.post('/auth/register', body)),
   me: () => unwrap(http.get('/auth/me')),
   updateMe: (body) => unwrap(http.patch('/auth/me', body)),
@@ -119,12 +120,6 @@ export const aiApi = {
   status: () => unwrap(http.get('/ai/status')),
 };
 
-export const channelApi = {
-  sms: (from, message) => unwrap(http.post('/sms/simulate', { from, message })),
-  smsMessages: (phone) => unwrap(http.get(`/sms/messages${qs({ phone })}`)),
-  ussd: (sessionId, phoneNumber, text) => unwrap(http.post('/ussd/simulate', { sessionId, phoneNumber, text, serviceCode: '*123#' })),
-};
-
 export const uploadApi = {
   image: (file) => {
     const fd = new FormData();
@@ -149,4 +144,6 @@ export const adminApi = {
   jobs: () => unwrap(http.get('/admin/jobs')),
   runJob: (name) => unwrap(http.post(`/admin/jobs/${name}/run`)),
   notificationLogs: () => unwrap(http.get('/admin/notification-logs')),
+  africasTalking: () => unwrap(http.get('/admin/integrations/africastalking')),
+  testSms: (phone, message) => unwrap(http.post('/admin/integrations/africastalking/test-sms', { phone, ...(message ? { message } : {}) })),
 };

@@ -7,6 +7,8 @@ import { I18nProvider } from '../../../i18n/I18nProvider.jsx';
 export const FARM = {
   id: '11111111-1111-4111-8111-111111111111', farmCode: 'FARM001', name: 'Paje Test Farm', isDemo: true, status: 'ACTIVE',
   cropAgeDays: 39, currentCycle: { id: 'c1', cropAgeDays: 39, daysToHarvest: 6, expectedHarvestDate: '2026-09-29T00:00:00.000Z', plantingDate: '2026-08-15T00:00:00.000Z', linesPlanted: 150, status: 'ACTIVE' },
+  lastObservation: { id: 'o1', observedAt: new Date(Date.now() - 2 * 86400000).toISOString(), cropCondition: 'FAIR', whitening: true, breakage: false, epiphytes: false },
+  forecast: { expectedHarvestDate: '2026-09-29T00:00:00.000Z', riskAdjustedQuantityKg: 182.4, lowQuantityKg: 150, highQuantityKg: 210, confidence: 0.6 },
 };
 
 export const farmerFarm = (overrides = {}) => ({
@@ -21,7 +23,7 @@ const rec = (id, riskType, validated = false) => ({
 export const prediction = (riskType, riskLevel, probability, withRec = false) => ({
   id: `p-${riskType}-${riskLevel}`, riskType, riskLevel, probability, confidence: 0.9, forecastHorizonHours: 72, modelType: 'RULE', modelVersion: 'rules-v1',
   explanation: `${riskType} explanation`, explanationSw: `${riskType} maelezo`, dataSource: 'DEMO', insufficientData: false, createdAt: '2026-09-23T10:00:00.000Z',
-  factors: [{ code: 'SST_ANOMALY', label: 'Sea temperature is above normal', labelSw: 'Joto la bahari liko juu', value: '+1.5°C', contribution: 1.4, direction: 'INCREASES' }],
+  factors: [{ code: 'SST_ANOMALY', label: 'Sea temperature is above normal', labelSw: 'Joto la bahari liko juu', simpleLabel: 'The sea is warmer than normal', simpleLabelSw: 'Maji ya bahari yana joto kuliko kawaida', value: '+1.5°C', contribution: 1.4, direction: 'INCREASES' }],
   recommendation: withRec ? rec(`r-${riskType}`, riskType) : null,
 });
 
@@ -41,8 +43,8 @@ export const riskResult = (heatLevel = 'HIGH', heatP = 0.72) => {
   };
 };
 
-export function renderPage(ui, { route = '/' } = {}) {
-  try { localStorage.setItem('mwanimlinzi.lang', 'en'); } catch { /* ignore */ }
+export function renderPage(ui, { route = '/', lang = 'en' } = {}) {
+  try { localStorage.setItem('mwanimlinzi.lang', lang); } catch { /* ignore */ }
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>

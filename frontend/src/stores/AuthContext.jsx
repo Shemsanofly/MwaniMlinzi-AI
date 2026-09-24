@@ -26,6 +26,7 @@ export function AuthProvider({ children }) {
     setUser(null);
     setStatus('anonymous');
     queryClient.clear();
+    try { localStorage.removeItem('mwanimlinzi.cache'); } catch { /* storage unavailable */ }
   }, [queryClient]);
 
   const loadMe = useCallback(async () => {
@@ -44,8 +45,8 @@ export function AuthProvider({ children }) {
     if (tokenStore.get()) loadMe();
   }, [clear, loadMe]);
 
-  const login = useCallback(async (email, password) => {
-    const data = await authApi.login(email, password);
+  const login = useCallback(async (identifier, password) => {
+    const data = await authApi.login(identifier, password);
     tokenStore.set(data.token);
     if (data.user.preferredLanguage) setLang(data.user.preferredLanguage);
     await loadMe();
@@ -55,9 +56,10 @@ export function AuthProvider({ children }) {
   const register = useCallback(async (body) => {
     const data = await authApi.register(body);
     tokenStore.set(data.token);
+    if (data.user.preferredLanguage) setLang(data.user.preferredLanguage);
     await loadMe();
     return data.user;
-  }, [loadMe]);
+  }, [loadMe, setLang]);
 
   const logout = useCallback(async () => {
     try { await authApi.logout(); } catch { /* token may already be invalid */ }

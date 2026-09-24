@@ -1,20 +1,40 @@
-import { Languages } from 'lucide-react';
 import { useI18n } from '../i18n/I18nProvider.jsx';
 import { useAuth } from '../stores/AuthContext.jsx';
 import { authApi } from '../api/endpoints.js';
+import { cx } from '../components/ui/index.jsx';
 
+const OPTIONS = [
+  { code: 'en', short: 'EN', long: 'English' },
+  { code: 'sw', short: 'SW', long: 'Kiswahili' },
+];
+
+/**
+ * [English | Kiswahili] switch. The choice is stored in localStorage (by the i18n provider) and,
+ * when logged in, saved to the user's profile so SMS/USSD use the same language.
+ */
 export default function LanguageSwitch({ className = '' }) {
-  const { lang, setLang } = useI18n();
-  const { isAuthenticated } = useAuth();
-  const toggle = () => {
-    const next = lang === 'sw' ? 'en' : 'sw';
+  const { lang, setLang, t } = useI18n();
+  const { isAuthenticated, refresh } = useAuth();
+  const choose = (next) => {
+    if (next === lang) return;
     setLang(next);
-    if (isAuthenticated) authApi.updateMe({ preferredLanguage: next }).catch(() => {});
+    if (isAuthenticated) authApi.updateMe({ preferredLanguage: next }).then(() => refresh?.()).catch(() => {});
   };
   return (
-    <button type="button" onClick={toggle} className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-ocean-800 ring-1 ring-ocean-200 hover:bg-ocean-50 ${className}`} aria-label="Switch language / Badilisha lugha">
-      <Languages className="h-4 w-4" aria-hidden />
-      {lang === 'sw' ? 'EN' : 'SW'}
-    </button>
+    <div role="group" aria-label={t('a11y.language')} className={cx('inline-flex overflow-hidden rounded-lg text-sm font-semibold ring-1 ring-ocean-200', className)}>
+      {OPTIONS.map((o, i) => (
+        <button
+          key={o.code}
+          type="button"
+          lang={o.code}
+          onClick={() => choose(o.code)}
+          aria-pressed={lang === o.code}
+          className={cx('px-2.5 py-1.5 transition', i > 0 && 'border-l border-ocean-200', lang === o.code ? 'bg-ocean-700 text-white' : 'text-ocean-800 hover:bg-ocean-50')}
+        >
+          <span className="sm:hidden">{o.short}</span>
+          <span className="hidden sm:inline">{o.long}</span>
+        </button>
+      ))}
+    </div>
   );
 }

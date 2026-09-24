@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   Activity, BarChart3, Bell, BookOpen, Bot, ClipboardCheck, ClipboardList, Cpu, FlaskConical, History, Home, LogOut, Map, Menu,
-  MessageSquare, Settings, ShieldCheck, Smartphone, Sprout, Truck, Users, X,
+  Settings, ShieldCheck, Sprout, Truck, UserCog, Users, X,
 } from 'lucide-react';
 import { useAuth } from '../stores/AuthContext.jsx';
 import { useI18n } from '../i18n/I18nProvider.jsx';
@@ -10,6 +10,7 @@ import Logo from './Logo.jsx';
 import LanguageSwitch from './LanguageSwitch.jsx';
 import NotificationBell from './NotificationBell.jsx';
 import DemoBanner from './DemoBanner.jsx';
+import OfflineBanner from './OfflineBanner.jsx';
 import { cx } from '../components/ui/index.jsx';
 
 export const NAV = {
@@ -53,8 +54,6 @@ export const NAV = {
 
 const DEMO_NAV = [
   { to: '/demo/simulation', key: 'simulation', icon: FlaskConical },
-  { to: '/demo/ussd', key: 'ussd', icon: Smartphone },
-  { to: '/demo/sms', key: 'sms', icon: MessageSquare },
 ];
 
 function NavItems({ items, onNavigate }) {
@@ -83,7 +82,7 @@ export default function AppLayout() {
   const showDemo = !roles.every((r) => r === 'BUYER');
 
   const sidebar = (
-    <nav className="flex h-full flex-col gap-1 overflow-y-auto p-3" aria-label="Main">
+    <nav className="flex h-full flex-col gap-1 overflow-y-auto p-3" aria-label={t('a11y.mainNav')}>
       {sections.map((role) => (
         <div key={role} className="mb-3">
           {sections.length > 1 && <p className="px-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-ocean-300">{t(`roles.${role}`)}</p>}
@@ -96,9 +95,12 @@ export default function AppLayout() {
           <NavItems items={DEMO_NAV} onNavigate={() => setOpen(false)} />
         </div>
       )}
-      <div className="mt-auto rounded-lg bg-ocean-800/60 p-3 text-xs text-ocean-100">
+      <div className="mt-auto">
+        <NavItems items={[{ to: '/account/settings', key: 'account', icon: UserCog }]} onNavigate={() => setOpen(false)} />
+      </div>
+      <div className="rounded-lg bg-ocean-800/60 p-3 text-xs text-ocean-100">
         <p className="font-semibold text-white">{user?.fullName}</p>
-        <p className="truncate">{user?.email}</p>
+        <p className="truncate">{user?.phone || user?.email}</p>
         <p className="mt-0.5 text-ocean-300">{roles.map((r) => t(`roles.${r}`)).join(', ')}</p>
       </div>
     </nav>
@@ -106,6 +108,7 @@ export default function AppLayout() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <OfflineBanner />
       <DemoBanner />
       <div className="flex flex-1">
         <aside className="hidden w-64 shrink-0 bg-ocean-900 lg:block">
@@ -115,15 +118,15 @@ export default function AppLayout() {
         {open && (
           <div className="fixed inset-0 z-[1200] flex lg:hidden">
             <div className="w-72 bg-ocean-900">
-              <div className="flex h-16 items-center justify-between px-4"><Logo light /><button type="button" onClick={() => setOpen(false)} className="text-white" aria-label="Close menu"><X /></button></div>
+              <div className="flex h-16 items-center justify-between px-4"><Logo light /><button type="button" onClick={() => setOpen(false)} className="text-white" aria-label={t('a11y.closeMenu')}><X /></button></div>
               {sidebar}
             </div>
-            <button type="button" className="flex-1 bg-slate-900/50" onClick={() => setOpen(false)} aria-label="Close menu" />
+            <button type="button" className="flex-1 bg-slate-900/50" onClick={() => setOpen(false)} aria-label={t('a11y.closeMenu')} />
           </div>
         )}
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-[900] flex h-16 min-w-0 items-center gap-2 border-b border-slate-200 bg-white/95 px-3 backdrop-blur sm:gap-3 sm:px-6">
-            <button type="button" className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu"><Menu /></button>
+            <button type="button" className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden" onClick={() => setOpen(true)} aria-label={t('a11y.openMenu')}><Menu /></button>
             <div className="min-w-0 truncate lg:hidden"><Logo /></div>
             <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
               <LanguageSwitch />

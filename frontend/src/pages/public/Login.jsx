@@ -18,7 +18,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const [params] = useSearchParams();
-  const [email, setEmail] = useState(location.state?.email || params.get('email') || '');
+  const [identifier, setIdentifier] = useState(location.state?.identifier || location.state?.email || params.get('phone') || params.get('email') || '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [pending, setPending] = useState(false);
@@ -26,13 +26,13 @@ export default function Login() {
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
-    if (!email.trim() || !password) {
+    if (!identifier.trim() || !password) {
       setError({ message: t('public.login.missing') });
       return;
     }
     setPending(true);
     try {
-      const user = await login(email.trim(), password);
+      const user = await login(identifier.trim(), password);
       navigate(safeFrom(location.state?.from) || HOME_FOR_ROLE[user?.primaryRole] || '/app', { replace: true });
     } catch (err) {
       setError(err);
@@ -43,8 +43,8 @@ export default function Login() {
   return (
     <AuthShell title={t('public.login.title')} subtitle={t('public.login.subtitle')}>
       <form onSubmit={submit} className="space-y-4" noValidate>
-        <Field label={t('public.form.email')} htmlFor="login-email" required>
-          <input id="login-email" type="email" autoComplete="username" className="input" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <Field label={t('public.form.phoneOrEmail')} htmlFor="login-identifier" required hint={t('public.login.identifierHint')}>
+          <input id="login-identifier" type="text" inputMode="tel" autoComplete="username" className="input" placeholder="0777 123 456" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required />
         </Field>
         <Field label={t('public.form.password')} htmlFor="login-password" required>
           <input id="login-password" type="password" autoComplete="current-password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} required />

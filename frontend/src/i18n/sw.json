@@ -111,13 +111,12 @@
     "settings": "Mipangilio",
     "audit": "Kumbukumbu za ukaguzi",
     "simulation": "Majaribio ya AI",
-    "ussd": "Majaribio ya USSD",
-    "sms": "Majaribio ya SMS",
     "notifications": "Taarifa",
     "home": "Nyumbani",
     "about": "Kuhusu",
     "howItWorks": "Inavyofanya kazi",
-    "demo": "Demo"
+    "demo": "Demo",
+    "account": "Mipangilio"
   },
   "roles": {
     "FARMER": "Mkulima",
@@ -178,7 +177,8 @@
       "UPLOAD_ERROR": "Faili haikupakiwa. Tafadhali jaribu tena.",
       "PAYLOAD_TOO_LARGE": "Faili au taarifa ni kubwa mno.",
       "NOT_CONFIGURED": "Huduma hii bado haijawekwa.",
-      "PROVIDER_ERROR": "Huduma ya nje haikujibu. Tafadhali jaribu tena baadaye."
+      "PROVIDER_ERROR": "Huduma ya nje haikujibu. Tafadhali jaribu tena baadaye.",
+      "WRONG_PASSWORD": "Nenosiri la sasa si sahihi."
     }
   },
   "demoNotice": "Hali ya demo: mashamba, wakulima na taarifa za mazingira ni za mfano (demo), si vipimo halisi.",
@@ -220,7 +220,27 @@
       "calculated": "Imekokotolewa {time}",
       "recalculated": "Hatari imekokotolewa upya.",
       "environment": "Hali ya bahari na hewa sasa",
-      "alerts": "Tahadhari za shamba hili"
+      "alerts": "Tahadhari za shamba hili",
+      "currentRisk": "Hatari ya sasa",
+      "insufficient": "Data haitoshi kutoa ushauri wa kuaminika.",
+      "keepChecking": "Hakuna hatua maalum inayohitajika. Endelea kukagua shamba lako.",
+      "when": "Lini",
+      "before": "kabla ya {date}",
+      "about": "takriban {kg}",
+      "importantAlert": "Tahadhari muhimu",
+      "recentObservation": "Ripoti ya mwisho ya shamba",
+      "noObservation": "Bado hakuna ripoti.",
+      "condition": {
+        "good": "Mwani unaonekana vizuri",
+        "fair": "Kuna matatizo kadhaa",
+        "poor": "Mwani unaonekana vibaya"
+      },
+      "symptom": {
+        "whitening": "mwani kuwa mweupe",
+        "breakage": "kukatika",
+        "epiphytes": "uchafu juu ya mwani"
+      },
+      "details": "Angalia maelezo"
     },
     "risk": {
       "title": "Hatari za shamba",
@@ -1413,15 +1433,51 @@
         "UploadedFile": "Faili iliyopakiwa",
         "Assistant": "Msaidizi wa AI"
       }
+    },
+    "at": {
+      "title": "Africa's Talking (SMS na USSD)",
+      "subtitle": "Hali ya muunganisho wa SMS na USSD. Ufunguo wa API hauonyeshwi kamwe.",
+      "connection": {
+        "CONNECTED": "Imeunganishwa",
+        "NOT_CONFIGURED": "Haijasanidiwa",
+        "ERROR": "Hitilafu",
+        "UNKNOWN": "Bado hakuna ujumbe uliotumwa"
+      },
+      "environment": "Mazingira",
+      "username": "Jina la mtumiaji",
+      "apiKey": "Ufunguo wa API",
+      "set": "Umewekwa",
+      "notSet": "Haujawekwa",
+      "default": "Chaguo-msingi",
+      "configured": "Imesanidiwa",
+      "notConfigured": "Haijasanidiwa",
+      "serviceCode": "Namba ya USSD",
+      "senderId": "Jina la mtumaji",
+      "lastSend": "Jaribio la mwisho la SMS",
+      "lastError": "Hitilafu ya mwisho",
+      "last7": "SMS za siku 7 zilizopita",
+      "callbacks": "Anwani za callback za kuweka kwenye Africa's Talking",
+      "callbacksHint": "Badilisha vishika-nafasi kwa anwani ya umma ya API na siri ya callback kutoka kwenye mipangilio ya seva.",
+      "callback": {
+        "ussd": "Callback ya USSD",
+        "smsInbound": "Callback ya SMS zinazoingia",
+        "smsDelivery": "Callback ya ripoti za kufika"
+      },
+      "noSecret": "AT_CALLBACK_SECRET haijawekwa: callback za USSD na SMS zinakataliwa hadi iwekwe.",
+      "testPhone": "Tuma SMS ya majaribio kwa",
+      "testHint": "Hutuma SMS moja halisi kupitia Africa's Talking.",
+      "testSend": "Tuma SMS ya majaribio",
+      "result": {
+        "QUEUED": "Imepokelewa na Africa's Talking kwa {to}. Kufika kutathibitishwa na ripoti ya kufika.",
+        "SENT": "Imetumwa kwenye mtandao kwa {to}.",
+        "DELIVERED": "Imefika kwa {to}.",
+        "FAILED": "Haikutumwa kwa {to}.",
+        "UNKNOWN": "Jibu la Africa's Talking halieleweki kwa {to}.",
+        "NOT_CONFIGURED": "Haikutumwa: Africa's Talking haijasanidiwa (AT_USERNAME / AT_API_KEY)."
+      }
     }
   },
   "demo": {
-    "simulated": "Imeigwa",
-    "clear": "Futa",
-    "phoneLabel": "Namba ya simu",
-    "farmerOwnNumber": "Wakulima wanaweza kutumia namba yao iliyosajiliwa tu.",
-    "staffNumber": "Watumishi wanaweza kuiga namba ya mkulima yeyote aliyesajiliwa. Mkulima wa demo: +255777000001.",
-    "badPhone": "Tumia tarakimu 9–15, mf. +255777000001.",
     "sim": {
       "title": "Jaribio la AI",
       "subtitle": "Badilisha hali ya bahari na hewa kwa shamba uone jinsi injini ya hatari na injini ya hatua zinavyojibu.",
@@ -1488,99 +1544,6 @@
         "alert": "Imekagua kanuni za tahadhari",
         "alertDetail": "Tahadhari {n} za jaribio zimetolewa"
       }
-    },
-    "ussd": {
-      "title": "Kiigaji cha USSD",
-      "subtitle": "Menyu ya *123# inayofanya kazi kwenye simu yoyote, kwa mfumo wa Africa's Talking.",
-      "screen": "Skrini ya simu",
-      "input": "Kuandika kwenye simu",
-      "reply": "Jibu…",
-      "dialHint": "Piga *123# kisha bonyeza Tuma",
-      "running": "Inaunganisha…",
-      "unknownCode": "Msimbo wa USSD haujulikani. Piga *123#.",
-      "badPhone": "Weka namba sahihi ya simu kwanza.",
-      "ended": "Kipindi kimeisha — bonyeza SAWA kuanza tena",
-      "send": "Tuma",
-      "ok": "SAWA",
-      "delete": "Futa",
-      "cancel": "Ghairi",
-      "key": "Kitufe",
-      "setupTitle": "Jinsi ya kutumia",
-      "how1": "Andika *123# kwenye vitufe (au kibodi) kisha bonyeza Tuma.",
-      "how2": "Jibu kwa namba ya chaguo la menyu kisha bonyeza Tuma.",
-      "how3": "Kila jibu linatumwa pamoja na njia yote hadi sasa, mf. \"2*1*1\" (mfumo wa Africa's Talking).",
-      "session": "Kipindi",
-      "menuTitle": "Ramani ya menyu",
-      "menuSubtitle": "Menyu kuu (kama wakulima wanavyoiona)",
-      "menu": {
-        "1": {
-          "label": "1. Angalia Hatari",
-          "text": "Viwango vya hatari vya sasa na hatua inayofuata."
-        },
-        "2": {
-          "label": "2. Ripoti Dalili",
-          "text": "Hali ya mwani, kubadilika rangi, kukatika, ukuaji usio wa kawaida. Hatari inahesabiwa upya."
-        },
-        "3": {
-          "label": "3. Rekodi Mavuno",
-          "text": "Kilo za mwani mkavu uliovunwa."
-        },
-        "4": {
-          "label": "4. Ushauri",
-          "text": "Hatua iliyoidhinishwa inayofuata kwa shamba."
-        },
-        "5": {
-          "label": "5. Historia",
-          "text": "Umri wa mwani, ripoti ya mwisho na mavuno ya mwisho."
-        }
-      },
-      "multiFarm": "Wakulima wenye shamba zaidi ya moja wanaulizwa kuchagua shamba baada ya kuchagua huduma.",
-      "logTitle": "Kumbukumbu za maombi / majibu",
-      "logSubtitle": "Mawasiliano ghafi na seva",
-      "logEmpty": "Hakuna maombi bado."
-    },
-    "sms": {
-      "title": "Kiigaji cha SMS",
-      "subtitle": "Tuma amri za SMS kama mkulima uone majibu na ujumbe wa tahadhari unaotumwa na mfumo.",
-      "simulatedSms": "SMS za kuigwa",
-      "from": "Kutoka",
-      "conversation": "Mazungumzo ya SMS",
-      "empty": "Hakuna ujumbe kwa namba hii bado. Jaribu amri ya haraka.",
-      "alert": "Tahadhari",
-      "message": "Ujumbe",
-      "placeholder": "Andika amri, mf. RISK FARM001",
-      "send": "Tuma SMS",
-      "setupTitle": "Mtumaji",
-      "quick": "Amri za haraka",
-      "chipHint": "Gusa amri kuiweka kwenye kisanduku cha ujumbe, kisha tuma.",
-      "lastReply": "Jibu la mwisho",
-      "provider": "Mtoa huduma",
-      "reload": "Pakia upya mazungumzo",
-      "commandsTitle": "Amri za SMS",
-      "commandsSubtitle": "Maneno ya Kiingereza pia yanafanya kazi: RISK, ACTION, REPORT, HARVEST, HELP",
-      "commands": {
-        "RISK": {
-          "syntax": "RISK <SHAMBA>",
-          "text": "Hatari ya sasa na hatua inayofuata (pia HATARI)."
-        },
-        "USHAURI": {
-          "syntax": "USHAURI <SHAMBA>",
-          "text": "Hatua iliyoidhinishwa inayofuata (pia ACTION)."
-        },
-        "RIPOTI": {
-          "syntax": "RIPOTI <SHAMBA> WEUPE|KUKATIKA|UCHAFU|NZURI|MBAYA <n>%",
-          "text": "Ripoti dalili; hatari inahesabiwa upya (pia REPORT)."
-        },
-        "MAVUNO": {
-          "syntax": "MAVUNO <SHAMBA> <KILO>",
-          "text": "Rekodi mavuno kwa kilo za mwani mkavu (pia HARVEST)."
-        },
-        "MSAADA": {
-          "syntax": "MSAADA",
-          "text": "Msaada — orodha ya amri (pia HELP)."
-        }
-      },
-      "alertsNote": "Ujumbe wenye alama \"Tahadhari\" ulitumwa na mfumo wenyewe hatari ya shamba ilipopanda."
     }
   },
   "public": {
@@ -1591,7 +1554,7 @@
       "tryDemo": "Jaribu demo",
       "channelWeb": "Programu ya mtandao",
       "channelSms": "SMS",
-      "channelUssd": "USSD *123#"
+      "channelUssd": "USSD"
     },
     "preview": {
       "aria": "Mfano wa skrini ya mkulima",
@@ -1795,7 +1758,7 @@
         },
         "ussd": {
           "title": "USSD",
-          "text": "Piga *123# kwenye simu yoyote: angalia hatari, ripoti dalili, rekodi mavuno, pata ushauri na historia."
+          "text": "Piga namba ya USSD ya MwaniMlinzi kwenye simu yoyote: angalia hatari, ripoti dalili, rekodi mavuno, pata ushauri na badilisha lugha."
         }
       },
       "rolesTitle": "Majukumu",
@@ -1862,13 +1825,9 @@
           "title": "Jaribio la AI",
           "text": "Badilisha joto la bahari, mawimbi au mvua uone jinsi hatari na hatua zinavyobadilika."
         },
-        "ussd": {
-          "title": "Kiigaji cha USSD",
-          "text": "Piga *123# kama +255777000001 na upitie menyu."
-        },
-        "sms": {
-          "title": "Kiigaji cha SMS",
-          "text": "Tuma RISK FARM001 uone jibu na ujumbe wa tahadhari."
+        "atChannels": {
+          "title": "SMS na USSD",
+          "text": "SMS na USSD halisi hupitia Africa's Talking. Tumia kiigaji cha sandbox cha Africa's Talking kwa namba ya simu iliyosajiliwa (angalia docs/AFRICASTALKING.md)."
         }
       },
       "healthTitle": "Hali ya seva",
@@ -1879,7 +1838,7 @@
       "weather": "Chanzo cha hali ya hewa",
       "ocean": "Chanzo cha bahari",
       "llm": "Mfumo wa lugha",
-      "providerLegend": "Kijani = chanzo hai, zambarau = chanzo cha demo / kuigwa.",
+      "providerLegend": "Kijani = chanzo hai, zambarau = chanzo cha demo. SMS na USSD haziigizwi: zinafanya kazi tu Africa's Talking ikisanidiwa.",
       "scenariosTitle": "Mashamba ya mfano",
       "scenariosSubtitle": "Mashamba ya demo, kila moja likionyesha hali tofauti.",
       "scenarios": {
@@ -1904,7 +1863,8 @@
           "text": "Hali shwari — hatari ndogo, ufuatiliaji wa kawaida. Nzuri kwa majaribio."
         }
       },
-      "scenarioNote": "Viwango hivi vinaeleza hali ya mfano; programu inaonyesha daima thamani ya hivi karibuni iliyohesabiwa."
+      "scenarioNote": "Viwango hivi vinaeleza hali ya mfano; programu inaonyesha daima thamani ya hivi karibuni iliyohesabiwa.",
+      "notConfigured": "Haijasanidiwa"
     },
     "form": {
       "email": "Barua pepe",
@@ -1916,16 +1876,18 @@
       "cooperative": "Chama cha ushirika",
       "village": "Kijiji",
       "district": "Wilaya",
-      "companyName": "Jina la kampuni"
+      "companyName": "Jina la kampuni",
+      "phoneOrEmail": "Namba ya simu au barua pepe"
     },
     "login": {
       "title": "Ingia",
       "subtitle": "Karibu tena MwaniMlinzi AI.",
-      "missing": "Weka barua pepe na nenosiri.",
+      "missing": "Weka namba yako ya simu (au barua pepe) na nenosiri.",
       "signingIn": "Inaingia…",
       "noAccount": "Huna akaunti bado?",
       "demoHint": "Unajaribu tu?",
-      "demoLink": "Fungua mwongozo wa demo"
+      "demoLink": "Fungua mwongozo wa demo",
+      "identifierHint": "Tumia namba ya simu uliyojisajili nayo, mfano 0777 123 456."
     },
     "register": {
       "title": "Fungua akaunti",
@@ -1935,7 +1897,7 @@
         "FARMER": "Pata tahadhari na ushauri wa shamba langu",
         "BUYER": "Ona makadirio ya upatikanaji bila majina"
       },
-      "phoneHint": "Mfano +2557… — inatumika kwa SMS na USSD. Si lazima.",
+      "phoneHint": "Namba yako ya simu, mfano 0777 123 456. Inatumika kuingia na kwa SMS/USSD.",
       "passwordHint": "Angalau herufi 8, zenye herufi na namba.",
       "coopHint": "Chama chako kitaweza kuona shamba lako na kukusaidia.",
       "noCoop": "Hakuna chama / chagua baadaye",
@@ -1947,12 +1909,16 @@
       "errors": {
         "required": "Sehemu hii ni lazima.",
         "email": "Weka barua pepe sahihi.",
-        "phone": "Tumia tarakimu 9–15, mf. +255777123456.",
+        "phone": "Weka namba sahihi ya simu ya Tanzania, mfano 0777 123 456.",
         "passwordLength": "Nenosiri liwe na angalau herufi 8.",
         "passwordMix": "Nenosiri liwe na herufi na namba.",
         "passwordMatch": "Manenosiri hayalingani.",
         "consent": "Lazima ukubali matumizi ya data ili kufungua akaunti."
-      }
+      },
+      "emailHint": "Si lazima.",
+      "optionalTitle": "Maelezo zaidi (si lazima)",
+      "smsOptIn": "Nitumie SMS za tahadhari kuhusu shamba langu",
+      "smsOptInHint": "Ujumbe muhimu tu. Unaweza kubadilisha baadaye kwenye Mipangilio."
     },
     "notFound": {
       "title": "Ukurasa haukupatikana",
@@ -1975,5 +1941,44 @@
   "languageName": {
     "en": "Kiingereza",
     "sw": "Kiswahili"
+  },
+  "a11y": {
+    "mainNav": "Menyu kuu",
+    "closeMenu": "Funga menyu",
+    "openMenu": "Fungua menyu",
+    "menu": "Menyu",
+    "farmerNav": "Menyu ya mkulima",
+    "language": "Lugha",
+    "publicNav": "Menyu ya tovuti",
+    "mapCredit": "Data ya ramani © wachangiaji wa OpenStreetMap"
+  },
+  "offline": {
+    "banner": "Huna mtandao. Unaona taarifa zilizohifadhiwa mara ya mwisho. Kurekodi taarifa mpya kunahitaji mtandao."
+  },
+  "account": {
+    "title": "Mipangilio",
+    "subtitle": "Lugha yako, namba ya simu, SMS za tahadhari na nenosiri.",
+    "languageTitle": "Lugha",
+    "languageText": "Programu, SMS na USSD zitatumia lugha hii.",
+    "contactTitle": "Namba ya simu",
+    "contactText": "Namba yako ya simu inatumika kuingia na kupokea SMS na USSD.",
+    "smsTitle": "SMS za tahadhari",
+    "smsText": "Chagua ujumbe muhimu tunaotuma kwenye simu yako. Tahadhari zote zinaonekana kwenye programu.",
+    "prefs": {
+      "smsEnabled": "Nitumie SMS",
+      "smsEnabledText": "Zima ili kusimamisha SMS zote za MwaniMlinzi.",
+      "risk": "Tahadhari za hatari",
+      "riskText": "Hatari kubwa na hatari kubwa sana tu kwenye shamba lako.",
+      "harvest": "Vikumbusho vya mavuno",
+      "harvestText": "Mwani wako ukiwa tayari kuvunwa.",
+      "system": "Ujumbe muhimu wa mfumo",
+      "systemText": "Kwa mfano mabadiliko ya akaunti au huduma."
+    },
+    "noPhone": "Weka namba ya simu ili upokee SMS.",
+    "passwordTitle": "Badilisha nenosiri",
+    "currentPassword": "Nenosiri la sasa",
+    "newPassword": "Nenosiri jipya",
+    "changePassword": "Badilisha nenosiri",
+    "saved": "Imehifadhiwa"
   }
 }

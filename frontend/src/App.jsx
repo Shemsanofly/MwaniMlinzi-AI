@@ -51,8 +51,7 @@ const AdminSettings = page(() => import('./pages/admin/Settings.jsx'));
 const AdminAudit = page(() => import('./pages/admin/Audit.jsx'));
 // Demo
 const DemoSimulation = page(() => import('./pages/demo/Simulation.jsx'));
-const DemoUssd = page(() => import('./pages/demo/Ussd.jsx'));
-const DemoSms = page(() => import('./pages/demo/Sms.jsx'));
+const AccountSettings = page(() => import('./pages/account/Settings.jsx'));
 
 function HomeRedirect() {
   const { status, homePath } = useAuth();
@@ -85,6 +84,7 @@ export default function App() {
             <Route path="/farmer/harvest" element={<FarmerHarvest />} />
             <Route path="/farmer/history" element={<FarmerHistory />} />
             <Route path="/farmer/assistant" element={<FarmerAssistant />} />
+            <Route path="/farmer/settings" element={<AccountSettings />} />
           </Route>
         </Route>
 
@@ -136,8 +136,7 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
             <Route path="/demo/simulation" element={<DemoSimulation />} />
-            <Route path="/demo/ussd" element={<DemoUssd />} />
-            <Route path="/demo/sms" element={<DemoSms />} />
+            <Route path="/account/settings" element={<AccountSettings />} />
           </Route>
         </Route>
 

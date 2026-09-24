@@ -8,6 +8,7 @@ import {
   Badge, Button, Card, CardHeader, DemoBadge, EmptyState, ErrorState, Field, FormError, Modal, Notice, PageHeader, PageLoader, Table, Toggle, cx,
 } from '../../components/ui/index.jsx';
 import { date, timeAgo } from '../../utils/format.js';
+import { normalizeTzPhone } from '../../utils/phone.js';
 import { Pagination, Tabs } from './components/shared.jsx';
 
 const ROLES = ['FARMER', 'COOPERATIVE_ADMIN', 'EXTENSION_OFFICER', 'BUYER', 'ADMIN'];
@@ -73,10 +74,10 @@ function UserModal({ open, user, onClose }) {
     setLocalError(null);
     if (!f.roles.length) return setLocalError({ message: t('admin.users.needRole') });
     if (!isEdit && f.password.length < 8) return setLocalError({ message: t('admin.users.passwordShort') });
-    const phone = f.phone.trim() ? f.phone.trim().replace(/\s/g, '') : null;
+    const phone = f.phone.trim() ? normalizeTzPhone(f.phone) || f.phone.trim() : null;
     const body = isEdit
       ? { fullName: f.fullName.trim(), phone, roles: f.roles, cooperativeId: f.cooperativeId, isActive: f.isActive }
-      : { email: f.email.trim(), password: f.password, fullName: f.fullName.trim(), phone, roles: f.roles, cooperativeId: f.cooperativeId, preferredLanguage: f.preferredLanguage };
+      : { email: f.email.trim() || null, password: f.password, fullName: f.fullName.trim(), phone, roles: f.roles, cooperativeId: f.cooperativeId, preferredLanguage: f.preferredLanguage };
     return m.mutate(body);
   };
   return (
@@ -94,8 +95,8 @@ function UserModal({ open, user, onClose }) {
         {isEdit && <p className="text-sm text-slate-500">{user.email}</p>}
         <div className="grid gap-4 sm:grid-cols-2">
           {!isEdit && (
-            <Field label={t('public.form.email')} htmlFor="u-email" required>
-              <input id="u-email" type="email" className="input" value={f.email} onChange={set('email')} required />
+            <Field label={t('public.form.email')} htmlFor="u-email" hint={t('public.register.emailHint')}>
+              <input id="u-email" type="email" className="input" value={f.email} onChange={set('email')} />
             </Field>
           )}
           {!isEdit && (
@@ -106,7 +107,7 @@ function UserModal({ open, user, onClose }) {
           <Field label={t('public.form.fullName')} htmlFor="u-name" required>
             <input id="u-name" className="input" value={f.fullName} onChange={set('fullName')} required />
           </Field>
-          <Field label={t('public.form.phone')} htmlFor="u-phone" hint="+2557…">
+          <Field label={t('public.form.phone')} htmlFor="u-phone" hint="0777 123 456">
             <input id="u-phone" type="tel" className="input" value={f.phone} onChange={set('phone')} />
           </Field>
           <Field label={t('common.cooperative')} htmlFor="u-coop" hint={t('admin.users.coopHint')}>
@@ -158,7 +159,7 @@ function UsersTab() {
       key: 'name', header: t('admin.users.user'), render: (u) => (
         <div className="min-w-[12rem]">
           <p className="flex flex-wrap items-center gap-1.5 font-semibold text-slate-900">{u.fullName}{u.isDemo && <DemoBadge />}{u.id === me?.id && <Badge>{t('admin.users.you')}</Badge>}</p>
-          <p className="text-xs text-slate-500">{u.email}</p>
+          <p className="text-xs text-slate-500">{u.email || ''}</p>
         </div>
       ),
     },
