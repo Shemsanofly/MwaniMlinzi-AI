@@ -7,7 +7,7 @@ export const farmInclude = {
   species: true,
   location: true,
   cooperative: { select: { id: true, name: true, code: true } },
-  farmer: { include: { user: { select: { id: true, fullName: true, phone: true, preferredLanguage: true } } } },
+  farmer: { include: { user: { select: { id: true, fullName: true, phone: true, preferredLanguage: true, isDemo: true, smsEnabled: true, notifyRiskAlerts: true, notifyHarvest: true, notifySystem: true } } } },
 };
 
 export async function activeCycle(farmId) {

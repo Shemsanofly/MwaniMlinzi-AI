@@ -65,7 +65,7 @@ function ModelCard({ m, aiMode }) {
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('admin.models.fieldMetrics')}</p>
             {hasField ? (
               <div className="grid grid-cols-2 gap-2">
-                {Object.entries(m.fieldMetrics).map(([k, v]) => <Metric key={k} label={k} value={v} format={k === 'rocAuc' ? 'raw' : 'pct'} />)}
+                {Object.entries(m.fieldMetrics).map(([k, v]) => <Metric key={k} label={FIELD_METRIC_KEYS[k] ? t(`admin.models.${FIELD_METRIC_KEYS[k]}`) : METRIC_ABBR[k] || k} value={v} format={k === 'rocAuc' ? 'raw' : 'pct'} />)}
               </div>
             ) : <p className="text-sm text-slate-500">{t('admin.models.noFieldMetrics')}</p>}
           </div>
@@ -88,6 +88,10 @@ function ModelCard({ m, aiMode }) {
     </Card>
   );
 }
+
+/** Field-metric keys from the backend → translation keys (F1 / ROC AUC are standard abbreviations). */
+const FIELD_METRIC_KEYS = { precision: 'precision', recall: 'recall', accuracy: 'accuracy' };
+const METRIC_ABBR = { f1: 'F1', rocAuc: 'ROC AUC' };
 
 export default function AdminModels() {
   const { t } = useI18n();

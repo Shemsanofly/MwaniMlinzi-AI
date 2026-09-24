@@ -70,7 +70,7 @@ export const RecordService = {
     return { observation, risk };
   },
 
-  async createHarvest(farmId, data) {
+  async createHarvest(farmId, data, { channel = 'APP' } = {}) {
     const cycle = await activeCycle(farmId);
     let estimated = data.estimatedQuantity;
     if (estimated == null) {
@@ -94,6 +94,7 @@ export const RecordService = {
           dryingDurationDays: data.dryingDurationDays ?? null,
           pricePerKg: data.pricePerKg ?? null,
           notes: data.notes || null,
+          channel,
           ...metrics,
         },
       });

@@ -43,7 +43,7 @@ export default function FarmMap({ farms = [], height = 480, renderPopup, linkTo,
                       </ul>
                     )}
                     {f.forecast && <p>{t('common.expectedHarvest')}: {date(f.forecast.expectedHarvestDate, lang)} · {kg(f.forecast.riskAdjustedQuantityKg)}</p>}
-                    <p className="text-xs text-slate-500">{lang === 'sw' ? 'Ripoti ya mwisho' : 'Last observation'}: {f.lastObservation ? date(f.lastObservation.observedAt, lang) : '—'}</p>
+                    <p className="text-xs text-slate-500">{t('map.lastObservation')}: {f.lastObservation ? date(f.lastObservation.observedAt, lang) : '—'}</p>
                     {linkTo && <Link to={linkTo(f)} className="font-semibold text-ocean-700">{t('actions.viewDetails')} →</Link>}
                   </div>
                 )}
@@ -54,7 +54,7 @@ export default function FarmMap({ farms = [], height = 480, renderPopup, linkTo,
       </MapContainer>
       <MapLegend />
       {located.some((f) => f.isDemo) && (
-        <p className="mt-1 text-xs text-violet-700">{lang === 'sw' ? 'Maeneo ya mashamba ni ya demo — si mashamba halisi.' : 'Farm locations are demo data — they do not represent real farms.'}</p>
+        <p className="mt-1 text-xs text-violet-700">{t('map.demoLocations')}</p>
       )}
     </div>
   );

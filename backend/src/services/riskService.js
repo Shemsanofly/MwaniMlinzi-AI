@@ -6,6 +6,7 @@ import { RISK_TYPES, levelRank } from '../ai/constants.js';
 import { FarmContextService } from './farmContextService.js';
 import { AlertService } from './alertService.js';
 import { getAllSettings } from './settingsService.js';
+import { simpleReason } from '../ai/simpleReasons.js';
 
 export function serializeAction(a) {
   if (!a) return null;
@@ -65,7 +66,7 @@ export function serializePrediction(p) {
     features: p.features,
     insufficientData: p.features?.__insufficientData ?? false,
     createdAt: p.createdAt,
-    factors: (p.factors || []).map(({ id, predictionId, ...f }) => f).sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution)),
+    factors: (p.factors || []).map(({ id, predictionId, ...f }) => { const s = simpleReason(f.code, f.direction); return { ...f, simpleLabel: s?.en || null, simpleLabelSw: s?.sw || null }; }).sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution)),
     recommendation: p.recommendations?.[0] ? serializeRecommendation(p.recommendations[0]) : null,
   };
 }
@@ -171,6 +172,7 @@ export const RiskService = {
       actions: selection.perRisk,
       features: result.features,
       simulation,
+      sendSms: trigger !== 'SEED',
     });
 
     const predictions = saved.map(serializePrediction);

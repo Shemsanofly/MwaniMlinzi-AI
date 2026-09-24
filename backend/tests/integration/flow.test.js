@@ -57,8 +57,10 @@ describe('end-to-end risk → action → outcome flow', () => {
 
     const notifications = await api().get('/api/notifications').set(auth(farmer));
     expect(notifications.body.data.notifications.some((n) => n.alertId)).toBe(true);
-    const smsLog = await prisma.notificationLog.findFirst({ where: { channel: 'SMS' }, orderBy: { createdAt: 'desc' } });
-    expect(smsLog.status).toBe('SIMULATED');
+    // A CRITICAL alert triggers a real SMS attempt; without Africa's Talking credentials it is honestly logged as NOT_CONFIGURED.
+    const smsLog = await prisma.notificationLog.findFirst({ where: { channel: 'SMS', messageType: 'RISK_ALERT' }, orderBy: { createdAt: 'desc' } });
+    expect(smsLog.status).toBe('NOT_CONFIGURED');
+    expect(smsLog.message).toMatch(/^MWANIMLINZI: .*FARM001.*HATARI KUBWA SANA. Hatua: /);
   });
 
   let actionId;

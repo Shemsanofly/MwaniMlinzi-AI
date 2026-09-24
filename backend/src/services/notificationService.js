@@ -1,49 +1,40 @@
 import prisma from '../config/prisma.js';
-import { createSMSProvider } from '../providers/smsProvider.js';
-import { createEmailProvider } from '../providers/emailProvider.js';
-import { getSetting } from './settingsService.js';
-
-let smsProvider = createSMSProvider();
-const emailProvider = createEmailProvider();
-export const setSMSProvider = (p) => { smsProvider = p; };
-export const getSMSProvider = () => smsProvider;
+import { SMSService } from './smsService.js';
 
 /**
- * NotificationService — delivers alerts over IN_APP, SMS and EMAIL channels and logs every attempt
- * in `notification_logs`. SMS/email are simulated unless a live provider is configured.
+ * NotificationService — the single place that notifies people.
+ * Always creates an IN_APP notification (in the user's language); sends an SMS through SMSService
+ * only when `sms` text is given — SMSService then applies opt-in, preference and priority rules.
  */
 export const NotificationService = {
-  async notifyUser(user, { title, body, alertId = null, channels = ['IN_APP'] }) {
-    const results = [];
-    for (const channel of channels) {
-      if (channel === 'SMS' && (!user.phone || !(await getSetting('notifications.smsEnabled')))) continue;
-      const notification = await prisma.notification.create({ data: { userId: user.id, alertId, channel, title, body } });
-      if (channel === 'IN_APP') {
-        results.push(notification);
-        continue;
-      }
-      const provider = channel === 'SMS' ? smsProvider : emailProvider;
-      const recipient = channel === 'SMS' ? user.phone : user.email;
-      let outcome;
-      try {
-        outcome = await provider.send(recipient, `${title}: ${body}`.slice(0, 459));
-      } catch (err) {
-        outcome = { status: 'FAILED', error: err.message };
-      }
-      await prisma.notificationLog.create({
-        data: { notificationId: notification.id, channel, provider: provider.name, recipient, status: outcome.status, providerRef: outcome.providerRef || null, error: outcome.error || null },
+  /**
+   * @param user  full user row (needs id, phone, preferredLanguage and notification preferences)
+   * @param n     { type, priority, source, alertId, title:{en,sw}|string, body:{en,sw}|string, sms?:{en,sw} }
+   * @returns { notification, sms }  sms = SMSService result or null
+   */
+  async notifyUser(user, { type = 'GENERAL', priority = 'INFO', source = null, alertId = null, title, body, sms = null }) {
+    const language = user.preferredLanguage === 'en' ? 'en' : 'sw';
+    const pick = (v) => (typeof v === 'string' ? v : v?.[language] || v?.sw || v?.en || '');
+    const notification = await prisma.notification.create({
+      data: { userId: user.id, alertId, channel: 'IN_APP', type, priority, language, source, title: pick(title), body: pick(body) },
+    });
+    let smsResult = null;
+    if (sms) {
+      const smsNotification = await prisma.notification.create({
+        data: { userId: user.id, alertId, channel: 'SMS', type, priority, language, source, title: pick(title), body: pick(sms), readAt: new Date() },
       });
-      if (channel === 'SMS' && outcome.status !== 'FAILED') {
-        await prisma.smsMessage.create({ data: { direction: 'OUTBOUND', phoneNumber: recipient, body: `${title}: ${body}`.slice(0, 459), command: 'ALERT', simulated: outcome.status === 'SIMULATED' } });
+      smsResult = await SMSService.sendToUser(user, { type, priority, text: sms, notificationId: smsNotification.id });
+      if (smsResult.status === 'SKIPPED') {
+        await prisma.notification.update({ where: { id: smsNotification.id }, data: { status: 'SKIPPED' } });
       }
-      results.push(notification);
     }
-    return results;
+    return { notification, sms: smsResult };
   },
 
   async listForUser(userId, { unreadOnly = false, take = 50 } = {}) {
     return prisma.notification.findMany({
       where: { userId, channel: 'IN_APP', ...(unreadOnly ? { readAt: null } : {}) },
+      include: { alert: { select: { id: true, title: true, titleSw: true, message: true, messageSw: true, severity: true, type: true, farmId: true } } },
       orderBy: { createdAt: 'desc' },
       take,
     });

@@ -29,13 +29,18 @@ export const env = {
   },
   weather: { provider: (process.env.WEATHER_PROVIDER || '').toLowerCase(), apiKey: process.env.WEATHER_API_KEY || '' },
   ocean: { provider: (process.env.OCEAN_PROVIDER || '').toLowerCase(), apiKey: process.env.OCEAN_API_KEY || '' },
-  sms: {
-    provider: (process.env.SMS_PROVIDER || '').toLowerCase(),
-    apiKey: process.env.SMS_API_KEY || '',
-    username: process.env.SMS_USERNAME || '',
-    senderId: process.env.SMS_SENDER_ID || '',
+  // Africa's Talking (SMS + USSD). Credentials only come from the environment — never from the database or the UI.
+  africastalking: {
+    username: process.env.AT_USERNAME || '',
+    apiKey: process.env.AT_API_KEY || '',
+    environment: (process.env.AT_ENVIRONMENT || 'sandbox').toLowerCase() === 'production' ? 'production' : 'sandbox',
+    senderId: process.env.AT_SMS_SENDER_ID || '',
+    ussdServiceCode: process.env.AT_USSD_SERVICE_CODE || '',
+    // Shared secret appended to the callback URLs you register in the Africa's Talking dashboard (?secret=...).
+    callbackSecret: process.env.AT_CALLBACK_SECRET || '',
   },
-  ussd: { provider: (process.env.USSD_PROVIDER || '').toLowerCase(), apiKey: process.env.USSD_API_KEY || '' },
+  // Public HTTPS base URL of this API (used to show the callback URLs to admins), e.g. https://api.example.org
+  publicApiUrl: (process.env.PUBLIC_API_URL || '').replace(/\/$/, ''),
   uploadDir: process.env.UPLOAD_DIR || 'uploads',
   maxUploadBytes: Number(process.env.MAX_UPLOAD_MB || 5) * 1024 * 1024,
 };

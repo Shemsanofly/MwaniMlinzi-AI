@@ -4,7 +4,7 @@ import { LocateFixed } from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nProvider.jsx';
 import { useAuth } from '../../../stores/AuthContext.jsx';
 import { metaApi } from '../../../api/endpoints.js';
-import { Button, Field, FormError, Notice } from '../../../components/ui/index.jsx';
+import { Button, Field, FormError, Notice, apiErrorMessage } from '../../../components/ui/index.jsx';
 import { isoDate } from '../../../utils/format.js';
 import { numOrNull, numOrUndef } from './shared.jsx';
 
@@ -91,7 +91,7 @@ export default function FarmForm({ farm, onSubmit, pending, error, submitLabel, 
         <Field label={t('farmer.farm.f.name')} htmlFor="ff-name" required>
           <input id="ff-name" className="input" required maxLength={120} value={f.name} onChange={(e) => set({ name: e.target.value })} />
         </Field>
-        <Field label={t('farmer.farm.f.species')} htmlFor="ff-species" required error={speciesQ.error?.message}>
+        <Field label={t('farmer.farm.f.species')} htmlFor="ff-species" required error={speciesQ.error ? apiErrorMessage(speciesQ.error, t, lang) : undefined}>
           <select id="ff-species" className="input" required value={f.speciesId} onChange={(e) => set({ speciesId: e.target.value })} disabled={speciesQ.isLoading}>
             <option value="">{speciesQ.isLoading ? t('actions.loading') : t('farmer.farm.choose')}</option>
             {(speciesQ.data?.species || []).map((s) => <option key={s.id} value={s.id}>{lang === 'sw' ? s.commonNameSw : s.commonName} — {s.scientificName}</option>)}

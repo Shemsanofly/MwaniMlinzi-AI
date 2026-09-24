@@ -4,7 +4,7 @@ import { ClipboardCheck, Database, Info, SendHorizontal, ShieldCheck, Sprout, Tr
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { useFarmerFarm } from '../../hooks/useFarmerFarm.js';
 import { aiApi, farmApi } from '../../api/endpoints.js';
-import { Badge, Button, FormError, Notice, PageHeader, cx } from '../../components/ui/index.jsx';
+import { Badge, Button, FormError, Notice, PageHeader, apiErrorMessage, cx } from '../../components/ui/index.jsx';
 import { ValidationBadge } from './components/RecommendationPanel.jsx';
 import ObservationResult from './components/ObservationResult.jsx';
 import { FarmGate, FarmSwitcher, useInvalidateFarm } from './components/shared.jsx';
@@ -40,7 +40,7 @@ function Chat({ ff }) {
   const chat = useMutation({
     mutationFn: (message) => aiApi.chat(message, farmId, lang),
     onSuccess: (res) => setMessages((m) => [...m, { id: newId(), role: 'assistant', response: res }]),
-    onError: (err) => setMessages((m) => [...m, { id: newId(), role: 'error', text: err.message }]),
+    onError: (err) => setMessages((m) => [...m, { id: newId(), role: 'error', error: { status: err?.status, code: err?.code, message: err?.message } }]),
   });
 
   const send = (msg) => {
@@ -79,7 +79,7 @@ function Chat({ ff }) {
                 <UserRound className="mt-1 h-5 w-5 shrink-0 text-slate-400" aria-hidden />
               </div>
             ) : m.role === 'error' ? (
-              <Notice key={m.id} tone="danger">{m.text}</Notice>
+              <Notice key={m.id} tone="danger">{apiErrorMessage(m.error || { message: m.text }, t, lang)}</Notice>
             ) : (
               <AssistantMessage key={m.id} msg={m} farmId={farmId} onPatch={(p) => patchMessage(m.id, p)} />
             )

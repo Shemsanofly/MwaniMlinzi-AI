@@ -15,8 +15,9 @@ import { ModelMonitoringService } from '../services/modelMonitoringService.js';
 import { JOBS, runJob } from '../jobs/jobs.js';
 import { EnvironmentService } from '../services/environmentService.js';
 import { getLLMProvider } from '../services/assistantService.js';
-import { getSMSProvider } from '../services/notificationService.js';
-import { getUSSDProvider } from '../services/channelService.js';
+import { SMSService } from '../services/smsService.js';
+import { atConfig, atPublicStatus } from '../providers/africastalking/config.js';
+import { maskPhone } from '../utils/phone.js';
 import { assertFarmAccess, isUuid } from '../services/accessService.js';
 
 /* ───────────── Users & roles ───────────── */
@@ -31,7 +32,7 @@ export async function listUsers(req, res) {
   const { take, skip, page, limit } = pageParams(req.query);
   const where = {
     ...(req.query.role ? { roles: { some: { role: { name: String(req.query.role) } } } } : {}),
-    ...(req.query.search ? { OR: [{ email: { contains: String(req.query.search), mode: 'insensitive' } }, { fullName: { contains: String(req.query.search), mode: 'insensitive' } }] } : {}),
+    ...(req.query.search ? { OR: [{ email: { contains: String(req.query.search), mode: 'insensitive' } }, { phone: { contains: String(req.query.search) } }, { fullName: { contains: String(req.query.search), mode: 'insensitive' } }] } : {}),
   };
   const [users, total] = await Promise.all([prisma.user.findMany({ where, select: userSelect, orderBy: { createdAt: 'desc' }, take, skip }), prisma.user.count({ where })]);
   return ok(res, { users: users.map(flatUser), total, page, limit });
@@ -45,13 +46,13 @@ async function roleIds(names) {
 
 export async function createUser(req, res) {
   const d = req.valid.body;
-  if (await prisma.user.findUnique({ where: { email: d.email } })) throw conflict('Email already in use');
+  if (d.email && (await prisma.user.findUnique({ where: { email: d.email } }))) throw conflict('Email already in use');
   if (d.phone && (await prisma.user.findUnique({ where: { phone: d.phone } }))) throw conflict('Phone already in use');
   const roles = await roleIds(d.roles);
   const user = await prisma.$transaction(async (tx) => {
     const u = await tx.user.create({
       data: {
-        email: d.email, passwordHash: await bcrypt.hash(d.password, 12), fullName: d.fullName, phone: d.phone || null,
+        email: d.email || null, passwordHash: await bcrypt.hash(d.password, 12), fullName: d.fullName, phone: d.phone || null,
         preferredLanguage: d.preferredLanguage, cooperativeId: d.cooperativeId || null, consentGiven: true, consentAt: new Date(),
         roles: { create: roles.map((r) => ({ roleId: r.id })) },
       },
@@ -137,7 +138,7 @@ export async function getSettings(_req, res) {
     system: {
       demoMode: env.demoMode,
       jobsEnabled: env.enableJobs,
-      providers: { ...EnvironmentService.providerStatus(), llm: getLLMProvider().name, sms: getSMSProvider().name, ussd: getUSSDProvider().name },
+      providers: { ...EnvironmentService.providerStatus(), llm: getLLMProvider().name, sms: SMSService.status().configured ? SMSService.status().provider : 'NOT_CONFIGURED', ussd: atConfig().ussdConfigured ? 'africastalking' : 'NOT_CONFIGURED' },
       note: 'DEMO_MODE and provider credentials are set in backend/.env (never stored in the database).',
     },
   });
@@ -227,6 +228,45 @@ export async function runJobNow(req, res) {
 export async function notificationLogs(req, res) {
   const logs = await prisma.notificationLog.findMany({ orderBy: { createdAt: 'desc' }, take: Math.min(Number(req.query.limit) || 100, 300) });
   return ok(res, { logs });
+}
+
+/* ───────────── Africa's Talking ───────────── */
+
+/**
+ * Integration status for the admin panel. Never includes the API key or callback secret.
+ * connection: CONNECTED (a real API call succeeded) | NOT_CONFIGURED | ERROR | UNKNOWN (no successful call yet).
+ */
+export async function africasTalkingStatus(_req, res) {
+  const status = atPublicStatus();
+  const since = new Date(Date.now() - 7 * 24 * 3600 * 1000);
+  const [byStatus, recentLogs, recentEvents, lastSend] = await Promise.all([
+    prisma.notificationLog.groupBy({ by: ['status'], where: { channel: 'SMS', createdAt: { gte: since } }, _count: { _all: true } }),
+    prisma.notificationLog.findMany({ where: { channel: 'SMS' }, orderBy: { createdAt: 'desc' }, take: 20 }),
+    prisma.integrationEvent.findMany({ where: { provider: 'AFRICASTALKING' }, orderBy: { createdAt: 'desc' }, take: 20 }),
+    prisma.notificationLog.findFirst({ where: { channel: 'SMS', provider: { startsWith: 'africastalking' }, status: { in: ['QUEUED', 'SENT', 'DELIVERED', 'FAILED'] } }, orderBy: { createdAt: 'desc' } }),
+  ]);
+  let connection = 'UNKNOWN';
+  if (status.sms === 'NOT_CONFIGURED') connection = 'NOT_CONFIGURED';
+  else if (lastSend) connection = lastSend.status === 'FAILED' && /auth|401|network/i.test(lastSend.error || '') ? 'ERROR' : 'CONNECTED';
+  return ok(res, {
+    ...status,
+    connection,
+    lastSendAt: lastSend?.createdAt || null,
+    lastError: lastSend?.status === 'FAILED' ? lastSend.error : null,
+    smsLast7Days: Object.fromEntries(byStatus.map((r) => [r.status, r._count._all])),
+    recentSms: recentLogs.map((l) => ({ ...l, recipient: maskPhone(l.recipient) })),
+    recentEvents: recentEvents.map(({ payload, ...e }) => e),
+  });
+}
+
+/** Sends one real SMS through Africa's Talking and reports exactly what the provider answered. */
+export async function testSms(req, res) {
+  const { phone, message } = req.valid.body;
+  const lang = req.user.preferredLanguage === 'en' ? 'en' : 'sw';
+  const text = message || (lang === 'en' ? 'MwaniMlinzi test message. SMS is working.' : 'Ujumbe wa majaribio wa MwaniMlinzi. SMS inafanya kazi.');
+  const result = await SMSService.sendRaw(phone, text, { type: 'ADMIN_TEST', language: lang });
+  await audit(req, 'TEST_SMS', 'Integration', null, { to: maskPhone(phone), status: result.status });
+  return ok(res, { ...result, environment: atConfig().environment.toUpperCase(), to: maskPhone(phone) }, result.status === 'FAILED' || result.status === 'NOT_CONFIGURED' ? 'SMS not sent' : 'SMS accepted by provider');
 }
 
 /* ───────────── Action library ───────────── */

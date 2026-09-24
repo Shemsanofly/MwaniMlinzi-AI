@@ -1,36 +1,55 @@
 import { z } from 'zod';
+import { normalizeTzPhone } from '../utils/phone.js';
 
 const trimmed = (max = 200) => z.string().trim().min(1).max(max);
 const optText = (max = 2000) => z.string().trim().max(max).optional().nullable();
 const dateStr = z.coerce.date();
 const bool = z.preprocess((v) => (v === 'true' ? true : v === 'false' ? false : v), z.boolean());
 const num = (min, max) => z.coerce.number().min(min).max(max);
-const phone = z.string().trim().regex(/^\+?[0-9]{9,15}$/, 'Phone must be 9–15 digits, optionally starting with +');
+/** Tanzanian mobile number in any common format (+255…, 255…, 07…, 7…) → normalised +255XXXXXXXXX. */
+const phone = z.string().trim().max(32)
+  .refine((v) => normalizeTzPhone(v) !== null, 'Enter a valid Tanzanian mobile number, e.g. 0777 123 456 or +255777123456')
+  .transform((v) => normalizeTzPhone(v));
+const password = z.string().min(8, 'Password must be at least 8 characters').max(128)
+  .regex(/[A-Za-z]/, 'Password must contain a letter').regex(/[0-9]/, 'Password must contain a number');
+const optEmail = z.union([z.string().trim().toLowerCase().email().max(200), z.literal('').transform(() => null)]).optional().nullable();
 
 export const registerSchema = z.object({
-  email: z.string().trim().toLowerCase().email().max(200),
-  password: z.string().min(8, 'Password must be at least 8 characters').max(128)
-    .regex(/[A-Za-z]/, 'Password must contain a letter').regex(/[0-9]/, 'Password must contain a number'),
   fullName: trimmed(120),
-  phone: phone.optional().nullable(),
+  phone,
+  password,
+  email: optEmail,
   role: z.enum(['FARMER', 'BUYER']).default('FARMER'),
   preferredLanguage: z.enum(['en', 'sw']).default('sw'),
   cooperativeCode: z.string().trim().max(40).optional().nullable(),
   companyName: z.string().trim().max(160).optional().nullable(),
   village: optText(120),
   district: optText(120),
+  smsEnabled: bool.optional(),
   consent: z.literal(true, { message: 'You must agree to data use to create an account' }),
 });
 
+/** Log in with a phone number or an email address (`email` is kept for older clients). */
 export const loginSchema = z.object({
-  email: z.string().trim().toLowerCase().email(),
+  identifier: z.string().trim().min(3).max(200).optional(),
+  email: z.string().trim().max(200).optional(),
   password: z.string().min(1).max(128),
-});
+}).refine((v) => v.identifier || v.email, { message: 'Enter your phone number or email', path: ['identifier'] });
 
 export const profileSchema = z.object({
   fullName: trimmed(120).optional(),
-  phone: phone.optional().nullable(),
+  phone: phone.optional(),
+  email: optEmail,
   preferredLanguage: z.enum(['en', 'sw']).optional(),
+  smsEnabled: bool.optional(),
+  notifyRiskAlerts: bool.optional(),
+  notifyHarvest: bool.optional(),
+  notifySystem: bool.optional(),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(128),
+  newPassword: password,
 });
 
 export const farmSchema = z.object({
@@ -183,12 +202,9 @@ export const chatSchema = z.object({
   language: z.enum(['en', 'sw']).optional(),
 });
 
-export const smsSchema = z.object({ from: phone, message: z.string().trim().min(1).max(320) });
-export const ussdSchema = z.object({
-  sessionId: z.string().trim().min(1).max(100),
-  phoneNumber: phone,
-  serviceCode: z.string().max(20).optional(),
-  text: z.string().max(200).default(''),
+export const testSmsSchema = z.object({
+  phone,
+  message: z.string().trim().min(1).max(306).optional(),
 });
 
 export const cooperativeSchema = z.object({
@@ -200,14 +216,14 @@ export const cooperativeSchema = z.object({
 });
 
 export const adminUserCreateSchema = z.object({
-  email: z.string().trim().toLowerCase().email(),
+  email: optEmail,
   password: z.string().min(8).max(128),
   fullName: trimmed(120),
   phone: phone.optional().nullable(),
   roles: z.array(z.enum(['FARMER', 'COOPERATIVE_ADMIN', 'EXTENSION_OFFICER', 'BUYER', 'ADMIN'])).min(1),
   cooperativeId: z.string().uuid().optional().nullable(),
-  preferredLanguage: z.enum(['en', 'sw']).default('en'),
-});
+  preferredLanguage: z.enum(['en', 'sw']).default('sw'),
+}).refine((v) => v.email || v.phone, { message: 'Enter a phone number or an email', path: ['phone'] });
 
 export const adminUserUpdateSchema = z.object({
   fullName: trimmed(120).optional(),

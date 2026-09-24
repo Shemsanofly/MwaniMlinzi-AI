@@ -4,6 +4,7 @@ import { loadUser, signToken } from '../middleware/auth.js';
 import { ok, created } from '../utils/response.js';
 import { AppError, badRequest, conflict } from '../utils/errors.js';
 import { audit } from '../utils/audit.js';
+import { normalizeTzPhone } from '../utils/phone.js';
 
 // Used to equalise response time when the email does not exist.
 const DUMMY_HASH = bcrypt.hashSync('timing-equaliser-not-a-password', 12);
@@ -13,8 +14,8 @@ const withPrimary = (u) => ({ ...u, primaryRole: primaryRole(u.roles) });
 
 export async function register(req, res) {
   const d = req.valid.body;
-  if (await prisma.user.findUnique({ where: { email: d.email } })) throw conflict('An account with this email already exists');
-  if (d.phone && (await prisma.user.findUnique({ where: { phone: d.phone } }))) throw conflict('An account with this phone number already exists');
+  if (await prisma.user.findUnique({ where: { phone: d.phone } })) throw conflict('An account with this phone number already exists');
+  if (d.email && (await prisma.user.findUnique({ where: { email: d.email } }))) throw conflict('An account with this email already exists');
   let cooperative = null;
   if (d.cooperativeCode) {
     cooperative = await prisma.cooperative.findUnique({ where: { code: d.cooperativeCode.toUpperCase() } });
@@ -27,8 +28,8 @@ export async function register(req, res) {
   const user = await prisma.$transaction(async (tx) => {
     const u = await tx.user.create({
       data: {
-        email: d.email, passwordHash, fullName: d.fullName, phone: d.phone || null, preferredLanguage: d.preferredLanguage,
-        consentGiven: true, consentAt: new Date(), roles: { create: { roleId: role.id } },
+        email: d.email || null, passwordHash, fullName: d.fullName, phone: d.phone, preferredLanguage: d.preferredLanguage,
+        smsEnabled: d.smsEnabled ?? true, consentGiven: true, consentAt: new Date(), roles: { create: { roleId: role.id } },
       },
     });
     if (d.role === 'FARMER') {
@@ -46,12 +47,20 @@ export async function register(req, res) {
   return created(res, { token: signToken(user), user: withPrimary(full) }, 'Account created');
 }
 
+/** Finds a user by phone (any Tanzanian format) or email. */
+async function findByIdentifier(identifier) {
+  const id = String(identifier || '').trim();
+  if (id.includes('@')) return prisma.user.findUnique({ where: { email: id.toLowerCase() } });
+  const phone = normalizeTzPhone(id);
+  return phone ? prisma.user.findUnique({ where: { phone } }) : null;
+}
+
 export async function login(req, res) {
-  const { email, password } = req.valid.body;
-  const user = await prisma.user.findUnique({ where: { email } });
-  // Same message for unknown email and wrong password (no account enumeration).
+  const { identifier, email, password } = req.valid.body;
+  const user = await findByIdentifier(identifier || email);
+  // Same message for unknown account and wrong password (no account enumeration).
   const valid = user ? await bcrypt.compare(password, user.passwordHash) : await bcrypt.compare(password, DUMMY_HASH).then(() => false);
-  if (!user || !valid) throw new AppError('INVALID_CREDENTIALS', 'Incorrect email or password', 401);
+  if (!user || !valid) throw new AppError('INVALID_CREDENTIALS', 'Incorrect phone/email or password', 401);
   if (!user.isActive) throw new AppError('ACCOUNT_DISABLED', 'This account has been disabled', 403);
   await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
   req.user = { id: user.id };
@@ -72,9 +81,23 @@ export async function updateMe(req, res) {
     const other = await prisma.user.findFirst({ where: { phone: d.phone, NOT: { id: req.user.id } } });
     if (other) throw conflict('Phone number already in use');
   }
+  if (d.email) {
+    const other = await prisma.user.findFirst({ where: { email: d.email, NOT: { id: req.user.id } } });
+    if (other) throw conflict('Email already in use');
+  }
   await prisma.user.update({ where: { id: req.user.id }, data: d });
   await audit(req, 'UPDATE_PROFILE', 'User', req.user.id, { fields: Object.keys(d) });
   return ok(res, { user: withPrimary(await loadUser(req.user.id)) }, 'Profile updated');
+}
+
+export async function changePassword(req, res) {
+  const { currentPassword, newPassword } = req.valid.body;
+  const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+  if (!(await bcrypt.compare(currentPassword, user.passwordHash))) throw new AppError('WRONG_PASSWORD', 'Current password is incorrect', 400);
+  if (currentPassword === newPassword) throw badRequest('The new password must be different');
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(newPassword, 12) } });
+  await audit(req, 'CHANGE_PASSWORD', 'User', user.id);
+  return ok(res, {}, 'Password changed');
 }
 
 export async function logout(req, res) {

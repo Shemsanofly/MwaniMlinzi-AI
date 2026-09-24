@@ -4,6 +4,7 @@ import { RiskService } from '../services/riskService.js';
 import { AlertService } from '../services/alertService.js';
 import { HarvestForecastService } from '../services/harvestForecastService.js';
 import { ModelMonitoringService } from '../services/modelMonitoringService.js';
+import { UssdService } from '../services/ussdService.js';
 
 const activeFarms = () => prisma.farm.findMany({ where: { status: 'ACTIVE' }, include: { location: true } });
 
@@ -57,6 +58,11 @@ export const JOBS = {
       const rows = await HarvestForecastService.generate();
       return { forecasts: rows.length, totalRiskAdjustedKg: Math.round(rows.reduce((s, r) => s + r.riskAdjustedQuantityKg, 0)) };
     },
+  },
+  'expire-ussd-sessions': {
+    schedule: '*/10 * * * *',
+    description: 'Mark USSD sessions inactive for more than 5 minutes as EXPIRED',
+    async run() { return { expired: await UssdService.expireStale() }; },
   },
   'model-monitoring': {
     schedule: '0 2 * * *',

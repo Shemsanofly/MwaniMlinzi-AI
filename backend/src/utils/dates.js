@@ -12,3 +12,6 @@ export const daysBetween = (from, to = new Date()) => Math.floor((startOfDay(to)
 
 /** Crop age is always derived from the planting date — never entered manually. */
 export const cropAgeDays = (plantingDate, now = new Date()) => (plantingDate ? Math.max(0, daysBetween(plantingDate, now)) : null);
+
+/** YYYY-MM-DD (UTC) — short and unambiguous for SMS/USSD. */
+export const formatDate = (d) => new Date(d).toISOString().slice(0, 10);

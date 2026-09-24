@@ -1,0 +1,1979 @@
+{
+  "app": {
+    "name": "MwaniMlinzi AI",
+    "tagline": "Jua hatari. Jua hatua inayofuata."
+  },
+  "risk": {
+    "level": {
+      "LOW": "Hatari ndogo",
+      "MEDIUM": "Hatari ya kati",
+      "HIGH": "Hatari kubwa",
+      "CRITICAL": "Hatari kubwa sana"
+    },
+    "levelLong": {
+      "LOW": "Hatari ndogo",
+      "MEDIUM": "Hatari ya kati",
+      "HIGH": "Hatari kubwa",
+      "CRITICAL": "Hatari kubwa sana"
+    },
+    "type": {
+      "HEAT_ICE_ICE": "Joto / Ice-Ice",
+      "STORM_LINE_DAMAGE": "Dhoruba / Kukatika mistari",
+      "POOR_GROWTH": "Ukuaji hafifu",
+      "HARVEST_WINDOW": "Wakati wa mavuno"
+    },
+    "confidence": "Uhakika",
+    "probability": "Uwezekano",
+    "horizon": "Saa {hours} zijazo",
+    "why": "Kwa nini?",
+    "factors": "Sababu za hatari",
+    "model": "Modeli",
+    "insufficient": "Taarifa hazitoshi kwa utabiri wa uhakika",
+    "ruleBaseline": "Modeli ya kanuni (msingi)",
+    "flagged": "Imewekwa alama kwa ukaguzi",
+    "increases": "Inaongeza hatari",
+    "decreases": "Inapunguza hatari",
+    "nextAction": "Hatua inayofuata",
+    "actionRecorded": "Umerekodi kwamba umechukua hatua hii."
+  },
+  "urgency": {
+    "ROUTINE": "Kawaida",
+    "SOON": "Hivi karibuni",
+    "URGENT": "Haraka",
+    "IMMEDIATE": "Mara moja"
+  },
+  "source": {
+    "LIVE": "Taarifa za moja kwa moja",
+    "CACHED": "Taarifa za awali",
+    "DEMO": "Taarifa za mazingira za majaribio (Demo)",
+    "SIMULATION": "Majaribio",
+    "demoBadge": "TAARIFA ZA DEMO",
+    "syntheticBadge": "TAARIFA BANDIA",
+    "modelPrediction": "Utabiri wa modeli",
+    "fieldValidated": "Imethibitishwa shambani",
+    "real": "Taarifa halisi"
+  },
+  "actions": {
+    "inspectFarm": "Kagua Shamba",
+    "recordSymptoms": "Rekodi Dalili",
+    "recordObservation": "Rekodi Dalili",
+    "recordHarvest": "Rekodi Mavuno",
+    "viewHistory": "Angalia Historia",
+    "askAI": "Uliza AI",
+    "save": "Hifadhi",
+    "cancel": "Ghairi",
+    "submit": "Tuma",
+    "next": "Endelea",
+    "back": "Rudi",
+    "close": "Funga",
+    "retry": "Jaribu tena",
+    "refresh": "Onyesha upya",
+    "edit": "Hariri",
+    "create": "Unda",
+    "delete": "Futa",
+    "search": "Tafuta",
+    "filter": "Chuja",
+    "logout": "Toka",
+    "login": "Ingia",
+    "register": "Fungua akaunti",
+    "yes": "Ndiyo",
+    "no": "Hapana",
+    "viewDetails": "Angalia zaidi",
+    "runNow": "Endesha sasa",
+    "loading": "Inapakia…",
+    "recalculate": "Kokotoa hatari upya",
+    "acknowledge": "Nimeona",
+    "resolve": "Imetatuliwa",
+    "markAllRead": "Weka zote zimesomwa",
+    "contactExtension": "Wasiliana na afisa ugani",
+    "didIt": "Nimefanya hatua hii",
+    "couldNot": "Sikuweza kufanya",
+    "ok": "Sawa"
+  },
+  "nav": {
+    "dashboard": "Mwanzo",
+    "farm": "Shamba langu",
+    "risk": "Hatari",
+    "observations": "Ripoti",
+    "harvest": "Mavuno",
+    "history": "Historia",
+    "assistant": "Msaidizi wa AI",
+    "farms": "Mashamba",
+    "map": "Ramani",
+    "forecast": "Makadirio",
+    "alerts": "Tahadhari",
+    "riskMap": "Ramani ya hatari",
+    "actionLibrary": "Maktaba ya hatua",
+    "reviews": "Ukaguzi",
+    "supply": "Upatikanaji",
+    "users": "Watumiaji",
+    "models": "Modeli",
+    "settings": "Mipangilio",
+    "audit": "Kumbukumbu za ukaguzi",
+    "simulation": "Majaribio ya AI",
+    "ussd": "Majaribio ya USSD",
+    "sms": "Majaribio ya SMS",
+    "notifications": "Taarifa",
+    "home": "Nyumbani",
+    "about": "Kuhusu",
+    "howItWorks": "Inavyofanya kazi",
+    "demo": "Demo"
+  },
+  "roles": {
+    "FARMER": "Mkulima",
+    "COOPERATIVE_ADMIN": "Ushirika",
+    "EXTENSION_OFFICER": "Afisa ugani",
+    "BUYER": "Mnunuzi",
+    "ADMIN": "Msimamizi"
+  },
+  "common": {
+    "days": "siku {n}",
+    "day": "siku",
+    "kg": "kg",
+    "cropAge": "Umri wa mwani",
+    "plantingDate": "Tarehe ya kupanda",
+    "expectedHarvest": "Mavuno yanatarajiwa",
+    "lastUpdated": "Imesasishwa {time}",
+    "noData": "Hakuna taarifa bado",
+    "error": "Kuna hitilafu",
+    "language": "Lugha",
+    "demoFarm": "Shamba la demo",
+    "farm": "Shamba",
+    "farmer": "Mkulima",
+    "cooperative": "Ushirika",
+    "district": "Wilaya",
+    "status": "Hali",
+    "date": "Tarehe",
+    "notes": "Maelezo",
+    "total": "Jumla",
+    "optional": "si lazima",
+    "required": "lazima",
+    "unread": "hazijasomwa",
+    "all": "Zote",
+    "none": "Hakuna",
+    "range": "Kiwango",
+    "uncertainty": "Kutokuwa na uhakika",
+    "pendingValidation": "Inasubiri uthibitisho wa wataalamu wa ndani",
+    "validated": "Imethibitishwa"
+  },
+  "errors": {
+    "network": "Hatuwezi kufikia seva. Angalia mtandao wako.",
+    "forbidden": "Huna ruhusa ya kuona hili.",
+    "notFound": "Haikupatikana.",
+    "generic": "Kuna hitilafu. Tafadhali jaribu tena.",
+    "invalidValue": "thamani si sahihi",
+    "title": "Kuna hitilafu",
+    "codes": {
+      "VALIDATION_ERROR": "Baadhi ya taarifa ulizoweka si sahihi.",
+      "UNAUTHORIZED": "Tafadhali ingia ili kuendelea.",
+      "INVALID_CREDENTIALS": "Namba ya simu/barua pepe au nenosiri si sahihi.",
+      "ACCOUNT_DISABLED": "Akaunti hii imezimwa. Wasiliana na ushirika wako.",
+      "FORBIDDEN": "Huna ruhusa ya kufanya hivi.",
+      "NOT_FOUND": "Hatukupata ulichotafuta.",
+      "CONFLICT": "Hiki tayari kipo au kimebadilishwa na mtu mwingine.",
+      "RATE_LIMITED": "Majaribio mengi mno. Subiri kidogo kisha jaribu tena.",
+      "DATABASE_UNAVAILABLE": "Huduma haipatikani kwa sasa. Jaribu tena baadaye kidogo.",
+      "INTERNAL_ERROR": "Kuna hitilafu upande wetu. Tafadhali jaribu tena.",
+      "NETWORK_ERROR": "Hatuwezi kufikia seva. Angalia mtandao wako.",
+      "UPLOAD_ERROR": "Faili haikupakiwa. Tafadhali jaribu tena.",
+      "PAYLOAD_TOO_LARGE": "Faili au taarifa ni kubwa mno.",
+      "NOT_CONFIGURED": "Huduma hii bado haijawekwa.",
+      "PROVIDER_ERROR": "Huduma ya nje haikujibu. Tafadhali jaribu tena baadaye."
+    }
+  },
+  "demoNotice": "Hali ya demo: mashamba, wakulima na taarifa za mazingira ni za mfano (demo), si vipimo halisi.",
+  "farmer": {
+    "switcher": {
+      "label": "Chagua shamba"
+    },
+    "noFarm": {
+      "title": "Bado huna shamba",
+      "message": "Ongeza shamba lako la mwani ili uone hatari na ushauri.",
+      "cta": "Ongeza shamba langu"
+    },
+    "alerts": {
+      "none": "Hakuna tahadhari kwa shamba hili sasa."
+    },
+    "riskTiles": {
+      "up": "Imepanda",
+      "down": "Imeshuka",
+      "was": "Ilikuwa: {level}"
+    },
+    "action": {
+      "didIt": "Nimefanya hatua hii",
+      "couldNot": "Sikuweza kufanya",
+      "recordedDone": "Imehifadhiwa: umefanya hatua hii.",
+      "recordedNotDone": "Imehifadhiwa: hukuweza kufanya hatua hii.",
+      "outcomePrompt": "Baada ya siku chache, tuambie kilichotokea shambani. Hii inasaidia kuboresha ushauri.",
+      "recordOutcomeLink": "Rekodi matokeo",
+      "later": "Baadaye"
+    },
+    "dashboard": {
+      "greeting": "Habari, {name}",
+      "subtitle": "Jua hatari. Jua hatua inayofuata.",
+      "daysToHarvest": "Siku hadi mavuno",
+      "harvestNow": "Tayari sasa",
+      "noCycle": "Hakuna upandaji unaoendelea kwenye shamba hili.",
+      "currentRisks": "Hatari za sasa",
+      "nextAction": "Hatua inayofuata",
+      "model": "Modeli",
+      "calculated": "Imekokotolewa {time}",
+      "recalculated": "Hatari imekokotolewa upya.",
+      "environment": "Hali ya bahari na hewa sasa",
+      "alerts": "Tahadhari za shamba hili"
+    },
+    "risk": {
+      "title": "Hatari za shamba",
+      "subtitle": "Hatari zote nne, sababu zake, na nini cha kufanya.",
+      "recommendation": "Ushauri ulioidhinishwa",
+      "dueBy": "Fanya kabla ya {time}",
+      "noPredictions": "Bado hakuna utabiri wa hatari.",
+      "historyTitle": "Hatari kwa siku 30 zilizopita",
+      "historySubtitle": "Uwezekano (%) wa kila hatari. Mistari ya vistari inaonyesha viwango vya kati, kubwa na muhimu.",
+      "noHistory": "Bado hakuna historia ya hatari.",
+      "chartAria": "Chati ya mistari ya uwezekano wa hatari kwa siku 30 zilizopita kwa kila aina ya hatari"
+    },
+    "obs": {
+      "title": "Ripoti hali ya shamba",
+      "subtitle": "Jibu maswali machache. Ripoti yako inasasisha hatari mara moja.",
+      "tabNew": "Ripoti mpya",
+      "tabPast": "Ripoti za zamani",
+      "stepOf": "Hatua {n} kati ya {total}",
+      "q": {
+        "condition": "Mwani uko hali gani?",
+        "whitening": "Unaona mwani mweupe?",
+        "breakage": "Mwani au kamba zinakatika?",
+        "unusualGrowth": "Ukuaji si wa kawaida?",
+        "details": "Maelezo zaidi",
+        "photo": "Ongeza picha",
+        "review": "Hakiki na tuma"
+      },
+      "hint": {
+        "whitening": "Ncha nyeupe au zilizofifia zinaweza kuwa dalili ya ice-ice.",
+        "breakage": "Matawi, kamba au mistari iliyokatika.",
+        "unusualGrowth": "Ukuaji wa polepole sana, laini au wa ajabu.",
+        "details": "Si lazima. Ruka kama huna uhakika.",
+        "photo": "Si lazima. Picha nzuri inamsaidia afisa ugani."
+      },
+      "moreDetails": "Ongeza maelezo zaidi",
+      "skip": "Ruka",
+      "f": {
+        "epiphytes": "Mimea mingine inaota juu ya mwani (epiphytes)?",
+        "disease": "Dalili nyingine za ugonjwa?",
+        "percent": "Kiasi gani cha mwani kimeathirika?",
+        "percentUnset": "Haijawekwa — sogeza kitelezi kuiweka.",
+        "water": "Maji yanaonekanaje?",
+        "line": "Hali ya kamba",
+        "anchor": "Hali ya nanga / vigingi",
+        "confidence": "Una uhakika kiasi gani?"
+      },
+      "addPhoto": "Piga au chagua picha",
+      "changePhoto": "Badilisha picha",
+      "removePhoto": "Ondoa",
+      "photoRules": "JPEG, PNG au WebP, hadi MB 5",
+      "photoType": "Picha za JPEG, PNG au WebP pekee zinaruhusiwa.",
+      "photoSize": "Picha ni kubwa mno. Mwisho ni MB 5.",
+      "photoAlt": "Picha ya shamba la mwani",
+      "r": {
+        "condition": "Hali ya mwani",
+        "whitening": "Mwani mweupe",
+        "breakage": "Kukatika",
+        "unusualGrowth": "Ukuaji usio wa kawaida",
+        "photo": "Picha"
+      },
+      "needCondition": "Tafadhali jibu swali la kwanza.",
+      "submit": "Tuma ripoti",
+      "sending": "Inatuma…",
+      "success": "Ripoti imepokelewa",
+      "successSub": "Asante. Hatari imekokotolewa upya kwa ripoti yako.",
+      "updatedRisk": "Hatari mpya",
+      "levelChanged": "{type}: imebadilika kutoka {from} hadi {to}.",
+      "noLevelChange": "Hakuna kiwango cha hatari kilichobadilika baada ya ripoti yako.",
+      "newAlerts": "Tahadhari mpya",
+      "done": "Maliza",
+      "another": "Ripoti nyingine",
+      "noPast": "Bado hakuna ripoti.",
+      "noSigns": "Hakuna tatizo lililoripotiwa",
+      "affected": "{n}% imeathirika",
+      "reviewer": "Mkaguzi",
+      "sign": {
+        "whitening": "Mwani mweupe",
+        "breakage": "Kukatika",
+        "unusualGrowth": "Ukuaji usio wa kawaida",
+        "epiphytes": "Mimea inayoota juu ya mwani",
+        "disease": "Dalili za ugonjwa"
+      }
+    },
+    "harvest": {
+      "title": "Mavuno na hasara",
+      "subtitle": "Rekodi ulichovuna au ulichopoteza. Hii inaboresha makadirio yajayo.",
+      "forecastTitle": "Makadirio ya mavuno",
+      "forecastSub": "Makadirio ya mfumo kwa mwani wa sasa",
+      "estimate": "Makadirio",
+      "expectedKg": "Yanayotarajiwa (baada ya hatari)",
+      "range": "Kiwango: kg {low}–{high}",
+      "forecastNote": "Haya ni makadirio yenye kutokuwa na uhakika, si ahadi.",
+      "noForecast": "Bado hakuna makadirio. Rekodi upandaji kupata makadirio.",
+      "tabHarvest": "Rekodi mavuno",
+      "tabLoss": "Rekodi hasara",
+      "f": {
+        "date": "Tarehe ya mavuno",
+        "unit": "Kipimo",
+        "actual": "Kiasi halisi (kg)",
+        "estimated": "Makadirio yako (kg)",
+        "estimatedHint": "Ukiacha wazi, mfumo utatumia makadirio yake.",
+        "grade": "Daraja la ubora",
+        "buyer": "Mnunuzi",
+        "price": "Bei kwa kg (TZS)",
+        "moisture": "Unyevu (%)",
+        "drying": "Njia ya kukausha",
+        "dryDays": "Siku za kukausha",
+        "groundContact": "Mwani uligusa ardhi",
+        "rain": "Mvua wakati wa kukausha",
+        "closeCycle": "Hii inamaliza upandaji wa sasa",
+        "lossDate": "Tarehe ya hasara",
+        "cause": "Sababu",
+        "percentLost": "Asilimia iliyopotea (%)",
+        "quantityKg": "Kiasi kilichopotea (kg)"
+      },
+      "noCycle": "Hakuna upandaji unaoendelea — mavuno yatahifadhiwa bila mzunguko.",
+      "save": "Hifadhi mavuno",
+      "saved": "Mavuno yamehifadhiwa",
+      "m": {
+        "expected": "Yaliyotarajiwa",
+        "actual": "Halisi",
+        "difference": "Tofauti",
+        "loss": "Hasara",
+        "value": "Thamani yote",
+        "noEstimate": "Hakuna makadirio"
+      },
+      "lossIntro": "Rekodi mwani uliopotea kwa ugonjwa, dhoruba, kuliwa na samaki au wizi.",
+      "bigLossWarn": "Hasara ya 90% au zaidi itaweka upandaji wa sasa kuwa umeshindwa.",
+      "saveLoss": "Hifadhi hasara",
+      "lossSaved": "Hasara imehifadhiwa",
+      "pastHarvests": "Mavuno ya zamani",
+      "pastLosses": "Hasara za zamani",
+      "noHarvests": "Bado hakuna mavuno yaliyorekodiwa.",
+      "noLosses": "Hakuna hasara iliyorekodiwa.",
+      "lostPct": "{n}% imepotea"
+    },
+    "history": {
+      "title": "Historia ya shamba",
+      "subtitle": "Kila kilichotokea shambani kwako.",
+      "timeline": "Mfuatano wa matukio",
+      "noEvents": "Bado hakuna kilichorekodiwa.",
+      "showMore": "Onyesha zaidi ({n})",
+      "feedback": "Ushauri → hatua → matokeo",
+      "feedbackWhy": "Ukirekodi kilichotokea baada ya hatua, mfumo unajifunza na utabiri ujao unakuwa bora.",
+      "actionsTitle": "Hatua zako",
+      "noActions": "Bado hakuna hatua zilizorekodiwa.",
+      "allOutcomes": "Hatua zako zote zina matokeo. Asante!",
+      "recordOutcome": "Rekodi kilichotokea",
+      "whatHappened": "Nini kilitokea shambani?",
+      "lossPercent": "Asilimia iliyopotea (%)",
+      "outcomeSaved": "Matokeo yamehifadhiwa. Asante!",
+      "outcomesTitle": "Matokeo yaliyorekodiwa",
+      "noOutcomes": "Bado hakuna matokeo yaliyorekodiwa.",
+      "predicted": "Utabiri",
+      "noLinkedPrediction": "Haijaunganishwa na utabiri",
+      "recsTitle": "Ushauri wa hivi karibuni",
+      "noRecs": "Bado hakuna ushauri.",
+      "ev": {
+        "observation": "Ripoti: mwani {cond}",
+        "harvest": "Mavuno: {qty}",
+        "lossPct": "hasara {n}%",
+        "loss": "Hasara: {cause}",
+        "actionDone": "Hatua imefanyika",
+        "actionNotDone": "Hatua haikufanyika",
+        "outcome": "Matokeo: {type}",
+        "planting": "Upandaji: mistari {n}",
+        "prediction": "{type}: {level} ({p})"
+      }
+    },
+    "assistant": {
+      "title": "Msaidizi wa shamba",
+      "subtitle": "Uliza kuhusu shamba lako. Majibu yanatoka kwenye kumbukumbu za shamba lako na ushauri ulioidhinishwa.",
+      "helperName": "Msaidizi wa shamba wa MwaniMlinzi",
+      "grounded": "Anatumia kumbukumbu za {farm}",
+      "intro": "Niulize kwa nini hatari yako iko juu, nifanye nini, lini uvune, au hali ya bahari. Unaweza pia kuniambia unachokiona shambani.",
+      "clear": "Futa mazungumzo",
+      "thinking": "Naangalia kumbukumbu za shamba lako…",
+      "suggested": "Jaribu kuuliza",
+      "q": {
+        "why": "Kwa nini hatari yangu iko juu?",
+        "todo": "Nifanye nini?",
+        "harvest": "Lini nivune?",
+        "sea": "Hali ya bahari ikoje?",
+        "white": "Naona mwani mweupe",
+        "medicine": "Nitumie dawa gani?"
+      },
+      "inputLabel": "Swali lako",
+      "placeholder": "Andika swali lako…",
+      "send": "Tuma",
+      "approvedAction": "Hatua iliyoidhinishwa",
+      "source": "Chanzo",
+      "draftTitle": "Ripoti ya kurekodi",
+      "confirmRecord": "Thibitisha na rekodi",
+      "fromRecords": "Jibu kutoka kumbukumbu za shamba lako ({farm})",
+      "noFarmRecords": "Hakuna kumbukumbu za shamba zilizotumika",
+      "gen": {
+        "template": "Jibu la kiolezo",
+        "safety": "Sera ya usalama",
+        "llm": "Limepangwa upya na AI ({name})"
+      },
+      "footer": "Msaidizi anatumia taarifa za shamba lako na ushauri ulioidhinishwa pekee. Hatoi ushauri wa dawa au kemikali — kwa hilo, wasiliana na afisa ugani."
+    },
+    "farm": {
+      "title": "Shamba langu",
+      "firstTitle": "Ongeza shamba lako",
+      "firstSubtitle": "Tuambie kuhusu shamba lako la mwani ili upate tahadhari na ushauri.",
+      "addFarm": "Ongeza shamba",
+      "editTitle": "Hariri shamba",
+      "create": "Hifadhi shamba",
+      "updated": "Shamba limesasishwa.",
+      "choose": "Chagua…",
+      "location": "Mahali",
+      "coords": "Majiranukta",
+      "useLocation": "Tumia mahali nilipo",
+      "geoOk": "Mahali pameongezwa.",
+      "geoDenied": "Ruhusa ya mahali imekataliwa. Tafadhali andika majiranukta.",
+      "geoFailed": "Imeshindwa kupata mahali ulipo. Tafadhali andika majiranukta.",
+      "geoUnsupported": "Kifaa hiki hakiwezi kutoa mahali. Tafadhali andika majiranukta.",
+      "plantingOptional": "Upandaji (si lazima)",
+      "map": "Mahali pa shamba",
+      "demoLocation": "mahali pa demo",
+      "currentCycle": "Upandaji wa sasa",
+      "cycleActive": "Upandaji huu unaendelea. Ili kuanza mpya, kwanza rekodi mavuno.",
+      "recordPlanting": "Rekodi upandaji",
+      "noCycle": "Hakuna upandaji unaoendelea. Anza mpya.",
+      "expectedHint": "Ukiacha wazi, mfumo utatumia muda wa kawaida wa mwani huu.",
+      "plantingSaved": "Upandaji umerekodiwa.",
+      "pastCycles": "Upandaji wa zamani",
+      "noPastCycles": "Hakuna upandaji wa zamani.",
+      "linesN": "Mistari {n}",
+      "f": {
+        "code": "Namba ya shamba",
+        "name": "Jina la shamba",
+        "species": "Aina ya mwani",
+        "method": "Njia ya kilimo",
+        "exposure": "Kukabiliwa na mawimbi",
+        "anchoring": "Njia ya kufunga",
+        "cooperative": "Ushirika",
+        "area": "Eneo (hekta)",
+        "lines": "Idadi ya mistari",
+        "locationName": "Jina la mahali",
+        "region": "Mkoa",
+        "lat": "Latitudo",
+        "lng": "Longitudo",
+        "linesPlanted": "Mistari iliyopandwa",
+        "seedKg": "Kiasi cha mbegu (kg)"
+      }
+    },
+    "enums": {
+      "cropCondition": {
+        "GOOD": "Nzuri",
+        "FAIR": "Wastani",
+        "POOR": "Mbaya"
+      },
+      "gear": {
+        "GOOD": "Nzuri",
+        "LOOSE": "Imelegea",
+        "BROKEN": "Imekatika",
+        "MISSING": "Haipo"
+      },
+      "water": {
+        "CLEAR": "Safi",
+        "TURBID": "Tope",
+        "DISCOLORED": "Rangi imebadilika"
+      },
+      "confidence": {
+        "LOW": "Sina uhakika",
+        "MEDIUM": "Uhakika kiasi",
+        "HIGH": "Uhakika kamili"
+      },
+      "reviewStatus": {
+        "PENDING": "Inasubiri ukaguzi",
+        "REVIEWED": "Imekaguliwa",
+        "FLAGGED": "Imewekwa alama"
+      },
+      "recStatus": {
+        "PENDING": "Mpya",
+        "ACKNOWLEDGED": "Imeonekana",
+        "COMPLETED": "Imefanyika",
+        "DISMISSED": "Haikufanyika",
+        "SUPERSEDED": "Imebadilishwa"
+      },
+      "method": {
+        "OFF_BOTTOM": "Vigingi (off-bottom)",
+        "LONG_LINE": "Kamba ndefu",
+        "RAFT": "Chelezo",
+        "FLOATING_LINE": "Kamba zinazoelea"
+      },
+      "exposure": {
+        "SHELTERED": "Pamejikinga",
+        "MODERATE": "Wastani",
+        "EXPOSED": "Wazi kwa mawimbi"
+      },
+      "anchoring": {
+        "WOODEN_STAKES": "Vigingi vya mbao",
+        "CONCRETE_BLOCKS": "Matofali ya saruji",
+        "SAND_BAGS": "Mifuko ya mchanga",
+        "ROCKS": "Mawe"
+      },
+      "farmStatus": {
+        "ACTIVE": "Linatumika",
+        "FALLOW": "Linapumzika",
+        "INACTIVE": "Halitumiki"
+      },
+      "cycleStatus": {
+        "ACTIVE": "Unaendelea",
+        "HARVESTED": "Umevunwa",
+        "FAILED": "Umeshindwa"
+      },
+      "unit": {
+        "KG_DRY": "kg (kavu)",
+        "KG_WET": "kg (mbichi)"
+      },
+      "unitShort": {
+        "KG_DRY": "kavu",
+        "KG_WET": "mbichi"
+      },
+      "grade": {
+        "A": "Daraja A",
+        "B": "Daraja B",
+        "C": "Daraja C",
+        "REJECT": "Imekataliwa"
+      },
+      "drying": {
+        "RACK": "Kichanja",
+        "TARPAULIN": "Turubai",
+        "ROPE_HANGING": "Kuning'iniza kwenye kamba",
+        "GROUND": "Ardhini"
+      },
+      "cause": {
+        "ICE_ICE": "Ugonjwa wa ice-ice",
+        "STORM": "Dhoruba",
+        "EPIPHYTES": "Mimea inayoota juu ya mwani",
+        "GRAZING": "Kuliwa na samaki",
+        "THEFT": "Wizi",
+        "POOR_GROWTH": "Ukuaji hafifu",
+        "OTHER": "Nyingine"
+      },
+      "outcome": {
+        "NO_LOSS": "Hakuna hasara",
+        "MINOR_LOSS": "Hasara ndogo",
+        "MAJOR_LOSS": "Hasara kubwa",
+        "TOTAL_LOSS": "Nimepoteza yote",
+        "HARVESTED": "Nimevuna"
+      },
+      "event": {
+        "OBSERVATION": "Ripoti",
+        "HARVEST": "Mavuno",
+        "LOSS": "Hasara",
+        "ACTION": "Hatua",
+        "OUTCOME": "Matokeo",
+        "ALERT": "Tahadhari",
+        "PLANTING": "Upandaji",
+        "PREDICTION": "Hatari"
+      }
+    }
+  },
+  "coop": {
+    "regenerate": "Tengeneza utabiri upya",
+    "forecastsRegenerated": "Utabiri {n} wa mavuno umetengenezwa upya kutoka kwa utabiri wa hatari wa karibuni.",
+    "dashboard": {
+      "title": "Dashibodi ya kikundi",
+      "subtitle": "Wanachama hai {members} · wilaya ya {district}",
+      "map": "Mashamba ya kikundi",
+      "openMap": "Fungua ramani kamili",
+      "highRisk": "Mashamba yenye hatari kubwa",
+      "highRiskSub": "Hatari JUU au MUHIMU — wasiliana na wakulima hawa kwanza",
+      "recentAlerts": "Tahadhari za karibuni",
+      "allAlerts": "Tahadhari zote"
+    },
+    "perf": {
+      "title": "Utendaji wa mashamba",
+      "subtitle": "Mashamba 10 bora kwa mavuno yaliyorekodiwa (mwani mkavu)",
+      "harvests": "Mavuno",
+      "totalKg": "Jumla",
+      "avgKg": "Wastani / mavuno",
+      "avgLoss": "Wastani wa hasara",
+      "empty": "Bado hakuna mavuno yaliyorekodiwa"
+    },
+    "outcomes": {
+      "title": "Matokeo ya karibuni",
+      "subtitle": "Kilichotokea baada ya tahadhari na hatua",
+      "risk": "Hatari iliyotabiriwa",
+      "result": "Matokeo",
+      "loss": "Hasara",
+      "materialized": "Hatari ilitokea?",
+      "empty": "Bado hakuna matokeo yaliyorekodiwa"
+    },
+    "farms": {
+      "title": "Mashamba ya kikundi",
+      "subtitle": "Tafuta na chuja mashamba ya wanachama; bonyeza mstari kufungua shamba"
+    },
+    "map": {
+      "title": "Ramani ya hatari za mashamba",
+      "subtitle": "Hatari iko wapi — chuja kwa kiwango au weka rangi kwa aina ya hatari"
+    },
+    "forecast": {
+      "title": "Utabiri wa mavuno",
+      "subtitle": "Mavuno yanayotarajiwa baada ya hatari kwa mashamba ya wanachama",
+      "window": "Kipindi cha mavuno",
+      "allUpcoming": "Utabiri wote wa sasa",
+      "nextDays": "Siku {n} zijazo",
+      "byDistrict": "Kwa wilaya",
+      "perFarm": "Utabiri kwa kila shamba",
+      "perFarmSub": "Mashamba {n} yenye utabiri wa sasa",
+      "expectedDate": "Tarehe inayotarajiwa",
+      "expectedKg": "kg zinazotarajiwa",
+      "riskAdjustedKg": "kg baada ya hatari",
+      "rangeKg": "Kiwango (kg)",
+      "grade": "Daraja",
+      "yieldSource": "Msingi wa mavuno",
+      "yield": {
+        "FARM_HISTORY": "Historia ya mavuno ya shamba",
+        "SPECIES_DEFAULT": "Wastani wa aina (hakuna historia)"
+      },
+      "lossFraction": "Hasara inayotarajiwa {pct}",
+      "overdue": "Imepita tarehe",
+      "unitNote": "Kipimo: {unit}.",
+      "emptyHint": "Shamba linahitaji msimu wa kupanda unaoendelea ili kupata utabiri. Jaribu \"Tengeneza utabiri upya\"."
+    },
+    "alerts": {
+      "title": "Tahadhari",
+      "subtitle": "Tahadhari za hatari kwa mashamba ya wanachama — thibitisha ukiziona, maliza ukishazishughulikia",
+      "open": "Wazi (hai + zimeonekana)",
+      "severity": "Uzito",
+      "type": "Aina ya tahadhari",
+      "includeSimulations": "Onyesha za majaribio",
+      "simulationNote": "Tahadhari za majaribio zinatoka kwenye majaribio ya \"je, ikiwa\". Zimewekwa alama na si tahadhari halisi.",
+      "count": "Tahadhari {n}",
+      "emptyHint": "Badilisha vichujio kuona tahadhari za zamani au zilizomalizwa."
+    }
+  },
+  "extension": {
+    "shared": {
+      "stats": {
+        "totalFarmers": "Wakulima wote",
+        "activeFarms": "Mashamba hai",
+        "highRiskFarms": "Mashamba yenye hatari kubwa",
+        "criticalAlerts": "Tahadhari muhimu",
+        "activeAlertsSub": "Tahadhari {n} hai kwa jumla",
+        "expectedHarvest30": "Mavuno yanayotarajiwa (siku 30)",
+        "rangeKg": "Kiwango: kg {low}–{high} (baada ya hatari)",
+        "missingReports": "Ripoti zinazokosekana",
+        "missingReportsSub": "Mashamba hai bila ripoti ya karibuni"
+      },
+      "charts": {
+        "riskDistribution": "Mashamba kwa kiwango cha hatari",
+        "riskDistributionSub": "Utabiri wa mwisho kwa kila shamba (bila dirisha la mavuno)",
+        "byType": "Kiwango cha hatari kwa aina",
+        "byTypeSub": "Idadi ya mashamba katika kila kiwango",
+        "harvestByWeek": "Utabiri wa mavuno kwa wiki",
+        "harvestByWeekSub": "Nguzo: kiasi baada ya hatari · mistari: kiwango cha chini–juu · mstari wa vipande: kabla ya hatari",
+        "activity": "Shughuli za mashamba (siku 30)",
+        "activitySub": "Ripoti za shambani na hatua za wakulima kwa siku",
+        "observationsSeries": "Ripoti",
+        "actionsSeries": "Hatua za wakulima",
+        "losses": "Hasara kwa sababu (miezi 6)",
+        "lossesSub": "Matukio ya hasara, kg zilizopotea",
+        "kgLost": "kg zilizopotea",
+        "lossDetail": "matukio {events} · wastani {pct}% imepotea",
+        "noLosses": "Hakuna hasara iliyorekodiwa",
+        "alertsByType": "Tahadhari kwa aina (siku 30)",
+        "alertsByTypeSub": "Tahadhari za majaribio hazihesabiwi",
+        "count": "Tahadhari",
+        "symptoms": "Dalili zilizoripotiwa (siku 30)",
+        "symptomsSub": "Kati ya ripoti {n} za shambani",
+        "reports": "Ripoti",
+        "farms": "Mashamba",
+        "riskAdjusted": "Baada ya hatari",
+        "riskAdjustedRange": "Baada ya hatari (na kiwango)",
+        "expected": "Kabla ya hatari",
+        "weekOf": "Wiki ya {date}"
+      },
+      "units": {
+        "tonnes": "tani"
+      },
+      "short": {
+        "HEAT": "JOTO",
+        "STORM": "DHORUBA",
+        "GROWTH": "UKUAJI",
+        "HARVEST": "MAVUNO"
+      },
+      "table": {
+        "code": "Namba",
+        "name": "Shamba",
+        "overallRisk": "Hatari kwa jumla",
+        "riskByType": "Hatari kwa aina",
+        "lastObservation": "Ripoti ya mwisho"
+      },
+      "filters": {
+        "searchPlaceholder": "Tafuta kwa jina au namba ya shamba…",
+        "riskLevel": "Kiwango cha hatari",
+        "allLevels": "Viwango vyote",
+        "allStatuses": "Hali zote",
+        "allCooperatives": "Vikundi vyote",
+        "colorBy": "Rangi za alama kwa",
+        "overall": "Hatari kwa jumla"
+      },
+      "map": {
+        "listTitle": "Mashamba (hatari kubwa kwanza)",
+        "coloredBy": "Rangi za alama: {what}"
+      },
+      "alerts": {
+        "empty": "Hakuna tahadhari"
+      },
+      "farmStatus": {
+        "ACTIVE": "Hai",
+        "FALLOW": "Limepumzika",
+        "INACTIVE": "Halitumiki"
+      },
+      "alertType": {
+        "HEAT_HIGH": "Joto — juu",
+        "HEAT_CRITICAL": "Joto — muhimu",
+        "STORM_HIGH": "Dhoruba — juu",
+        "STORM_CRITICAL": "Dhoruba — muhimu",
+        "POOR_GROWTH": "Ukuaji duni",
+        "HARVEST_WINDOW": "Wakati wa kuvuna",
+        "MISSING_REPORT": "Ripoti inakosekana",
+        "RISK_CHANGE": "Mabadiliko ya hatari"
+      },
+      "alertStatus": {
+        "ACTIVE": "Hai",
+        "ACKNOWLEDGED": "Imeonekana",
+        "RESOLVED": "Imeshughulikiwa"
+      },
+      "lossCause": {
+        "ICE_ICE": "Ice-ice",
+        "STORM": "Dhoruba",
+        "EPIPHYTES": "Mwani vimelea",
+        "GRAZING": "Kuliwa na samaki",
+        "THEFT": "Wizi",
+        "POOR_GROWTH": "Ukuaji duni",
+        "OTHER": "Nyingine"
+      },
+      "outcomeType": {
+        "NO_LOSS": "Hakuna hasara",
+        "MINOR_LOSS": "Hasara ndogo",
+        "MAJOR_LOSS": "Hasara kubwa",
+        "TOTAL_LOSS": "Hasara yote",
+        "HARVESTED": "Imevunwa"
+      },
+      "recStatus": {
+        "PENDING": "Inasubiri",
+        "ACKNOWLEDGED": "Imeonekana",
+        "COMPLETED": "Imefanyika",
+        "DISMISSED": "Imekataliwa",
+        "SUPERSEDED": "Imebadilishwa"
+      },
+      "reviewStatus": {
+        "PENDING": "Inasubiri kukaguliwa",
+        "REVIEWED": "Imekaguliwa",
+        "FLAGGED": "Imewekewa alama"
+      },
+      "diseaseType": {
+        "ICE_ICE": "Ice-ice",
+        "EPIPHYTES": "Mwani vimelea",
+        "GRAZING": "Kuliwa na samaki",
+        "OTHER": "Nyingine"
+      },
+      "cropCondition": {
+        "GOOD": "Hali nzuri",
+        "FAIR": "Hali ya wastani",
+        "POOR": "Hali mbaya"
+      },
+      "cropStage": {
+        "ANY": "Hatua yoyote",
+        "EARLY": "Mwanzo",
+        "GROWING": "Inakua",
+        "MATURING": "Inakomaa",
+        "HARVEST_READY": "Tayari kuvunwa"
+      },
+      "symptom": {
+        "whitening": "Kubadilika kuwa mweupe",
+        "breakage": "Kukatika",
+        "epiphytes": "Mwani vimelea",
+        "diseaseSymptoms": "Dalili za ugonjwa",
+        "unusualGrowth": "Ukuaji usio wa kawaida",
+        "poorCondition": "Hali mbaya"
+      },
+      "feedbackType": {
+        "FLAGGED": "Inahitaji kukaguliwa",
+        "FALSE_POSITIVE": "Hatari ilikadiriwa kuwa kubwa kuliko ilivyo",
+        "FALSE_NEGATIVE": "Hatari ilikadiriwa kuwa ndogo kuliko ilivyo",
+        "CORRECT": "Utabiri unaonekana sahihi"
+      },
+      "flag": {
+        "button": "Weka alama kwenye utabiri",
+        "again": "Ongeza maoni juu ya utabiri",
+        "title": "Maoni kuhusu utabiri huu",
+        "help": "Maoni yako yanahifadhiwa pamoja na utabiri na yanatumika kufuatilia na kuboresha modeli. Hayabadilishi ujumbe aliopewa mkulima.",
+        "type": "Aina ya maoni",
+        "reason": "Sababu",
+        "reasonPlaceholder": "Uliona nini shambani?",
+        "submit": "Tuma maoni",
+        "done": "Maoni ya utabiri yamehifadhiwa."
+      },
+      "note": "Maelezo",
+      "noteRequired": "Tafadhali andika maelezo mafupi.",
+      "percentAffected": "{n}% imeathirika",
+      "noSymptoms": "Hakuna dalili",
+      "independent": "Huru",
+      "farmsCount": "Mashamba {n}",
+      "farmsN": "Mashamba {n}",
+      "noFarms": "Hakuna mashamba",
+      "noFarmsFiltered": "Jaribu kuondoa utafutaji au vichujio.",
+      "noForecasts": "Bado hakuna utabiri wa mavuno",
+      "noHighRisk": "Hakuna shamba lenye hatari kubwa sasa",
+      "noMissingReports": "Mashamba yote hai yana ripoti za karibuni.",
+      "missingTitle": "Mashamba yasiyo na ripoti",
+      "never": "hakuna",
+      "horizon": "Siku {n} zijazo",
+      "beforeRisk": "Kabla ya hatari: {v}",
+      "uncertainty": "Utabiri ni makadirio yenye kiwango cha kutokuwa na uhakika, si ahadi.",
+      "viewPhoto": "Tazama picha",
+      "imageError": "Picha haikupakia"
+    },
+    "dashboard": {
+      "title": "Dashibodi ya afisa ugani",
+      "subtitle": "Mashamba yote ({n}) — wapi pa kwenda na nini cha kukagua",
+      "pendingObs": "Ripoti za kukagua",
+      "openReviews": "Fungua orodha ya ukaguzi",
+      "showingLatest": "Zinaonyeshwa {n} za mwisho",
+      "pendingRecs": "Mapendekezo ya hatari kubwa ya kukagua",
+      "pendingRecsSub": "Hatua za JUU / MUHIMU ambazo bado hazijakaguliwa",
+      "map": "Ramani ya hatari",
+      "openMap": "Ramani kamili",
+      "visits": "Kipaumbele cha kutembelea mashamba",
+      "visitsSub": "Alama = uwezekano mkubwa wa hatari × 70 + ripoti zisizokaguliwa × 5 (hadi 3) + siku tangu ziara ÷ 2 (hadi siku 30)",
+      "score": "alama",
+      "scoreWhy": "Hatari kubwa {prob} · ripoti {reports} hazijakaguliwa · ziara ya mwisho: {visit}",
+      "noVisitYet": "hakuna ziara iliyorekodiwa",
+      "daysAgo": "siku {n} zilizopita",
+      "noVisits": "Hakuna mashamba hai ya kupanga",
+      "highRisk": "Mashamba yenye hatari kubwa",
+      "disease": "Ripoti za magonjwa za karibuni",
+      "diseaseSub": "Kutoka kwa wakulima na maafisa",
+      "noDisease": "Hakuna ripoti za magonjwa.",
+      "recentAlerts": "Tahadhari za karibuni"
+    },
+    "farms": {
+      "title": "Mashamba yote",
+      "subtitle": "Kila shamba na hatari yake, umri wa mwani na utabiri wa mavuno"
+    },
+    "riskMap": {
+      "title": "Ramani ya hatari",
+      "subtitle": "Chuja kwa kiwango, weka rangi kwa aina ya hatari, au angalia kikundi kimoja"
+    },
+    "reviews": {
+      "title": "Ukaguzi",
+      "subtitle": "Kagua ripoti za wakulima na mapendekezo ya hatari kubwa kabla hayajatumika",
+      "tabObservations": "Ripoti za shambani",
+      "tabRecommendations": "Mapendekezo",
+      "show": "Onyesha",
+      "noObservations": "Hakuna ripoti",
+      "noRecommendations": "Hakuna mapendekezo",
+      "reportedBy": "Imeripotiwa na {name}",
+      "photoOf": "Picha ya ripoti kutoka {farm}",
+      "reviewNote": "Maelezo ya ukaguzi",
+      "review": "Kagua",
+      "reReview": "Badilisha ukaguzi",
+      "reviewObservation": "Kagua ripoti",
+      "reviewObservationHelp": "Weka \"imekaguliwa\" kama ripoti ni sahihi, au weka alama kama inahitaji ufuatiliaji (kwa mfano kutembelea shamba).",
+      "reviewRecommendation": "Kagua pendekezo",
+      "reviewRecommendationHelp": "Kubali kama hatua inafaa hali ya shamba hili, au weka alama na ueleze sababu.",
+      "markReviewed": "Imekaguliwa",
+      "approve": "Kubali",
+      "flag": "Weka alama",
+      "reviewedOk": "Ukaguzi umehifadhiwa.",
+      "flaggedOk": "Imewekewa alama kwa ufuatiliaji.",
+      "recommendedAction": "Hatua inayopendekezwa"
+    },
+    "actions": {
+      "title": "Maktaba ya hatua",
+      "subtitle": "Hatua zilizoidhinishwa ambazo MwaniMlinzi inaweza kupendekeza, na hali ya uthibitisho",
+      "demoWarningTitle": "Kanuni za demo — bado hazijathibitishwa kwa mashamba halisi",
+      "demoWarning": "Hatua zilizowekwa ni kanuni za demo zinazohitaji uthibitisho wa wataalamu wa ndani kabla ya kutumika kwa mashamba halisi. Thibitisha hatua baada ya kuikagua na wataalamu wa mwani na miongozo ya ugani.",
+      "riskType": "Aina ya hatari",
+      "validation": "Uthibitisho",
+      "summary": "Hatua {total} · {validated} zimethibitishwa · kanuni {demo} za demo",
+      "empty": "Hakuna hatua zinazolingana na vichujio",
+      "andAbove": "na zaidi",
+      "withinHours": "ndani ya saa {n}",
+      "disabled": "Imezimwa",
+      "escalates": "Inapelekwa kwa afisa ugani",
+      "conditions": "Masharti",
+      "noConditions": "Hakuna (inatumika kiwango kikilingana)",
+      "source": "Chanzo",
+      "validatedBy": "na {name}, {date}",
+      "timesRecommended": "Imependekezwa mara {n}",
+      "validate": "Thibitisha",
+      "removeValidation": "Ondoa uthibitisho",
+      "validationNote": "Maelezo ya uthibitisho",
+      "validateHelp": "Hakikisha hatua hii imekaguliwa na wataalamu wa ndani. Jina lako na maelezo yanahifadhiwa kwenye kumbukumbu.",
+      "removeHelp": "Hatua itarudi kuwa \"inasubiri uthibitisho\". Eleza sababu kwenye maelezo.",
+      "validatedOk": "{code} imethibitishwa.",
+      "unvalidatedOk": "Uthibitisho wa {code} umeondolewa."
+    },
+    "farm": {
+      "back": "Rudi kwenye mashamba",
+      "sections": "Sehemu za shamba",
+      "tabs": {
+        "overview": "Muhtasari",
+        "risk": "Hatari",
+        "recommendations": "Mapendekezo",
+        "observations": "Ripoti",
+        "records": "Mavuno na matokeo",
+        "alerts": "Tahadhari",
+        "notes": "Maelezo ya ugani"
+      },
+      "demoFarmNote": "Hili ni shamba la demo: mahali, mkulima na taarifa za mazingira ni za mfano, si halisi.",
+      "profile": "Taarifa za shamba",
+      "species": "Aina ya mwani",
+      "method": "Njia ya kilimo",
+      "methods": {
+        "OFF_BOTTOM": "Juu ya sakafu",
+        "LONG_LINE": "Kamba ndefu",
+        "RAFT": "Chelezo",
+        "FLOATING_LINE": "Kamba zinazoelea"
+      },
+      "exposure": "Mawimbi",
+      "exposures": {
+        "SHELTERED": "Pamejikinga",
+        "MODERATE": "Wastani",
+        "EXPOSED": "Wazi"
+      },
+      "anchoring": "Kufunga",
+      "anchors": {
+        "WOODEN_STAKES": "Vigingi vya mbao",
+        "CONCRETE_BLOCKS": "Matofali ya saruji",
+        "SAND_BAGS": "Mifuko ya mchanga",
+        "ROCKS": "Mawe"
+      },
+      "lines": "Kamba",
+      "area": "Ukubwa",
+      "location": "Mahali",
+      "cycle": "Msimu wa sasa",
+      "daysUnit": "siku",
+      "daysToHarvest": "Hadi kuvuna",
+      "overdueBy": "Imechelewa siku {n}",
+      "linesPlanted": "Kamba zilizopandwa",
+      "noCycle": "Hakuna msimu wa kupanda unaoendelea.",
+      "forecast": "Utabiri wa mavuno (baada ya hatari)",
+      "environment": "Mazingira",
+      "noEnvironment": "Bado hakuna taarifa za mazingira",
+      "envHistory": "Vipimo {n} vya mwisho",
+      "sstAnomaly": "Joto la bahari juu ya kawaida (°C)",
+      "waveHeight": "Urefu wa mawimbi (m)",
+      "wind": "Kasi ya upepo (km/h)",
+      "map": "Mahali",
+      "noLocation": "Mahali hapajarekodiwa",
+      "allOnMap": "Ona mashamba yote kwenye ramani",
+      "recalculated": "Hatari imekokotolewa upya kwa taarifa mpya.",
+      "demoDataNote": "Utabiri huu unatumia taarifa za mazingira za demo, si vipimo halisi.",
+      "noPredictions": "Bado hakuna utabiri — bonyeza \"Kokotoa hatari upya\".",
+      "review": "Ukaguzi",
+      "farmerResponse": "Jibu la mkulima",
+      "didIt": "Amefanya",
+      "couldNot": "Hakuweza",
+      "dueBy": "Kabla ya",
+      "noRecommendations": "Bado hakuna mapendekezo",
+      "harvests": "Mavuno",
+      "losses": "Hasara",
+      "actual": "Halisi",
+      "estimated": "Makadirio",
+      "kgDry": "kg kavu",
+      "kgWet": "kg mbichi",
+      "price": "Bei / kg",
+      "cause": "Sababu",
+      "actionTaken": "Hatua iliyochukuliwa",
+      "noHarvests": "Hakuna mavuno yaliyorekodiwa.",
+      "noLosses": "Hakuna hasara iliyorekodiwa.",
+      "addNote": "Ongeza maelezo ya ugani",
+      "note": "Maelezo",
+      "notePlaceholder": "Uliona nini au ulishauri nini?",
+      "visitPriority": "Kipaumbele cha ziara",
+      "visitBy": "Tembelea kabla ya",
+      "visitByOn": "Tembelea kabla ya {date}",
+      "saveNote": "Hifadhi maelezo",
+      "noteSaved": "Maelezo yamehifadhiwa.",
+      "noNotes": "Bado hakuna maelezo ya ugani"
+    }
+  },
+  "buyer": {
+    "tonnes": "tani {v}",
+    "tonnesShort": "Tani",
+    "grade": "Daraja {g}",
+    "privacy": "Upatikanaji unaonyeshwa kwa kikundi na wilaya tu — wakulima binafsi hawatambuliwi.",
+    "noSupply": "Hakuna upatikanaji unaolingana",
+    "postDemand": "Weka mahitaji",
+    "byCooperative": "Upatikanaji kwa kikundi",
+    "byDistrict": "Upatikanaji kwa wilaya",
+    "demoNote": "Inajumuisha mashamba ya demo — takwimu za mfano, si mzigo halisi.",
+    "cards": {
+      "nextDays": "Siku {n} zijazo",
+      "range": "Kiwango: tani {low}–{high}",
+      "lots": "Mafungu {n} ya mavuno"
+    },
+    "uncertainty": {
+      "title": "Uhakika ni kiasi gani?",
+      "body": "Namba kuu ni makadirio baada ya hatari: mavuno yanayotarajiwa yamepunguzwa kwa hatari za joto, dhoruba na ukuaji. Kiwango kinaonyesha matokeo ya chini na ya juu yanayowezekana. Kiwango kipana kina maana historia ndogo ya shamba au utabiri usio na uhakika mkubwa. Haya ni makadirio, si ahadi ya mzigo."
+    },
+    "dashboard": {
+      "title": "Mtazamo wa upatikanaji",
+      "subtitle": "Mwani mkavu unaotarajiwa kutoka vikundi vya Zanzibar",
+      "viewSupply": "Tazama mafungu",
+      "weekly": "Upatikanaji kwa wiki (tani)",
+      "weeklySub": "Nguzo: baada ya hatari · mistari: kiwango cha chini–juu · vipande: kabla ya hatari",
+      "quality": "Historia ya ubora (miezi 12)",
+      "qualitySub": "Mavuno yaliyorekodiwa kwa daraja",
+      "qualityRow": "tani {t} kutoka mavuno {harvests} ({share})",
+      "noQuality": "Bado hakuna mavuno yenye daraja",
+      "demand": "Mahitaji yako dhidi ya upatikanaji",
+      "demandSub": "Upatikanaji unaotarajiwa kabla ya tarehe unayohitaji na unaofikia daraja lako",
+      "noDemand": "Bado hujaweka mahitaji",
+      "noDemandHint": "Weka mahitaji yako kwenye ukurasa wa Upatikanaji ili kulinganisha na utabiri."
+    },
+    "demand": {
+      "neededBy": "Inahitajika kabla ya",
+      "what": "Bidhaa",
+      "anySpecies": "Aina yoyote",
+      "anyGrade": "Daraja lolote",
+      "gradeMin": "angalau {g}",
+      "quantity": "Kinachohitajika",
+      "quantityKg": "Kiasi (kg)",
+      "pricePerKg": "Bei kwa kg (TZS)",
+      "minimumGrade": "Daraja la chini",
+      "forecastSupply": "Upatikanaji uliotabiriwa",
+      "coverage": "Ukamilishaji",
+      "likely": "Inatarajiwa kutosha",
+      "possible": "Inawezekana",
+      "short": "Huenda haitoshi",
+      "price": "Bei / kg",
+      "status": {
+        "OPEN": "Wazi",
+        "FULFILLED": "Imetimizwa",
+        "CANCELLED": "Imefutwa"
+      },
+      "coverageNote": "Ukamilishaji unalinganisha kiasi chako na mafungu yote yanayotarajiwa kabla ya tarehe hiyo na yanayofikia daraja lako. Wanunuzi wengine wanaweza kushindania mzigo huo huo.",
+      "formSub": "Waambie vikundi unachohitaji. Majina ya wakulima hayashirikiwi nawe.",
+      "posted": "Mahitaji yamewekwa.",
+      "onlyBuyers": "Akaunti za wanunuzi tu zinaweza kuweka mahitaji.",
+      "errQuantity": "Weka kiasi cha angalau kg 1.",
+      "errDate": "Chagua tarehe unayohitaji mwani.",
+      "errPrice": "Bei haiwezi kuwa hasi."
+    },
+    "filters": {
+      "grade": "Daraja linalotarajiwa",
+      "minKg": "Ukubwa wa chini wa fungu (kg)",
+      "window": "Kipindi",
+      "anyTime": "Wakati wowote",
+      "from": "Kuanzia",
+      "to": "Hadi",
+      "apply": "Tumia",
+      "reset": "Futa"
+    },
+    "forecast": {
+      "title": "Utabiri wa upatikanaji",
+      "subtitle": "Chuja upatikanaji kwa kikundi, wilaya, tarehe, ukubwa wa fungu na daraja",
+      "matching": "Mafungu {n} ya mavuno yanalingana na vichujio.",
+      "tryWider": "Jaribu kipindi kirefu zaidi au vichujio vichache."
+    },
+    "supply": {
+      "title": "Mafungu ya mavuno",
+      "subtitle": "Mafungu bila majina, baada ya hatari — bonyeza safu kupanga",
+      "tableCaption": "Mafungu ya upatikanaji yaliyotabiriwa",
+      "expectedDate": "Inatarajiwa",
+      "species": "Aina",
+      "riskAdjusted": "Baada ya hatari",
+      "grade": "Daraja",
+      "totals": "Jumla (mafungu {n})"
+    }
+  },
+  "admin": {
+    "common": {
+      "showing": "Inaonyesha {from}–{to} kati ya {total}",
+      "prev": "Iliyotangulia",
+      "next": "Inayofuata"
+    },
+    "feedback": {
+      "FALSE_POSITIVE": "Tahadhari isiyo sahihi",
+      "FALSE_NEGATIVE": "Hatari iliyokosa kutabiriwa",
+      "FLAGGED": "Imewekewa alama",
+      "CORRECT": "Sahihi"
+    },
+    "system": {
+      "title": "Mfumo",
+      "readOnly": "Kusoma tu — huwekwa kwenye backend/.env",
+      "weather": "Chanzo cha hali ya hewa",
+      "ocean": "Chanzo cha bahari",
+      "llm": "Mfumo wa lugha",
+      "live": "Hai",
+      "demo": "Demo / kuigwa",
+      "database": "Hifadhidata",
+      "demoMode": "Hali ya demo",
+      "demoModeOn": "Hali ya demo IMEWASHWA",
+      "demoModeOff": "Hali ya demo imezimwa",
+      "jobsEnabled": "Kazi za ratiba zimewashwa",
+      "envNote": "Siri na vitambulisho vya vyanzo viko kwenye backend/.env na havihifadhiwi kwenye hifadhidata."
+    },
+    "dashboard": {
+      "title": "Muhtasari wa mfumo",
+      "subtitle": "Matumizi, utabiri, mifumo, kazi na afya ya mfumo.",
+      "health": "Afya ya mfumo",
+      "users": "Watumiaji",
+      "farms": "Mashamba",
+      "activeFarms": "{n} yanayoendelea",
+      "predictions": "Utabiri",
+      "last24h": "{n} ndani ya saa 24",
+      "simulations": "Majaribio",
+      "alertsActive": "Tahadhari hai",
+      "actions": "Maktaba ya hatua",
+      "validated": "zimeidhinishwa na wataalamu",
+      "observations": "Ripoti za shamba",
+      "harvestsOutcomes": "Mavuno / matokeo",
+      "byLevel": "Utabiri kwa kiwango cha hatari",
+      "byLevelSub": "Utabiri halisi, siku 7 zilizopita (bila majaribio)",
+      "predictionsUnit": "utabiri",
+      "noPredictions": "Hakuna utabiri katika siku 7 zilizopita",
+      "byRole": "Watumiaji kwa jukumu",
+      "usersUnit": "watumiaji",
+      "models": "Mifumo ya hatari",
+      "activeModels": "Mifumo {n} ya ML inatumika",
+      "ruleOnly": "Hakuna mfumo wa ML unaotumika — mfumo wa kanuni unatumika.",
+      "feedback": "Maoni kuhusu utabiri",
+      "recentJobs": "Kazi zilizoendeshwa karibuni"
+    },
+    "jobs": {
+      "title": "Kazi za ratiba",
+      "subtitle": "Kazi za nyuma zinazosasisha data, hatari na makadirio.",
+      "schedulerOn": "Ratiba imewashwa",
+      "schedulerOff": "Ratiba imezimwa",
+      "schedulerOffNote": "Ratiba ya kiotomatiki imezimwa (ENABLE_JOBS kwenye backend/.env). Kazi zinaendeshwa tu zikianzishwa hapa.",
+      "cron": "Ratiba ya cron (UTC)",
+      "lastRun": "Mara ya mwisho",
+      "neverRun": "Haijawahi kuendeshwa",
+      "running": "Inaendeshwa…",
+      "wait": "Inaendesha {name} — inaweza kuchukua sekunde kadhaa…",
+      "result": "Matokeo ya {name}",
+      "noRuns": "Hakuna kazi iliyoendeshwa bado",
+      "job": "Kazi",
+      "trigger": "Kichocheo",
+      "started": "Ilianza",
+      "duration": "Muda",
+      "summary": "Muhtasari"
+    },
+    "users": {
+      "title": "Watumiaji na ruhusa",
+      "subtitle": "Simamia akaunti, majukumu na vyama vya ushirika.",
+      "tabUsers": "Watumiaji",
+      "tabRoles": "Majukumu na ruhusa",
+      "tabCoops": "Vyama vya ushirika",
+      "user": "Mtumiaji",
+      "role": "Jukumu",
+      "roles": "Majukumu",
+      "you": "Wewe",
+      "active": "Hai",
+      "disabled": "Imezimwa",
+      "lastLogin": "Aliingia mwisho",
+      "never": "Hajawahi",
+      "created": "Imeundwa",
+      "searchPlaceholder": "Jina au barua pepe",
+      "new": "Mtumiaji mpya",
+      "none": "Hakuna mtumiaji anayelingana",
+      "createTitle": "Unda mtumiaji",
+      "editTitle": "Hariri {name}",
+      "needRole": "Chagua angalau jukumu moja.",
+      "passwordShort": "Nenosiri liwe na angalau herufi 8.",
+      "passwordHint": "Angalau herufi 8. Mpe mtumiaji kwa njia salama.",
+      "coopHint": "Kwa msimamizi wa ushirika: chama anachosimamia. Kwa mkulima: uanachama wake.",
+      "rolesNote": "Huwezi kuondoa jukumu la msimamizi kwenye akaunti yako mwenyewe.",
+      "updated": "Mtumiaji amesasishwa.",
+      "createdMsg": "Mtumiaji ameundwa.",
+      "userCount": "watumiaji {n}"
+    },
+    "coops": {
+      "new": "Chama kipya",
+      "none": "Hakuna vyama bado",
+      "createTitle": "Unda chama",
+      "editTitle": "Hariri chama",
+      "code": "Msimbo",
+      "codeHint": "Herufi, tarakimu au vistari 2–20 (mf. PAJE). Wakulima wanautumia kujiunga.",
+      "name": "Jina",
+      "region": "Mkoa",
+      "description": "Maelezo",
+      "members": "Wanachama",
+      "saved": "Chama kimehifadhiwa."
+    },
+    "actions": {
+      "title": "Maktaba ya hatua",
+      "subtitle": "Chanzo pekee cha mapendekezo kwa wakulima. Kila hatua inaunganisha aina na kiwango cha hatari na hatua moja iliyoidhinishwa.",
+      "new": "Hatua mpya",
+      "none": "Hakuna hatua zinazolingana",
+      "unvalidatedNotice": "Hatua {n} kati ya {total} bado hazijaidhinishwa na wataalamu wa ndani. Bado zinaweza kupendekezwa (isipokuwa \"Hitaji hatua zilizoidhinishwa\" imewashwa kwenye Mipangilio) na zinaonyeshwa kwa wakulima kama \"zinasubiri uthibitisho\".",
+      "unvalidated": "Haijaidhinishwa",
+      "disabled": "Imezimwa",
+      "escalates": "Inapelekwa kwa afisa ugani",
+      "andAbove": "na zaidi",
+      "sourceLabel": "Chanzo",
+      "used": "imetumika katika mapendekezo {n}",
+      "validatedBy": "imeidhinishwa na {name} tarehe {date}",
+      "createTitle": "Hatua mpya",
+      "editTitle": "Hariri {code}",
+      "createNote": "Hatua mpya zinaanza bila kuidhinishwa. Afisa ugani au msimamizi lazima aziidhinishe.",
+      "resetNote": "Kubadilisha maandishi ya hatua, maelezo, aina ya hatari, viwango au masharti kunaondoa uthibitisho wa wataalamu (mfumo unafanya hivi wenyewe).",
+      "resetWarning": "Umebadilisha kile wakulima wanaambiwa. Kuhifadhi KUTAONDOA uthibitisho wa wataalamu wa hatua hii.",
+      "code": "Msimbo",
+      "codeHint": "Herufi kubwa, tarakimu na _ (mf. HEAT_HIGH_INSPECT).",
+      "codeFixed": "Msimbo hauwezi kubadilishwa.",
+      "riskType": "Aina ya hatari",
+      "cropStage": "Hatua ya mwani",
+      "stage": {
+        "ANY": "Hatua yoyote",
+        "EARLY": "Mwanzo",
+        "GROWING": "Unakua",
+        "MATURING": "Unakomaa",
+        "HARVEST_READY": "Tayari kuvunwa"
+      },
+      "minLevel": "Kiwango cha chini cha hatari",
+      "maxLevel": "Kiwango cha juu cha hatari",
+      "noMax": "Hakuna kikomo",
+      "urgency": "Uharaka",
+      "urgencyHours": "Tenda ndani ya (saa)",
+      "priority": "Kipaumbele",
+      "priorityHint": "0–100, kikubwa kinashinda zikilingana nyingi",
+      "enabled": "Imewashwa",
+      "escalate": "Peleka kwa afisa ugani",
+      "actionEn": "Hatua (Kiingereza)",
+      "actionSw": "Hatua (Kiswahili)",
+      "explanationEn": "Maelezo (Kiingereza)",
+      "explanationSw": "Maelezo (Kiswahili)",
+      "source": "Chanzo / ushahidi",
+      "sourceHint": "Ushauri huu unatoka wapi (mwongozo, mtaalamu, utafiti).",
+      "conditions": "Masharti ya ziada (yote lazima yatimie)",
+      "addCondition": "Ongeza sharti",
+      "noConditions": "Hakuna masharti ya ziada — hatua inatumika kila aina ya hatari, kiwango na hatua ya mwani vinapolingana.",
+      "conditionsHint": "Majina ya vipimo yanatoka kwenye injini ya hatari, mf. maturityRatio, rainfallMm, sstAnomalyC, waveHeightM, windSpeedKmh, heatProbability, stormProbability, cropAgeDays.",
+      "feature": "Kipimo",
+      "operator": "Kilinganishi",
+      "value": "Thamani",
+      "badCondition": "Kila sharti linahitaji jina la kipimo (herufi, tarakimu, _) na thamani.",
+      "badRange": "Kiwango cha juu kiwe sawa au zaidi ya kiwango cha chini.",
+      "validate": "Idhinisha",
+      "unvalidate": "Ondoa uthibitisho",
+      "validateTitle": "Idhinisha {code}",
+      "unvalidateTitle": "Ondoa uthibitisho wa {code}",
+      "validateText": "Thibitisha kwamba hatua hii imekaguliwa na mtaalamu wa ndani na ni salama na inafaa kwa wakulima wa mwani Zanzibar.",
+      "unvalidateText": "Hatua itarudi kuwa \"inasubiri uthibitisho\".",
+      "note": "Maelezo ya uthibitisho",
+      "updated": "Hatua imesasishwa.",
+      "created": "Hatua imeundwa (inasubiri uthibitisho).",
+      "validationSaved": "Hali ya uthibitisho imehifadhiwa."
+    },
+    "models": {
+      "title": "Mifumo ya AI ya hatari",
+      "subtitle": "Mfumo wa kanuni, mifumo ya ML iliyofundishwa na utendaji wake uliopimwa.",
+      "currentStatus": "Mfumo wa hatari unaotumika",
+      "ruleBaseline": "Mfumo wa kanuni za msingi",
+      "ruleInfo": "Kanuni {version} · utabiri halisi {n} kwa injini ya kanuni",
+      "aiModeLabel": "Mpangilio ai.mode",
+      "changeMode": "Badilisha kwenye Mipangilio",
+      "hybridNoActive": "ai.mode ni HYBRID, lakini hakuna mfumo ULIOWASHWA — hivyo kila utabiri unatumia mfumo wa kanuni. Washa mfumo ili uchanganywe.",
+      "ruleOnlyMode": "ai.mode ni RULE_ONLY — mifumo ya ML haitumiki hata ikiwashwa.",
+      "none": "Hakuna mfumo wa ML uliofundishwa bado",
+      "noneText": "Injini ya kanuni inatumika. Kufundisha mifumo, endesha amri hii kwenye seva:",
+      "status": {
+        "ACTIVE": "Unatumika",
+        "TRAINED": "Umefundishwa (hautumiki)",
+        "RETIRED": "Umestaafishwa"
+      },
+      "inactiveByMode": "Hautumiki: ai.mode ni RULE_ONLY",
+      "trainedAt": "Ulifundishwa",
+      "trainRecords": "Rekodi za mafunzo",
+      "testRecords": "Rekodi za majaribio",
+      "usage": "Utabiri / maoni",
+      "usageValue": "{p} / {f}",
+      "testMetrics": "Vipimo vya majaribio (vilivyohesabiwa wakati wa mafunzo)",
+      "precision": "Usahihi wa tahadhari",
+      "recall": "Matukio yaliyonaswa",
+      "accuracy": "Usahihi wa jumla",
+      "confusionTest": "Jedwali la makosa (majaribio)",
+      "fieldMetrics": "Vipimo vya shambani",
+      "noFieldMetrics": "Hakuna vipimo vya shambani bado — vinahesabiwa kutoka matokeo halisi na kazi ya ufuatiliaji wa mifumo.",
+      "noMatrix": "Hakuna jedwali la makosa.",
+      "predYes": "Imetabiri: hatari",
+      "predNo": "Imetabiri: hakuna hatari",
+      "actualYes": "Halisi: hatari",
+      "actualNo": "Halisi: hakuna hatari",
+      "tp": "Kweli +",
+      "fn": "Uongo −",
+      "fp": "Uongo +",
+      "tn": "Kweli −",
+      "activate": "Washa",
+      "deactivate": "Zima",
+      "retire": "Staafisha",
+      "oneActive": "Mfumo mmoja tu kwa kila aina ya hatari unaweza kuwashwa.",
+      "fieldTitle": "Tathmini ya shambani (matokeo halisi)",
+      "fieldSubtitle": "Utabiri umelinganishwa na matokeo {n} yaliyorekodiwa",
+      "falsePositives": "Tahadhari {n} zisizo sahihi",
+      "fpText": "Hatari ilitabiriwa lakini hakuna hasara — inaweza kuwaletea wakulima kazi isiyo ya lazima.",
+      "falseNegatives": "Hatari {n} zilizokosa kutabiriwa",
+      "fnText": "Hasara ilitokea bila kutabiriwa — kosa lenye gharama kubwa zaidi.",
+      "fieldNote": "Vipimo vya shambani vinahesabiwa na seva kutoka matokeo yaliyorekodiwa. Matokeo yakiwa machache, havina uhakika mkubwa.",
+      "feedbackTitle": "Maoni kuhusu utabiri",
+      "feedbackSubtitle": "Alama kutoka kwa maafisa ugani na wakulima",
+      "noFeedback": "Hakuna maoni bado.",
+      "retrain": "Kufundisha (upya) mifumo:"
+    },
+    "settings": {
+      "title": "Mipangilio",
+      "subtitle": "Mipangilio iliyohifadhiwa kwenye hifadhidata. Kila mabadiliko yanarekodiwa.",
+      "groups": {
+        "risk": "Viwango vya hatari na AI",
+        "actions": "Hatua na tahadhari",
+        "environment": "Mazingira na taarifa"
+      },
+      "keys": {
+        "risk": {
+          "thresholds": "Mipaka ya viwango vya hatari"
+        },
+        "ai": {
+          "mode": "Hali ya AI",
+          "mlBlendWeight": "Uzito wa ML katika mchanganyiko",
+          "minTrainingRecords": "Rekodi za chini za mafunzo"
+        },
+        "actions": {
+          "requireValidated": "Hitaji hatua zilizoidhinishwa"
+        },
+        "alerts": {
+          "missingReportDays": "Ripoti inakosekana baada ya (siku)",
+          "dedupHours": "Muda wa kuzuia tahadhari zinazojirudia (saa)"
+        },
+        "environment": {
+          "maxCacheAgeHours": "Umri wa juu wa data iliyohifadhiwa (saa)",
+          "preferLive": "Pendelea data hai ya mazingira"
+        },
+        "notifications": {
+          "smsEnabled": "Taarifa kwa SMS"
+        }
+      },
+      "mode": {
+        "RULE_ONLY": "Injini ya kanuni pekee",
+        "HYBRID": "Changanya kanuni na mfumo wa ML ULIOWASHWA"
+      },
+      "on": "Imewashwa",
+      "off": "Imezimwa",
+      "default": "Chaguo-msingi",
+      "useDefault": "Tumia chaguo-msingi",
+      "updated": "Ilisasishwa {time}",
+      "savedMsg": "Imehifadhiwa",
+      "thresholdNumber": "Weka namba kwa kila kiwango.",
+      "thresholdRange": "Kila mpaka uwe kati ya 0 na 1.",
+      "thresholdOrder": "Mipaka lazima ipande: MEDIUM < HIGH < CRITICAL.",
+      "intRange": "Weka namba kamili ndani ya kiwango kinachoruhusiwa.",
+      "floatRange": "Weka namba kati ya 0 na 1.",
+      "previewAria": "Mwonekano wa viwango vya hatari",
+      "previewInvalid": "Rekebisha thamani kuona mwonekano",
+      "unknownKeys": "Mipangilio mingine: {keys}"
+    },
+    "audit": {
+      "title": "Kumbukumbu za ukaguzi",
+      "subtitle": "Nani alifanya nini, na lini. Pia kumbukumbu za kutuma ujumbe.",
+      "tabAudit": "Kumbukumbu za ukaguzi",
+      "tabDelivery": "Utumaji wa taarifa",
+      "action": "Kitendo",
+      "entity": "Aina ya kitu",
+      "clear": "Futa vichujio",
+      "none": "Hakuna kumbukumbu zinazolingana",
+      "user": "Mtumiaji",
+      "ip": "Anwani ya IP",
+      "details": "Onyesha maelezo",
+      "system": "Mfumo",
+      "deliveryIntro": "SMS na taarifa nyingine zilizotumwa karibuni. \"SIMULATED\" maana yake hakuna ujumbe halisi uliotumwa (hakuna mtoa huduma).",
+      "noDelivery": "Hakuna taarifa zilizotumwa bado",
+      "channel": "Njia",
+      "provider": "Mtoa huduma",
+      "recipient": "Mpokeaji",
+      "error": "Hitilafu",
+      "entities": {
+        "User": "Mtumiaji",
+        "Farm": "Shamba",
+        "Cooperative": "Ushirika",
+        "ActionLibrary": "Maktaba ya hatua",
+        "SystemSetting": "Mpangilio wa mfumo",
+        "MlModel": "Modeli ya AI",
+        "Job": "Kazi ya nyuma",
+        "RiskPrediction": "Utabiri wa hatari",
+        "Alert": "Tahadhari",
+        "BuyerDemand": "Mahitaji ya mnunuzi",
+        "HarvestForecast": "Makadirio ya mavuno",
+        "UploadedFile": "Faili iliyopakiwa",
+        "Assistant": "Msaidizi wa AI"
+      }
+    }
+  },
+  "demo": {
+    "simulated": "Imeigwa",
+    "clear": "Futa",
+    "phoneLabel": "Namba ya simu",
+    "farmerOwnNumber": "Wakulima wanaweza kutumia namba yao iliyosajiliwa tu.",
+    "staffNumber": "Watumishi wanaweza kuiga namba ya mkulima yeyote aliyesajiliwa. Mkulima wa demo: +255777000001.",
+    "badPhone": "Tumia tarakimu 9–15, mf. +255777000001.",
+    "sim": {
+      "title": "Jaribio la AI",
+      "subtitle": "Badilisha hali ya bahari na hewa kwa shamba uone jinsi injini ya hatari na injini ya hatua zinavyojibu.",
+      "label": "MAJARIBIO — si data halisi",
+      "noFarms": "Hakuna mashamba ya kujaribu.",
+      "currentRisks": "Hatari za sasa (halisi)",
+      "currentRisksSub": "Utabiri wa mwisho uliohifadhiwa kwa shamba hili",
+      "currentEnv": "Mazingira ya sasa",
+      "currentEnvSub": "Thamani za kuanzia kwa vitelezi",
+      "envNeeded": "Data ya mazingira inahitajika kuanza jaribio.",
+      "controlsTitle": "Hali ya jaribio",
+      "controlsSubtitle": "Anza na hali ya sasa, kisha ibadilishe",
+      "presets": "Mifano tayari",
+      "preset": {
+        "heatwave": "Wimbi la joto baharini",
+        "storm": "Dhoruba",
+        "rain": "Mvua kubwa",
+        "reset": "Rudisha hali ya sasa"
+      },
+      "fields": {
+        "sstAnomalyC": "Joto la bahari juu ya kawaida",
+        "sstAnomalyDays": "Siku za joto la juu la bahari",
+        "waveHeightM": "Urefu wa mawimbi",
+        "windSpeedKmh": "Kasi ya upepo",
+        "rainfallMm": "Mvua (saa 24)",
+        "currentVelocityMs": "Kasi ya mkondo",
+        "salinityPsu": "Chumvi"
+      },
+      "run": "Endesha AI",
+      "running": "Inaendesha injini ya hatari na injini ya hatua…",
+      "neverOverwrite": "Majaribio yanahifadhiwa peke yake na kuwekwa alama. Hayabadilishi kamwe utabiri halisi, tahadhari wala kumbukumbu za shamba.",
+      "readyTitle": "Tayari kujaribu",
+      "readyText": "Chagua mfano au sogeza vitelezi, kisha bonyeza \"Endesha AI\".",
+      "banner": "Majaribio — si data halisi",
+      "bannerText": "Matokeo haya yanatoka kwenye injini halisi za hatari na hatua, lakini yanatumia thamani ulizoweka. Si utabiri wa shamba hili.",
+      "compareTitle": "Kabla → baada",
+      "compareSubtitle": "Utabiri halisi wa mwisho ukilinganishwa na matokeo ya jaribio",
+      "riskType": "Aina ya hatari",
+      "before": "Kabla (halisi)",
+      "after": "Baada (jaribio)",
+      "change": "Mabadiliko",
+      "noBaseline": "Hakuna utabiri wa awali kwa shamba hili, hivyo hakuna cha kulinganisha.",
+      "recBefore": "Pendekezo kabla (halisi)",
+      "recAfter": "Pendekezo baada",
+      "factorsTitle": "Kwa nini? — sababu zilizoelezwa",
+      "factorsSubtitle": "Sababu kutoka kwenye utabiri wa jaribio",
+      "noFactors": "Hakuna sababu kubwa kwa hatari hii.",
+      "alertsTitle": "Tahadhari za jaribio",
+      "alertsSubtitle": "Tahadhari ambazo mfumo ungetoa — zimewekwa alama ya jaribio, hazitumwi kwa wakulima",
+      "noAlerts": "Hakuna tahadhari ingetolewa kwa hali hii.",
+      "noAction": "Hakuna hatua iliyochaguliwa",
+      "pipelineTitle": "Mfumo ulichofanya",
+      "pipelineSubtitle": "Hatua zilizotekelezwa kwa jaribio hili",
+      "simEnvTitle": "Mazingira ya jaribio yaliyotumika",
+      "steps": {
+        "receive": "Imepokea thamani za jaribio",
+        "features": "Imehesabu vipimo",
+        "featuresDetail": "Vipimo {n} kutoka mazingira, hatua ya mwani, taarifa za shamba, ripoti na historia",
+        "engine": "Imeendesha injini ya hatari",
+        "probability": "Imekadiria uwezekano",
+        "level": "Imeweka viwango vya hatari (kwa mipaka iliyowekwa)",
+        "explanation": "Imetengeneza maelezo kutoka kwa sababu",
+        "recommendation": "Imechagua pendekezo kutoka Maktaba ya Hatua",
+        "alert": "Imekagua kanuni za tahadhari",
+        "alertDetail": "Tahadhari {n} za jaribio zimetolewa"
+      }
+    },
+    "ussd": {
+      "title": "Kiigaji cha USSD",
+      "subtitle": "Menyu ya *123# inayofanya kazi kwenye simu yoyote, kwa mfumo wa Africa's Talking.",
+      "screen": "Skrini ya simu",
+      "input": "Kuandika kwenye simu",
+      "reply": "Jibu…",
+      "dialHint": "Piga *123# kisha bonyeza Tuma",
+      "running": "Inaunganisha…",
+      "unknownCode": "Msimbo wa USSD haujulikani. Piga *123#.",
+      "badPhone": "Weka namba sahihi ya simu kwanza.",
+      "ended": "Kipindi kimeisha — bonyeza SAWA kuanza tena",
+      "send": "Tuma",
+      "ok": "SAWA",
+      "delete": "Futa",
+      "cancel": "Ghairi",
+      "key": "Kitufe",
+      "setupTitle": "Jinsi ya kutumia",
+      "how1": "Andika *123# kwenye vitufe (au kibodi) kisha bonyeza Tuma.",
+      "how2": "Jibu kwa namba ya chaguo la menyu kisha bonyeza Tuma.",
+      "how3": "Kila jibu linatumwa pamoja na njia yote hadi sasa, mf. \"2*1*1\" (mfumo wa Africa's Talking).",
+      "session": "Kipindi",
+      "menuTitle": "Ramani ya menyu",
+      "menuSubtitle": "Menyu kuu (kama wakulima wanavyoiona)",
+      "menu": {
+        "1": {
+          "label": "1. Angalia Hatari",
+          "text": "Viwango vya hatari vya sasa na hatua inayofuata."
+        },
+        "2": {
+          "label": "2. Ripoti Dalili",
+          "text": "Hali ya mwani, kubadilika rangi, kukatika, ukuaji usio wa kawaida. Hatari inahesabiwa upya."
+        },
+        "3": {
+          "label": "3. Rekodi Mavuno",
+          "text": "Kilo za mwani mkavu uliovunwa."
+        },
+        "4": {
+          "label": "4. Ushauri",
+          "text": "Hatua iliyoidhinishwa inayofuata kwa shamba."
+        },
+        "5": {
+          "label": "5. Historia",
+          "text": "Umri wa mwani, ripoti ya mwisho na mavuno ya mwisho."
+        }
+      },
+      "multiFarm": "Wakulima wenye shamba zaidi ya moja wanaulizwa kuchagua shamba baada ya kuchagua huduma.",
+      "logTitle": "Kumbukumbu za maombi / majibu",
+      "logSubtitle": "Mawasiliano ghafi na seva",
+      "logEmpty": "Hakuna maombi bado."
+    },
+    "sms": {
+      "title": "Kiigaji cha SMS",
+      "subtitle": "Tuma amri za SMS kama mkulima uone majibu na ujumbe wa tahadhari unaotumwa na mfumo.",
+      "simulatedSms": "SMS za kuigwa",
+      "from": "Kutoka",
+      "conversation": "Mazungumzo ya SMS",
+      "empty": "Hakuna ujumbe kwa namba hii bado. Jaribu amri ya haraka.",
+      "alert": "Tahadhari",
+      "message": "Ujumbe",
+      "placeholder": "Andika amri, mf. RISK FARM001",
+      "send": "Tuma SMS",
+      "setupTitle": "Mtumaji",
+      "quick": "Amri za haraka",
+      "chipHint": "Gusa amri kuiweka kwenye kisanduku cha ujumbe, kisha tuma.",
+      "lastReply": "Jibu la mwisho",
+      "provider": "Mtoa huduma",
+      "reload": "Pakia upya mazungumzo",
+      "commandsTitle": "Amri za SMS",
+      "commandsSubtitle": "Maneno ya Kiingereza pia yanafanya kazi: RISK, ACTION, REPORT, HARVEST, HELP",
+      "commands": {
+        "RISK": {
+          "syntax": "RISK <SHAMBA>",
+          "text": "Hatari ya sasa na hatua inayofuata (pia HATARI)."
+        },
+        "USHAURI": {
+          "syntax": "USHAURI <SHAMBA>",
+          "text": "Hatua iliyoidhinishwa inayofuata (pia ACTION)."
+        },
+        "RIPOTI": {
+          "syntax": "RIPOTI <SHAMBA> WEUPE|KUKATIKA|UCHAFU|NZURI|MBAYA <n>%",
+          "text": "Ripoti dalili; hatari inahesabiwa upya (pia REPORT)."
+        },
+        "MAVUNO": {
+          "syntax": "MAVUNO <SHAMBA> <KILO>",
+          "text": "Rekodi mavuno kwa kilo za mwani mkavu (pia HARVEST)."
+        },
+        "MSAADA": {
+          "syntax": "MSAADA",
+          "text": "Msaada — orodha ya amri (pia HELP)."
+        }
+      },
+      "alertsNote": "Ujumbe wenye alama \"Tahadhari\" ulitumwa na mfumo wenyewe hatari ya shamba ilipopanda."
+    }
+  },
+  "public": {
+    "hero": {
+      "eyebrow": "Msaada wa maamuzi kwa kilimo cha mwani · Zanzibar",
+      "tagline": "Jua hatari. Jua hatua inayofuata.",
+      "description": "Msaada wa AI kwa hatari, mavuno na maamuzi ya kilimo cha mwani Zanzibar.",
+      "tryDemo": "Jaribu demo",
+      "channelWeb": "Programu ya mtandao",
+      "channelSms": "SMS",
+      "channelUssd": "USSD *123#"
+    },
+    "preview": {
+      "aria": "Mfano wa skrini ya mkulima",
+      "example": "Mfano",
+      "farmLabel": "Shamba langu",
+      "reason": "Joto la bahari liko juu ya kawaida kwa siku 8",
+      "nextAction": "Hatua inayofuata",
+      "action": "Kagua mistari ndani ya saa 24 na rekodi mwani kubadilika rangi au kukatika.",
+      "done": "Nimefanya",
+      "report": "Ripoti dalili",
+      "sea": "Joto la bahari",
+      "waves": "Mawimbi",
+      "demoLabel": "Mfano tu — si utabiri halisi",
+      "caption": "Mfano wa skrini ya mkulima. Namba ni mfano, si data halisi."
+    },
+    "loop": {
+      "aria": "Mzunguko: Fuatilia, Tabiri, Tenda, Jifunze",
+      "centre1": "Hatari → Hatua",
+      "centre2": "→ Matokeo",
+      "eyebrow": "Mzunguko wa maamuzi",
+      "title": "Fuatilia → Tabiri → Tenda → Jifunze",
+      "subtitle": "Kila utabiri unaleta hatua iliyoidhinishwa, na kila hatua inafuatwa na matokeo yanayoboresha utabiri unaofuata.",
+      "monitor": "Fuatilia",
+      "predict": "Tabiri",
+      "act": "Tenda",
+      "learn": "Jifunze",
+      "monitorText": "Joto la bahari, mawimbi, upepo na mvua kwa kila shamba, pamoja na kile mkulima anachoona kwenye mistari yake.",
+      "predictText": "Injini ya hatari iliyo wazi inakadiria hatari ya joto / ice-ice, dhoruba, ukuaji hafifu na wakati wa mavuno kwa saa 72 zijazo, pamoja na sababu.",
+      "actText": "Injini ya hatua inachagua hatua moja wazi kutoka maktaba ya hatua iliyokaguliwa na wataalamu — si ushauri wa AI usio na mipaka.",
+      "learnText": "Wakulima wanarekodi walichofanya na kilichotokea. Matokeo halisi yanapima ubora wa utabiri na kufundisha mifumo bora zaidi."
+    },
+    "flow": {
+      "title": "Mzunguko kamili wa data",
+      "farmData": "Data ya shamba",
+      "environment": "Mazingira",
+      "observations": "Ripoti za shamba",
+      "aiRisk": "Hatari ya AI",
+      "validatedAction": "Hatua iliyoidhinishwa",
+      "farmerResponse": "Jibu la mkulima",
+      "outcome": "Matokeo",
+      "learningData": "Data ya kujifunza",
+      "loopNote": "Data ya kujifunza inarudi kwenye hesabu inayofuata ya hatari."
+    },
+    "audiences": {
+      "title": "Kwa kila mtu katika mnyororo wa mwani",
+      "subtitle": "Kila mmoja anaona anachohitaji, si zaidi.",
+      "farmers": {
+        "title": "Wakulima",
+        "b1": "Hatari ya shamba lako na hatua moja wazi, kwa Kiswahili.",
+        "b2": "Inafanya kazi kwenye simu janja, SMS na simu za kawaida (USSD).",
+        "b3": "Rekodi dalili, hatua na mavuno kwa kubofya mara chache."
+      },
+      "cooperatives": {
+        "title": "Vyama vya ushirika",
+        "b1": "Ona mashamba ya wanachama yaliyo hatarini leo, kwenye ramani.",
+        "b2": "Makadirio ya mavuno yenye kiwango cha kutokuwa na uhakika.",
+        "b3": "Fuatilia tahadhari na ripoti zinazokosekana."
+      },
+      "extension": {
+        "title": "Maafisa ugani",
+        "b1": "Panga ziara za mashamba kwa kiwango cha hatari na uharaka.",
+        "b2": "Kagua ripoti za wakulima na mapendekezo.",
+        "b3": "Idhinisha maktaba ya hatua inayoongoza ushauri wote."
+      },
+      "buyers": {
+        "title": "Wanunuzi",
+        "b1": "Makadirio ya upatikanaji bila majina, kwa wilaya na ushirika.",
+        "b2": "Kiasi kinachotarajiwa na daraja la ubora.",
+        "b3": "Tangaza mahitaji ili vyama vipange mavuno."
+      }
+    },
+    "honesty": {
+      "eyebrow": "Ukweli wa data",
+      "title": "Tunaonyesha tunachojua — na tusichojua",
+      "subtitle": "MwaniMlinzi ni msaada wa maamuzi, si dhamana. Kila namba inaonyesha inatoka wapi.",
+      "demo": {
+        "title": "Data ya demo inaonyeshwa wazi",
+        "text": "Mashamba ya demo, data ya mazingira ya demo na majaribio huwekwa alama kila wakati, na hayachanganywi na kumbukumbu halisi."
+      },
+      "model": {
+        "title": "Mfumo ulio wazi",
+        "text": "Hatari inatoka kwenye mfumo wa kanuni ulio wazi, na unaweza kuchanganywa na mfumo wa ML. Kila utabiri unaonyesha sababu na mfumo uliotumika."
+      },
+      "library": {
+        "title": "Maktaba ya hatua iliyoidhinishwa",
+        "text": "Mapendekezo yanatoka tu kwenye maktaba ya hatua inayokaguliwa na wataalamu wa ndani. Kanuni ambazo bado hazijaidhinishwa zinaonyeshwa wazi."
+      },
+      "claims": {
+        "title": "Hakuna madai yasiyothibitishwa",
+        "text": "Hatudai usahihi wala kupunguza hasara hadi vipimwe shambani kwa matokeo halisi."
+      }
+    },
+    "cta": {
+      "title": "Ione ikifanya kazi na mashamba ya demo",
+      "text": "Ingia kwa akaunti ya demo na ufuate mzunguko wa hatari → hatua → matokeo mwanzo hadi mwisho."
+    },
+    "about": {
+      "title": "Maamuzi ya kila shamba kwa wakulima wa mwani Zanzibar",
+      "subtitle": "Kilimo cha mwani kinasaidia maelfu ya kaya za pwani Zanzibar, wengi wao wakiwa wanawake. Bahari inayobadilika inafanya kila msimu kuwa mgumu kutabiri.",
+      "problemTitle": "Tatizo",
+      "problem1": "Wakulima wanapata taarifa za jumla za hali ya hewa na bahari, lakini mara chache zinawaambia maana yake kwa mistari yao wiki hii, na nini cha kufanya.",
+      "problem2": "Hasara nyingi zinatokana na matukio yenye dalili siku kadhaa kabla. Bila ushauri wa wakati, wa shamba husika na unaotekelezeka, dalili hizo hupitwa.",
+      "challenges": {
+        "heat": {
+          "title": "Joto na ice-ice",
+          "text": "Joto la bahari kwa siku kadhaa linaudhoofisha mwani na kuleta ugonjwa wa ice-ice, unaoweza kuharibu mazao yote."
+        },
+        "storm": {
+          "title": "Dhoruba na kukatika kwa mistari",
+          "text": "Upepo mkali na mawimbi hukata mistari na kung'oa vigingi, hasa kwenye mashamba yaliyo wazi."
+        },
+        "growth": {
+          "title": "Ukuaji hafifu",
+          "text": "Virutubisho vichache, mvua kubwa na uchafu (epiphytes) hupunguza ukuaji na mavuno."
+        },
+        "harvest": {
+          "title": "Wakati wa kuvuna",
+          "text": "Kuvuna mapema sana au kuchelewa hupunguza mavuno na ubora; kukausha wakati wa mvua hupunguza bei."
+        }
+      },
+      "answerTitle": "Jibu letu",
+      "answer": "MwaniMlinzi AI inabadilisha data ya mazingira na ripoti za wakulima kuwa kiwango cha hatari kwa kila shamba, maelezo mafupi ya sababu, na hatua moja iliyoidhinishwa. Kisha inarekodi alichofanya mkulima na kilichotokea, ili ushauri ulinganishwe na uhalisia na uboreshwe.",
+      "servesTitle": "Inamhudumia nani",
+      "serves": {
+        "farmers": "Wanapata hatari na ushauri wa shamba lao kupitia mtandao, SMS au USSD, na kuhifadhi historia ya shamba.",
+        "cooperatives": "Wanafuatilia mashamba ya wanachama, kujibu tahadhari na kupanga mavuno na mauzo ya pamoja.",
+        "extension": "Wanatumia muda wao mchache shambani kwa mashamba yanayohitaji zaidi na kuhakikisha maktaba ya ushauri ni sahihi.",
+        "buyers": "Wanapanga ununuzi kwa makadirio ya upatikanaji yasiyo na majina."
+      },
+      "privacyTitle": "Ukweli wa data na faragha",
+      "privacyIntro": "Data ya shamba ni mali ya mkulima. Tunakusanya tu kinachohitajika kutoa ushauri wenye manufaa.",
+      "privacy": {
+        "consent": {
+          "title": "Ridhaa kwanza",
+          "text": "Kila akaunti inafunguliwa kwa ridhaa ya wazi inayoeleza jinsi kumbukumbu za shamba zinavyotumika."
+        },
+        "rbac": {
+          "title": "Ruhusa kwa majukumu",
+          "text": "Mkulima anaona mashamba yake; ushirika na maafisa ugani wanaona mashamba ya wanachama; msimamizi anasimamia mfumo. Kila mabadiliko yanarekodiwa."
+        },
+        "ownership": {
+          "title": "Mkulima anamiliki data yake",
+          "text": "Kumbukumbu zinatumika kumpa mkulima ushauri na kuboresha mifumo ya hatari — haziuzwi."
+        },
+        "buyers": {
+          "title": "Wanunuzi wanaona jumla tu",
+          "text": "Wanunuzi wanaona kiasi cha jumla kwa wilaya na ushirika tu — si majina ya wakulima wala mahali pa mashamba."
+        }
+      },
+      "honestyNote": "Mfumo huu unaweza kuwa kwenye hali ya demo. Mashamba na data ya mazingira ya demo ni mifano tu na yanaonyeshwa hivyo kwenye programu."
+    },
+    "how": {
+      "title": "MwaniMlinzi inavyofanya kazi",
+      "subtitle": "Njia iliyo wazi kutoka data ya bahari hadi hatua iliyoidhinishwa — na kurudi tena kupitia matokeo halisi.",
+      "pipelineTitle": "Kutoka data hadi uamuzi",
+      "optional": "Si lazima",
+      "steps": {
+        "environment": {
+          "title": "Data ya mazingira",
+          "text": "Joto la uso wa bahari, mawimbi, upepo, mvua, mikondo na chumvi kwa kila shamba — kutoka vyanzo hai vikiwepo, au data iliyohifadhiwa, au data ya demo iliyowekwa alama."
+        },
+        "risk": {
+          "title": "Injini ya hatari",
+          "text": "Mfumo wa kanuni unapima kila hatari kwa vichocheo vinavyojulikana (mf. siku za joto la juu, umri wa mwani, uwazi wa shamba). Mfumo wa ML unaweza kuchanganywa ukifundishwa na kuwashwa."
+        },
+        "action": {
+          "title": "Injini ya hatua",
+          "text": "Kwa hatari kubwa zaidi, injini inachagua hatua inayolingana kutoka Maktaba ya Hatua iliyoidhinishwa — kwa aina ya hatari, kiwango, hatua ya mwani na masharti."
+        },
+        "approved": {
+          "title": "Pendekezo lililoidhinishwa",
+          "text": "Mkulima anapokea hatua moja wazi, sababu zake, uharaka wake na kama awasiliane na afisa ugani."
+        },
+        "llm": {
+          "title": "Mfumo wa lugha (maelezo tu)",
+          "text": "Ukiwekwa, mfumo wa lugha unaweza kueleza upya au kutafsiri jibu lililoidhinishwa. Haubuni hatari, namba wala hatua."
+        },
+        "farmer": {
+          "title": "Hatua ya mkulima",
+          "text": "Mkulima anarekodi kama alifanya hatua, na anaripoti dalili za shamba."
+        },
+        "outcome": {
+          "title": "Matokeo",
+          "text": "Mavuno na hasara zinarekodiwa, zikionyesha kama hatari iliyotabiriwa ilitokea kweli."
+        },
+        "learning": {
+          "title": "Kujifunza",
+          "text": "Matokeo na maoni yanapima usahihi shambani na kuwa data ya kufundisha mifumo ya baadaye."
+        }
+      },
+      "guardrail": "Kinga: kila pendekezo analoona mkulima linatoka kwenye Maktaba ya Hatua. Hatua ambazo bado hazijaidhinishwa na wataalamu zinaonyeshwa \"zinasubiri uthibitisho\".",
+      "channelsTitle": "Njia za mawasiliano",
+      "channels": {
+        "web": {
+          "title": "Programu ya mtandao",
+          "text": "Programu kwa simu kwa wakulima na dashibodi kwa ushirika, maafisa ugani, wanunuzi na wasimamizi."
+        },
+        "sms": {
+          "title": "SMS",
+          "text": "Amri kama RISK FARM001 au RIPOTI FARM001 WEUPE 20%, pamoja na ujumbe wa tahadhari."
+        },
+        "ussd": {
+          "title": "USSD",
+          "text": "Piga *123# kwenye simu yoyote: angalia hatari, ripoti dalili, rekodi mavuno, pata ushauri na historia."
+        }
+      },
+      "rolesTitle": "Majukumu",
+      "role": "Jukumu",
+      "canDo": "Anachoweza kufanya",
+      "roles": {
+        "FARMER": "Kuona hatari na hatua ya shamba lake, kurekodi ripoti, hatua na mavuno, kutumia SMS/USSD na msaidizi.",
+        "COOPERATIVE_ADMIN": "Kufuatilia mashamba ya wanachama kwenye ramani, kusimamia tahadhari, kuona makadirio ya mavuno.",
+        "EXTENSION_OFFICER": "Kukagua ripoti na mapendekezo, kuwekea alama utabiri, kuidhinisha maktaba ya hatua.",
+        "BUYER": "Kuona makadirio ya upatikanaji bila majina na kutangaza mahitaji.",
+        "ADMIN": "Kusimamia watumiaji, vyama, mipangilio, mifumo, kazi na kumbukumbu za ukaguzi."
+      }
+    },
+    "demo": {
+      "title": "Mwongozo wa demo",
+      "subtitle": "Chunguza mzunguko mzima wa hatari → hatua → matokeo kwa akaunti za demo na mashamba matano ya mfano. Data yote ya demo ni mfano tu.",
+      "accountsTitle": "Akaunti za demo",
+      "accountsSubtitle": "Chagua akaunti — fomu ya kuingia itajazwa barua pepe yake.",
+      "useAccount": "Tumia akaunti hii",
+      "passwordPrefix": "Nenosiri: linachapishwa na",
+      "passwordSee": "angalia",
+      "walkTitle": "Hatua za kujaribu",
+      "walkSubtitle": "Takriban dakika 15, kwa kila jukumu na kila njia.",
+      "open": "Fungua",
+      "loginRequired": "Viungo vinafungua kurasa zinazohitaji kuingia kwa jukumu husika.",
+      "steps": {
+        "loginFarmer": {
+          "title": "Ingia kama mkulima",
+          "text": "Tumia farmer@demo.mwanimlinzi.local (mashamba FARM001 na FARM002)."
+        },
+        "viewRisk": {
+          "title": "Ona shamba, hatari, maelezo na pendekezo",
+          "text": "Fungua \"Kwa nini?\" kwenye kadi ya hatari kuona sababu, kisha soma hatua inayofuata."
+        },
+        "observation": {
+          "title": "Tuma ripoti ya shamba",
+          "text": "Ripoti mwani kubadilika rangi au kukatika kwa FARM001."
+        },
+        "recalc": {
+          "title": "Hatari inahesabiwa upya na tahadhari inatolewa",
+          "text": "Ripoti mpya inabadilisha hatari na inaweza kuleta tahadhari na SMS."
+        },
+        "recordAction": {
+          "title": "Rekodi hatua",
+          "text": "Bonyeza \"Nimefanya hatua hii\" (au \"Sikuweza kufanya\") kwenye hatua inayofuata."
+        },
+        "harvest": {
+          "title": "Rekodi mavuno au matokeo",
+          "text": "Rekodi mavuno ya FARM002, ambalo liko karibu kuvunwa."
+        },
+        "coop": {
+          "title": "Dashibodi ya ushirika, ramani na makadirio",
+          "text": "Ingia kama ushirika kuona mashamba yaliyo hatarini na makadirio ya mavuno."
+        },
+        "extension": {
+          "title": "Ukaguzi wa afisa ugani",
+          "text": "Ingia kama afisa ugani kukagua ripoti na mapendekezo."
+        },
+        "buyer": {
+          "title": "Makadirio ya mnunuzi",
+          "text": "Ingia kama mnunuzi kuona upatikanaji bila majina."
+        },
+        "simulation": {
+          "title": "Jaribio la AI",
+          "text": "Badilisha joto la bahari, mawimbi au mvua uone jinsi hatari na hatua zinavyobadilika."
+        },
+        "ussd": {
+          "title": "Kiigaji cha USSD",
+          "text": "Piga *123# kama +255777000001 na upitie menyu."
+        },
+        "sms": {
+          "title": "Kiigaji cha SMS",
+          "text": "Tuma RISK FARM001 uone jibu na ujumbe wa tahadhari."
+        }
+      },
+      "healthTitle": "Hali ya seva",
+      "healthSubtitle": "Moja kwa moja kutoka /api/health",
+      "status": "Hali",
+      "database": "Hifadhidata",
+      "demoModeOn": "Hali ya demo imewashwa",
+      "weather": "Chanzo cha hali ya hewa",
+      "ocean": "Chanzo cha bahari",
+      "llm": "Mfumo wa lugha",
+      "providerLegend": "Kijani = chanzo hai, zambarau = chanzo cha demo / kuigwa.",
+      "scenariosTitle": "Mashamba ya mfano",
+      "scenariosSubtitle": "Mashamba ya demo, kila moja likionyesha hali tofauti.",
+      "scenarios": {
+        "heat": {
+          "title": "Joto kali la bahari",
+          "text": "Joto la bahari juu ya kawaida kwa siku kadhaa — hatari kubwa ya joto / ice-ice."
+        },
+        "harvest": {
+          "title": "Karibu kuvuna",
+          "text": "Mwani unakaribia kukomaa — ushauri wa wakati wa mavuno."
+        },
+        "storm": {
+          "title": "Dhoruba",
+          "text": "Upepo mkali na mawimbi kwenye shamba lililo wazi — hatari kubwa ya kukatika kwa mistari."
+        },
+        "growth": {
+          "title": "Ukuaji hafifu",
+          "text": "Ukuaji wa polepole na uchafu — hatari kubwa ya ukuaji hafifu."
+        },
+        "normal": {
+          "title": "Hali ya kawaida",
+          "text": "Hali shwari — hatari ndogo, ufuatiliaji wa kawaida. Nzuri kwa majaribio."
+        }
+      },
+      "scenarioNote": "Viwango hivi vinaeleza hali ya mfano; programu inaonyesha daima thamani ya hivi karibuni iliyohesabiwa."
+    },
+    "form": {
+      "email": "Barua pepe",
+      "password": "Nenosiri",
+      "confirmPassword": "Rudia nenosiri",
+      "fullName": "Jina kamili",
+      "phone": "Namba ya simu",
+      "language": "Lugha unayopendelea",
+      "cooperative": "Chama cha ushirika",
+      "village": "Kijiji",
+      "district": "Wilaya",
+      "companyName": "Jina la kampuni"
+    },
+    "login": {
+      "title": "Ingia",
+      "subtitle": "Karibu tena MwaniMlinzi AI.",
+      "missing": "Weka barua pepe na nenosiri.",
+      "signingIn": "Inaingia…",
+      "noAccount": "Huna akaunti bado?",
+      "demoHint": "Unajaribu tu?",
+      "demoLink": "Fungua mwongozo wa demo"
+    },
+    "register": {
+      "title": "Fungua akaunti",
+      "subtitle": "Wakulima na wanunuzi wanaweza kujisajili hapa. Akaunti za ushirika, ugani na msimamizi zinafunguliwa na msimamizi.",
+      "iAm": "Mimi ni…",
+      "roleHint": {
+        "FARMER": "Pata tahadhari na ushauri wa shamba langu",
+        "BUYER": "Ona makadirio ya upatikanaji bila majina"
+      },
+      "phoneHint": "Mfano +2557… — inatumika kwa SMS na USSD. Si lazima.",
+      "passwordHint": "Angalau herufi 8, zenye herufi na namba.",
+      "coopHint": "Chama chako kitaweza kuona shamba lako na kukusaidia.",
+      "noCoop": "Hakuna chama / chagua baadaye",
+      "coopLoadError": "Imeshindwa kupakia vyama. Unaweza kujiunga baadaye.",
+      "consentTitle": "Ridhaa ya matumizi ya data (lazima)",
+      "consentText": "Nakubali kwamba MwaniMlinzi ihifadhi kumbukumbu za shamba langu ili kunipa ushauri wa hatari; chama changu na maafisa ugani wanaweza kuona data ya shamba langu; wanunuzi wanaona jumla ya upatikanaji tu bila majina.",
+      "consentMore": "Unaweza kumwomba chama chako au msimamizi kuona au kusahihisha data yako wakati wowote.",
+      "haveAccount": "Tayari una akaunti?",
+      "errors": {
+        "required": "Sehemu hii ni lazima.",
+        "email": "Weka barua pepe sahihi.",
+        "phone": "Tumia tarakimu 9–15, mf. +255777123456.",
+        "passwordLength": "Nenosiri liwe na angalau herufi 8.",
+        "passwordMix": "Nenosiri liwe na herufi na namba.",
+        "passwordMatch": "Manenosiri hayalingani.",
+        "consent": "Lazima ukubali matumizi ya data ili kufungua akaunti."
+      }
+    },
+    "notFound": {
+      "title": "Ukurasa haukupatikana",
+      "text": "Ukurasa unaoutafuta haupo au umehamishwa.",
+      "home": "Nenda ukurasa wa mwanzo"
+    }
+  },
+  "env": {
+    "seaTemp": "Joto la bahari",
+    "vsNormal": "{value} kuliko kawaida",
+    "waves": "Mawimbi",
+    "wind": "Upepo",
+    "rain": "Mvua",
+    "elevatedDays": "Joto la bahari limekuwa juu kwa siku {n}"
+  },
+  "map": {
+    "lastObservation": "Ripoti ya mwisho",
+    "demoLocations": "Maeneo ya mashamba ni ya demo — si mashamba halisi."
+  },
+  "languageName": {
+    "en": "Kiingereza",
+    "sw": "Kiswahili"
+  }
+}

@@ -9,6 +9,25 @@ const TYPE_FOR = {
   POOR_GROWTH: { HIGH: 'POOR_GROWTH', CRITICAL: 'POOR_GROWTH' },
 };
 
+const PRIORITY_FOR_LEVEL = { LOW: 'INFO', MEDIUM: 'WARNING', HIGH: 'HIGH', CRITICAL: 'CRITICAL' };
+const SMS_LEVEL = { en: { HIGH: 'HIGH', CRITICAL: 'CRITICAL' }, sw: { HIGH: 'HATARI KUBWA', CRITICAL: 'HATARI KUBWA SANA' } };
+
+/** Short SMS text (both languages) for an alert; null when the alert should not be sent by SMS. */
+export function smsForAlert(farm, prediction, action, type) {
+  if (type === 'HARVEST_WINDOW') {
+    return {
+      en: `MWANIMLINZI: Seaweed on farm ${farm.farmCode} is ready for harvest.${action ? ` ${action.action}` : ''}`,
+      sw: `MWANIMLINZI: Mwani wa shamba ${farm.farmCode} uko tayari kuvunwa.${action ? ` ${action.actionSw}` : ''}`,
+    };
+  }
+  if (!['HIGH', 'CRITICAL'].includes(prediction.riskLevel)) return null;
+  const risk = RISK_LABELS[prediction.riskType];
+  return {
+    en: `MWANIMLINZI: ${risk.en} risk on farm ${farm.farmCode} is now ${SMS_LEVEL.en[prediction.riskLevel]}.${action ? ` Action: ${action.action}` : ''}`,
+    sw: `MWANIMLINZI: Hatari ya ${risk.sw.toLowerCase()} kwa shamba ${farm.farmCode} sasa ni ${SMS_LEVEL.sw[prediction.riskLevel]}.${action ? ` Hatua: ${action.actionSw}` : ''}`,
+  };
+}
+
 async function isDuplicate(farmId, type) {
   const hours = Number(await getSetting('alerts.dedupHours')) || 24;
   const since = new Date(Date.now() - hours * 3600 * 1000);
@@ -63,7 +82,8 @@ async function recipientsFor(farm, severity) {
  * harvest window, risk increases, missing reports) and fans them out via NotificationService.
  */
 export const AlertService = {
-  async fromPredictions({ farm, predictions, previous, actions, features, simulation = false }) {
+  /** @param opts.sendSms false for seeding/back-fills (in-app only). Simulations never notify anyone. */
+  async fromPredictions({ farm, predictions, previous, actions, features, simulation = false, sendSms = true }) {
     const created = [];
     for (const p of predictions) {
       const action = actions[p.riskType] || null;
@@ -74,6 +94,11 @@ export const AlertService = {
       if (!type && rose) type = 'RISK_CHANGE';
       if (!type) continue;
       if (!simulation && (await isDuplicate(farm.id, type))) continue;
+      // One harvest reminder per planting cycle (not one per day).
+      if (!simulation && type === 'HARVEST_WINDOW' && p.plantingCycleId) {
+        const cycle = await prisma.plantingCycle.findUnique({ where: { id: p.plantingCycleId }, select: { plantingDate: true } });
+        if (cycle && (await prisma.alert.count({ where: { farmId: farm.id, type: 'HARVEST_WINDOW', isSimulation: false, createdAt: { gte: cycle.plantingDate } } })) > 0) continue;
+      }
 
       const msg = buildMessage(farm, p, action, type === 'HARVEST_WINDOW' || type === 'RISK_CHANGE' ? type : 'RISK');
       const alert = await prisma.alert.create({
@@ -85,10 +110,17 @@ export const AlertService = {
       });
       created.push(alert);
       if (!simulation) {
+        const isHarvest = type === 'HARVEST_WINDOW';
+        const priority = isHarvest ? 'WARNING' : PRIORITY_FOR_LEVEL[p.riskLevel];
+        const sms = sendSms ? smsForAlert(farm, p, action, type) : null;
         for (const u of await recipientsFor(farm, p.riskLevel)) {
-          const sw = u.lang === 'sw';
-          const channels = levelRank(p.riskLevel) >= levelRank('HIGH') || type === 'HARVEST_WINDOW' ? u.channels : ['IN_APP'];
-          await NotificationService.notifyUser(u, { title: sw ? alert.titleSw : alert.title, body: sw ? alert.messageSw : alert.message, alertId: alert.id, channels });
+          const isFarmer = u.id === farm.farmer?.user?.id;
+          await NotificationService.notifyUser(u, {
+            type: isHarvest ? 'HARVEST_REMINDER' : 'RISK_ALERT', priority, source: 'RISK_ENGINE', alertId: alert.id,
+            title: { en: alert.title, sw: alert.titleSw }, body: { en: alert.message, sw: alert.messageSw },
+            // Only the farmer gets SMS; SMSService still checks opt-in, preferences and priority.
+            sms: isFarmer ? sms : null,
+          });
         }
       }
     }
@@ -117,8 +149,10 @@ export const AlertService = {
       });
       created.push(alert);
       if (farm.farmer?.user) {
-        const sw = farm.farmer.user.preferredLanguage === 'sw';
-        await NotificationService.notifyUser(farm.farmer.user, { title: sw ? alert.titleSw : alert.title, body: sw ? alert.messageSw : alert.message, alertId: alert.id, channels: ['IN_APP'] });
+        await NotificationService.notifyUser(farm.farmer.user, {
+          type: 'SYSTEM', priority: 'WARNING', source: 'MISSING_REPORT_JOB', alertId: alert.id,
+          title: { en: alert.title, sw: alert.titleSw }, body: { en: alert.message, sw: alert.messageSw },
+        });
       }
     }
     return created;

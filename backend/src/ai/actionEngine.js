@@ -62,7 +62,7 @@ export const ActionEngine = {
   },
 
   INSUFFICIENT_DATA: {
-    en: 'Insufficient data for a reliable recommendation. Please record a farm observation so the system can assess your farm.',
-    sw: 'Taarifa hazitoshi kutoa ushauri wa uhakika. Tafadhali rekodi hali ya shamba ili mfumo uweze kulitathmini.',
+    en: 'Not enough data to give reliable advice. Please record a farm observation so the system can assess your farm.',
+    sw: 'Data haitoshi kutoa ushauri wa kuaminika. Tafadhali rekodi hali ya shamba ili mfumo uweze kulitathmini.',
   },
 };

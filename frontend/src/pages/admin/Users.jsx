@@ -115,8 +115,8 @@ function UserModal({ open, user, onClose }) {
           {!isEdit ? (
             <Field label={t('public.form.language')} htmlFor="u-lang" required>
               <select id="u-lang" className="input" value={f.preferredLanguage} onChange={set('preferredLanguage')}>
-                <option value="sw">Kiswahili</option>
-                <option value="en">English</option>
+                <option value="sw">{t('languageName.sw')}</option>
+                <option value="en">{t('languageName.en')}</option>
               </select>
             </Field>
           ) : (

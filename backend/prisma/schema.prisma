@@ -228,10 +228,21 @@ enum NotificationChannel {
 }
 
 enum DeliveryStatus {
+  QUEUED
   SENT
-  SIMULATED
+  DELIVERED
   FAILED
+  UNKNOWN
+  NOT_CONFIGURED
   SKIPPED
+  SIMULATED // legacy rows only — never written by current code
+}
+
+enum NotificationPriority {
+  INFO
+  WARNING
+  HIGH
+  CRITICAL
 }
 
 enum ModelStatus {
@@ -257,7 +268,7 @@ enum DemandStatus {
 
 model User {
   id                String    @id @default(uuid()) @db.Uuid
-  email             String    @unique
+  email             String?   @unique
   passwordHash      String    @map("password_hash")
   fullName          String    @map("full_name")
   phone             String?   @unique
@@ -267,6 +278,11 @@ model User {
   consentGiven      Boolean   @default(false) @map("consent_given")
   consentAt         DateTime? @map("consent_at")
   lastLoginAt       DateTime? @map("last_login_at")
+  // Notification preferences (farmers control these in Settings; SMS is only sent when enabled)
+  smsEnabled        Boolean   @default(true) @map("sms_enabled")
+  notifyRiskAlerts  Boolean   @default(true) @map("notify_risk_alerts")
+  notifyHarvest     Boolean   @default(true) @map("notify_harvest_reminders")
+  notifySystem      Boolean   @default(true) @map("notify_system_alerts")
   // Staff scoping: cooperative admins (and optionally extension officers) belong to one cooperative
   cooperativeId     String?   @map("cooperative_id") @db.Uuid
   createdAt         DateTime  @default(now()) @map("created_at")
@@ -1016,6 +1032,11 @@ model Notification {
   userId    String              @map("user_id") @db.Uuid
   alertId   String?             @map("alert_id") @db.Uuid
   channel   NotificationChannel
+  type      String              @default("GENERAL") // RISK_ALERT | HARVEST_REMINDER | RECOMMENDATION | SYSTEM | OBSERVATION_CONFIRMATION ...
+  priority  NotificationPriority @default(INFO)
+  language  Language            @default(sw)
+  source    String?             // e.g. RISK_ENGINE, USSD, SMS, ADMIN_TEST
+  status    DeliveryStatus?     // for SMS/EMAIL: latest delivery status (mirrors notification_logs)
   title     String
   body      String
   readAt    DateTime?           @map("read_at")
@@ -1036,12 +1057,21 @@ model NotificationLog {
   provider       String
   recipient      String
   status         DeliveryStatus
-  providerRef    String?             @map("provider_ref")
-  error          String?
+  providerRef    String?             @map("provider_ref") // Africa's Talking messageId
+  providerStatus String?             @map("provider_status") // raw provider status text
+  messageType    String?             @map("message_type")
+  language       Language?
+  message        String?
+  cost           String?
+  error          String?             // failure reason
+  sentAt         DateTime?           @map("sent_at")
+  deliveredAt    DateTime?           @map("delivered_at")
   createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @default(now()) @updatedAt @map("updated_at")
   notification   Notification?       @relation(fields: [notificationId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
+  @@index([providerRef])
   @@map("notification_logs")
 }
 
@@ -1133,17 +1163,47 @@ model ExtensionNote {
   @@map("extension_notes")
 }
 
+/// Africa's Talking USSD session state (persisted so restarts don't lose sessions).
 model UssdSession {
-  id          String   @id @default(uuid()) @db.Uuid
-  sessionId   String   @unique @map("session_id")
-  phoneNumber String   @map("phone_number")
-  lastInput   String   @default("") @map("last_input")
-  lastState   String   @default("MAIN") @map("last_state")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           String    @id @default(uuid()) @db.Uuid
+  sessionId    String    @unique @map("session_id")
+  phoneNumber  String    @map("phone_number")
+  serviceCode  String?   @map("service_code")
+  networkCode  String?   @map("network_code")
+  userId       String?   @map("user_id") @db.Uuid
+  language     Language?
+  currentMenu  String    @default("MAIN") @map("current_menu")
+  farmId       String?   @map("farm_id") @db.Uuid
+  tempData     Json?     @map("temp_data")
+  lastInput    String    @default("") @map("last_input")
+  lastResponse String?   @map("last_response")
+  status       String    @default("ACTIVE") // ACTIVE | ENDED | EXPIRED
+  requestCount Int       @default(0) @map("request_count")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   @@index([phoneNumber])
+  @@index([createdAt])
   @@map("ussd_sessions")
+}
+
+/// Log of Africa's Talking callbacks (USSD requests, inbound SMS, delivery reports). Secrets are never stored.
+model IntegrationEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  provider    String   // AFRICASTALKING
+  kind        String   // USSD | SMS_INBOUND | SMS_DELIVERY | SMS_SEND
+  reference   String?  // sessionId / messageId
+  phoneNumber String?  @map("phone_number")
+  status      String   // OK | DUPLICATE | REJECTED | ERROR
+  payload     Json?
+  response    String?
+  error       String?
+  durationMs  Int?     @map("duration_ms")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([kind, createdAt])
+  @@index([reference])
+  @@map("integration_events")
 }
 
 model SmsMessage {

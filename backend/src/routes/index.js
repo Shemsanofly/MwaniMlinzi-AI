@@ -24,7 +24,6 @@ const STAFF = ['COOPERATIVE_ADMIN', 'EXTENSION_OFFICER', 'ADMIN'];
 api.get('/health', core.health);
 api.get('/species', core.species);
 api.get('/cooperatives/public', core.publicCooperatives);
-api.post('/ussd/callback', core.ussdCallback); // live gateway (disabled unless configured)
 
 api.use('/auth', authRoutes);
 api.use('/farms', farmRoutes);
@@ -76,10 +75,6 @@ api.post('/forecasts/harvest/generate', authorize('COOPERATIVE_ADMIN', 'ADMIN'),
 api.post('/ai/chat', aiLimiter, validate(s.chatSchema), core.chat);
 api.get('/ai/status', core.aiStatus);
 
-api.post('/sms/simulate', validate(s.smsSchema), core.smsSimulate);
-api.get('/sms/messages', core.smsMessages);
-api.post('/ussd/simulate', validate(s.ussdSchema), core.ussdSimulate);
-
 api.post('/uploads', authorize('FARMER', 'EXTENSION_OFFICER', 'ADMIN'), upload.single('image'), admin.uploadImage);
 api.get('/uploads/:id', admin.getUpload);
 
@@ -98,6 +93,8 @@ adm.get('/audit', admin.listAudit);
 adm.get('/jobs', admin.listJobs);
 adm.post('/jobs/:name/run', admin.runJobNow);
 adm.get('/notification-logs', admin.notificationLogs);
+adm.get('/integrations/africastalking', admin.africasTalkingStatus);
+adm.post('/integrations/africastalking/test-sms', validate(s.testSmsSchema), admin.testSms);
 api.use('/admin', adm);
 
 export default api;

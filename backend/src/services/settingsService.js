@@ -20,7 +20,7 @@ export const DEFAULT_SETTINGS = {
   'alerts.dedupHours': { value: 24, description: 'Do not repeat the same alert type for a farm within this many hours.' },
   'environment.maxCacheAgeHours': { value: 48, description: 'Cached LIVE environmental data older than this is not reused.' },
   'environment.preferLive': { value: true, description: 'Use live providers when DEMO_MODE=false and providers are configured.' },
-  'notifications.smsEnabled': { value: true, description: 'Send SMS notifications (simulated unless an SMS provider is configured).' },
+  'notifications.smsEnabled': { value: true, description: "Master switch for SMS notifications (sent through Africa's Talking when AT_USERNAME and AT_API_KEY are set; otherwise logged as NOT_CONFIGURED)." },
 };
 
 let cache = null;

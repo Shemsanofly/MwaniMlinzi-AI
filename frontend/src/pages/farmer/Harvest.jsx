@@ -4,7 +4,7 @@ import { AlertOctagon, CheckCircle2, LineChart, Truck } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { useFarmerFarm } from '../../hooks/useFarmerFarm.js';
 import { buyerApi, farmApi } from '../../api/endpoints.js';
-import { Badge, Button, Card, CardHeader, EmptyState, ErrorState, Field, FormError, Notice, PageHeader, Spinner, Toggle, cx } from '../../components/ui/index.jsx';
+import { Badge, Button, Card, CardHeader, EmptyState, ErrorState, Field, FormError, Notice, PageHeader, Spinner, Toggle, apiErrorMessage, cx } from '../../components/ui/index.jsx';
 import { date as fmtDate, isoDate, kg, num, pct, tzs } from '../../utils/format.js';
 import { FarmGate, FarmSwitcher, SectionTitle, numOrNull, useInvalidateFarm } from './components/shared.jsx';
 
@@ -79,7 +79,7 @@ const HARVEST_EMPTY = {
 };
 
 function HarvestForm({ farmId, hasCycle }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const invalidate = useInvalidateFarm();
   const [f, setF] = useState(HARVEST_EMPTY);
   const set = (patch) => setF((s) => ({ ...s, ...patch }));
@@ -128,7 +128,7 @@ function HarvestForm({ farmId, hasCycle }) {
               {GRADES.map((g) => <option key={g} value={g}>{t(`farmer.enums.grade.${g}`)}</option>)}
             </select>
           </Field>
-          <Field label={t('farmer.harvest.f.buyer')} htmlFor="h-buyer" error={buyersQ.error?.message}>
+          <Field label={t('farmer.harvest.f.buyer')} htmlFor="h-buyer" error={buyersQ.error ? apiErrorMessage(buyersQ.error, t, lang) : undefined}>
             <select id="h-buyer" className="input" value={f.buyerId} onChange={(e) => set({ buyerId: e.target.value })} disabled={buyersQ.isLoading}>
               <option value="">{buyersQ.isLoading ? t('actions.loading') : '—'}</option>
               {(buyersQ.data?.buyers || []).map((b) => <option key={b.id} value={b.id}>{b.companyName}{b.district ? ` (${b.district})` : ''}</option>)}

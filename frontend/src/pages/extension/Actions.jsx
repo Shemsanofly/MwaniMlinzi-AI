@@ -58,12 +58,12 @@ function ActionRow({ action, canValidate, onValidated }) {
           </div>
           <div className="grid gap-2 md:grid-cols-2">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">English</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t('languageName.en')}</p>
               <p className="font-medium text-slate-900">{action.action}</p>
               <p className="text-sm text-slate-600">{action.explanation}</p>
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Kiswahili</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t('languageName.sw')}</p>
               <p className="font-medium text-slate-900">{action.actionSw}</p>
               <p className="text-sm text-slate-600">{action.explanationSw}</p>
             </div>

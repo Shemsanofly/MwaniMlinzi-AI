@@ -43,7 +43,6 @@ export default function Landing() {
             </p>
             <h1 className="mt-5 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">MWANIMLINZI AI</h1>
             <p className="mt-4 text-2xl font-semibold text-teal-300 sm:text-3xl">{t('public.hero.tagline')}</p>
-            <p className="mt-1 text-lg text-ocean-200">{t('public.hero.taglineAlt')}</p>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-ocean-100 sm:text-lg">{t('public.hero.description')}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link to="/demo" className="inline-flex items-center gap-2 rounded-lg bg-teal-400 px-5 py-3 text-base font-bold text-ocean-900 hover:bg-teal-300">

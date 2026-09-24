@@ -78,7 +78,8 @@ export function DemoBadge({ label }) {
 }
 
 export function Spinner({ className }) {
-  return <Loader2 className={cx('h-5 w-5 animate-spin text-ocean-600', className)} aria-label="Loading" />;
+  const { t } = useI18n();
+  return <Loader2 className={cx('h-5 w-5 animate-spin text-ocean-600', className)} aria-label={t('actions.loading')} />;
 }
 
 export function PageLoader({ label }) {
@@ -91,9 +92,40 @@ export function PageLoader({ label }) {
   );
 }
 
+/**
+ * Headline for an API error. Known backend codes are translated (errors.codes.<CODE>); otherwise the
+ * backend's own message is shown only in English (it is always English) and a translated generic message in Kiswahili.
+ */
+export function apiErrorMessage(error, t, lang) {
+  if (!error) return t('errors.generic');
+  if (error.code) {
+    const key = `errors.codes.${error.code}`;
+    const msg = t(key);
+    if (msg !== key) return msg;
+  }
+  if (error.status === 0) return t('errors.network');
+  if (error.status === 403) return t('errors.forbidden');
+  if (error.status === 404) return t('errors.notFound');
+  if (lang === 'en' && error.message) return error.message;
+  return t('errors.generic');
+}
+
+/** Hook form of apiErrorMessage: `const errMsg = useApiErrorMessage(); errMsg(error)`. */
+export function useApiErrorMessage() {
+  const { t, lang } = useI18n();
+  return (error) => (error ? apiErrorMessage(error, t, lang) : null);
+}
+
+/** One validation detail line: as-is in English; field name + translated hint in Kiswahili. */
+function detailLine(d, t, lang) {
+  const path = Array.isArray(d?.path) ? d.path.join('.') : d?.path;
+  if (lang === 'en') return `${path ? `${path}: ` : ''}${d?.message ?? ''}`;
+  return `${path ? `${path}: ` : ''}${t('errors.invalidValue')}`;
+}
+
 export function ErrorState({ error, onRetry, compact = false }) {
-  const { t } = useI18n();
-  const message = error?.status === 0 ? t('errors.network') : error?.status === 403 ? t('errors.forbidden') : error?.status === 404 ? t('errors.notFound') : error?.message || t('errors.generic');
+  const { t, lang } = useI18n();
+  const message = apiErrorMessage(error, t, lang);
   return (
     <div role="alert" className={cx('flex flex-col items-center gap-3 rounded-xl border border-red-200 bg-red-50 text-center text-red-800', compact ? 'p-4' : 'p-8')}>
       <AlertTriangle className="h-6 w-6" aria-hidden />
@@ -149,6 +181,7 @@ export function PageHeader({ title, subtitle, actions, badge }) {
 }
 
 export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
+  const { t } = useI18n();
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => e.key === 'Escape' && onClose?.();
@@ -162,7 +195,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
       <div className={cx('flex max-h-[92vh] w-full flex-col rounded-t-2xl bg-white shadow-xl sm:rounded-2xl', width)}>
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
           <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100" aria-label="Close"><X className="h-5 w-5" /></button>
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100" aria-label={t('actions.close')}><X className="h-5 w-5" /></button>
         </div>
         <div className="overflow-y-auto px-5 py-4">{children}</div>
         {footer && <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-3">{footer}</div>}
@@ -214,13 +247,14 @@ export function ProgressBar({ value, level, className }) {
 
 /** Mutation error helper: shows backend validation details. */
 export function FormError({ error }) {
+  const { t, lang } = useI18n();
   if (!error) return null;
   return (
     <Notice tone="danger" icon={AlertTriangle}>
-      <p className="font-medium">{error.message}</p>
-      {Array.isArray(error.details) && (
+      <p className="font-medium">{apiErrorMessage(error, t, lang)}</p>
+      {Array.isArray(error.details) && error.details.length > 0 && (
         <ul className="mt-1 list-disc pl-4 text-xs">
-          {error.details.map((d) => <li key={`${d.path}-${d.message}`}>{d.path ? `${d.path}: ` : ''}{d.message}</li>)}
+          {error.details.map((d, i) => <li key={`${d?.path}-${d?.message}-${i}`}>{detailLine(d, t, lang)}</li>)}
         </ul>
       )}
     </Notice>

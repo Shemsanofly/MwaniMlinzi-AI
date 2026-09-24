@@ -239,12 +239,13 @@ export function ReviewStatusBadge({ status }) {
 
 /** Small success banner shown after a mutation. */
 export function SuccessNote({ children, onClose }) {
+  const { t } = useI18n();
   if (!children) return null;
   return (
     <Notice tone="success" icon={CheckCircle2} className="mb-4">
       <div className="flex items-start justify-between gap-2">
         <span>{children}</span>
-        {onClose && <button type="button" className="text-xs font-semibold underline" onClick={onClose}>OK</button>}
+        {onClose && <button type="button" className="text-xs font-semibold underline" onClick={onClose}>{t('actions.ok')}</button>}
       </div>
     </Notice>
   );

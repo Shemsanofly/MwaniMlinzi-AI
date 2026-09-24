@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import prisma from '../config/prisma.js';
 import { env } from '../config/env.js';
 import { ok, created } from '../utils/response.js';
@@ -11,9 +10,8 @@ import { RiskService } from '../services/riskService.js';
 import { NotificationService } from '../services/notificationService.js';
 import { HarvestForecastService } from '../services/harvestForecastService.js';
 import { AssistantService, getLLMProvider } from '../services/assistantService.js';
-import { processSms, processUssd, getUSSDProvider } from '../services/channelService.js';
 import { MLRiskProvider } from '../ai/mlRiskProvider.js';
-import { getSMSProvider } from '../services/notificationService.js';
+import { atConfig } from '../providers/africastalking/config.js';
 import { getSetting } from '../services/settingsService.js';
 import { addDays } from '../utils/dates.js';
 
@@ -209,50 +207,6 @@ export async function aiStatus(_req, res) {
   });
 }
 
-/* ───────────── SMS / USSD simulators ───────────── */
-
-async function assertChannelPhone(req, phone) {
-  if (hasRole(req.user, ROLES.ADMIN, ROLES.EXTENSION_OFFICER, ROLES.COOPERATIVE_ADMIN)) return;
-  if (!req.user.phone || req.user.phone.replace(/[^0-9+]/g, '') !== phone.replace(/[^0-9+]/g, '')) {
-    throw forbidden('You can only simulate messages from your own registered phone number');
-  }
-}
-
-export async function smsSimulate(req, res) {
-  await assertChannelPhone(req, req.valid.body.from);
-  const result = await processSms(req.valid.body);
-  return ok(res, { ...result, provider: getSMSProvider().name, simulated: true });
-}
-
-export async function smsMessages(req, res) {
-  const phone = String(req.query.phone || req.user.phone || '');
-  if (!phone) return ok(res, { messages: [] });
-  await assertChannelPhone(req, phone);
-  const messages = await prisma.smsMessage.findMany({ where: { phoneNumber: phone.replace(/[^0-9+]/g, '') }, orderBy: { createdAt: 'desc' }, take: 50 });
-  return ok(res, { messages: messages.reverse() });
-}
-
-export async function ussdSimulate(req, res) {
-  await assertChannelPhone(req, req.valid.body.phoneNumber);
-  const result = await processUssd(req.valid.body);
-  return ok(res, { ...result, provider: getUSSDProvider().name, simulated: !getUSSDProvider().isLive });
-}
-
-/** Live gateway callback (Africa's Talking). Only active when USSD_PROVIDER is configured and DEMO_MODE=false. */
-export async function ussdCallback(req, res) {
-  const provider = getUSSDProvider();
-  if (!provider.isLive) return res.status(404).type('text/plain').send('END USSD gateway not configured');
-  // A shared secret is mandatory: without it anyone could submit reports as any registered phone.
-  if (!env.ussd.apiKey) return res.status(503).type('text/plain').send('END USSD gateway secret not configured');
-  const given = String(req.query.key || req.get('x-ussd-key') || '');
-  const a = Buffer.from(given); const b = Buffer.from(env.ussd.apiKey);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return res.status(401).type('text/plain').send('END Unauthorized');
-  const parsed = provider.parse(req.body || {});
-  if (!parsed.sessionId || !parsed.phoneNumber) return res.status(400).type('text/plain').send('END Invalid request');
-  const { response } = await processUssd(parsed);
-  return res.type('text/plain').send(response);
-}
-
 /* ───────────── Meta ───────────── */
 
 export async function species(_req, res) {
@@ -275,7 +229,7 @@ export async function health(_req, res) {
       status: database === 'ok' ? 'ok' : 'degraded',
       database,
       demoMode: env.demoMode,
-      providers: { ...EnvironmentService.providerStatus(), llm: getLLMProvider().name, sms: getSMSProvider().name, ussd: getUSSDProvider().name },
+      providers: { ...EnvironmentService.providerStatus(), llm: getLLMProvider().name, sms: atConfig().smsConfigured ? `africastalking-${atConfig().environment}` : 'NOT_CONFIGURED', ussd: atConfig().ussdConfigured ? `africastalking-${atConfig().environment}` : 'NOT_CONFIGURED' },
       time: new Date().toISOString(),
     },
     message: database === 'ok' ? 'Healthy' : 'Database unavailable',

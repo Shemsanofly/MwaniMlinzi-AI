@@ -33,7 +33,7 @@ function AuditTab() {
           <label htmlFor="audit-entity" className="label">{t('admin.audit.entity')}</label>
           <select id="audit-entity" className="input" value={filters.entityType} onChange={setFilter('entityType')}>
             <option value="">{t('common.all')}</option>
-            {ENTITIES.map((e) => <option key={e} value={e}>{e}</option>)}
+            {ENTITIES.map((e) => <option key={e} value={e}>{t(`admin.audit.entities.${e}`, { defaultValue: e })}</option>)}
           </select>
         </div>
         {(filters.action || filters.entityType) && <Button variant="ghost" onClick={() => { setFilters({ action: '', entityType: '' }); setPage(1); }}>{t('admin.audit.clear')}</Button>}
@@ -65,7 +65,7 @@ function AuditTab() {
                         <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-600">{dateTime(l.createdAt, lang)}</td>
                         <td className="px-3 py-2">{l.user ? <><p className="font-medium text-slate-900">{l.user.fullName}</p><p className="text-xs text-slate-500">{l.user.email}</p></> : <span className="text-slate-400">{t('admin.audit.system')}</span>}</td>
                         <td className="px-3 py-2"><Badge className="bg-ocean-50 font-mono text-ocean-800 ring-ocean-200">{l.action}</Badge></td>
-                        <td className="px-3 py-2"><p className="text-slate-800">{l.entityType}</p><p className="max-w-[14rem] truncate font-mono text-xs text-slate-500" title={l.entityId || ''}>{l.entityId || '—'}</p></td>
+                        <td className="px-3 py-2"><p className="text-slate-800">{l.entityType ? t(`admin.audit.entities.${l.entityType}`, { defaultValue: l.entityType }) : '—'}</p><p className="max-w-[14rem] truncate font-mono text-xs text-slate-500" title={l.entityId || ''}>{l.entityId || '—'}</p></td>
                         <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-slate-500">{l.ipAddress || '—'}</td>
                       </tr>
                       {isOpen && (

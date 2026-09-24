@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { BellRing, CheckCircle2, ChevronRight, MapPin, Sprout } from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nProvider.jsx';
 import { farmApi, alertApi } from '../../../api/endpoints.js';
-import { Badge, Button, DemoBadge, EmptyState, ErrorState, Notice, PageLoader, cx } from '../../../components/ui/index.jsx';
+import { Badge, Button, DemoBadge, EmptyState, ErrorState, Notice, PageLoader, apiErrorMessage, cx } from '../../../components/ui/index.jsx';
 import { RISK_TYPES, riskStyle } from '../../../utils/risk.js';
 import { timeAgo } from '../../../utils/format.js';
 
@@ -142,7 +142,7 @@ export function AlertList({ alerts = [], farmId, limit = 5 }) {
           </li>
         );
       })}
-      {ack.error && <li><Notice tone="danger">{ack.error.message}</Notice></li>}
+      {ack.error && <li><Notice tone="danger">{apiErrorMessage(ack.error, t, lang)}</Notice></li>}
     </ul>
   );
 }

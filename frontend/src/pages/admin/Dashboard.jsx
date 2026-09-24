@@ -34,11 +34,11 @@ function ChartTooltip({ active, payload, label, unit }) {
 }
 
 function SystemHealth() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { data, isLoading, error, refetch } = useQuery({ queryKey: ['health'], queryFn: metaApi.health, retry: false });
   return (
     <Card>
-      <CardHeader icon={Server} title={t('admin.dashboard.health')} subtitle={data ? t('common.lastUpdated', { time: dateTime(data.time) }) : null} />
+      <CardHeader icon={Server} title={t('admin.dashboard.health')} subtitle={data ? t('common.lastUpdated', { time: dateTime(data.time, lang) }) : null} />
       <div className="p-4 sm:p-5">
         {isLoading && <div className="flex justify-center py-4"><Spinner /></div>}
         {error && <ErrorState error={error} onRetry={refetch} compact />}
@@ -144,7 +144,7 @@ function JobsPanel() {
 }
 
 export default function AdminDashboard() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { data, isLoading, error, refetch } = useQuery({ queryKey: ['admin', 'dashboard'], queryFn: adminApi.dashboard });
   if (isLoading) return <PageLoader />;
   if (error) return <ErrorState error={error} onRetry={refetch} />;
@@ -256,7 +256,7 @@ export default function AdminDashboard() {
               { key: 'jobName', header: t('admin.jobs.job'), render: (r) => <span className="font-mono text-xs">{r.jobName}</span> },
               { key: 'trigger', header: t('admin.jobs.trigger') },
               { key: 'status', header: t('common.status'), render: (r) => <JobStatusBadge status={r.status} /> },
-              { key: 'startedAt', header: t('admin.jobs.started'), render: (r) => dateTime(r.startedAt) },
+              { key: 'startedAt', header: t('admin.jobs.started'), render: (r) => dateTime(r.startedAt, lang) },
               { key: 'dur', header: t('admin.jobs.duration'), render: duration },
               { key: 'summary', header: t('admin.jobs.summary'), render: (r) => <span className="line-clamp-2 max-w-xs break-all font-mono text-xs text-slate-500">{r.error || (r.summary ? JSON.stringify(r.summary) : '—')}</span> },
             ]}

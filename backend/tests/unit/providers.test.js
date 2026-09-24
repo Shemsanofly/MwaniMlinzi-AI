@@ -3,7 +3,7 @@ import { DemoWeatherProvider } from '../../src/providers/weatherProvider.js';
 import { DemoOceanProvider, createLiveOceanProvider } from '../../src/providers/oceanProvider.js';
 import { createLiveWeatherProvider } from '../../src/providers/weatherProvider.js';
 import { createLLMProvider, TemplateLLMProvider } from '../../src/providers/llmProvider.js';
-import { createSMSProvider } from '../../src/providers/smsProvider.js';
+import { AfricasTalkingSMSClient } from '../../src/providers/africastalking/smsClient.js';
 import { forecastForCycle, HarvestForecastService } from '../../src/services/harvestForecastService.js';
 import { harvestMetrics, feedbackTypeFor } from '../../src/services/recordService.js';
 import { applyOverrides } from '../../src/services/farmContextService.js';
@@ -52,10 +52,12 @@ describe('EnvironmentalProvider fallback (LIVE → CACHED → DEMO)', () => {
     expect(createLiveWeatherProvider({ demoMode: false, weather: { provider: 'openweathermap', apiKey: '' } })).toBeNull();
     expect(createLiveOceanProvider({ demoMode: false, ocean: { provider: 'open-meteo-marine' } }).name).toBe('open-meteo-marine');
   });
-  test('LLM and SMS fall back to deterministic/simulated providers without keys', () => {
+  test('LLM falls back to templates without keys; SMS reports NOT_CONFIGURED (never simulated success)', async () => {
     expect(createLLMProvider({ llm: { provider: 'anthropic', apiKey: '' } })).toBeInstanceOf(TemplateLLMProvider);
     expect(createLLMProvider({ llm: { provider: 'anthropic', apiKey: 'k' } }).name).toBe('anthropic');
-    expect(createSMSProvider({ demoMode: false, sms: { provider: 'africastalking', apiKey: '', username: '' } }).name).toBe('simulated-sms');
+    const sms = new AfricasTalkingSMSClient({ username: '', apiKey: '', environment: 'sandbox' });
+    expect(sms.configured).toBe(false);
+    expect((await sms.send('+255777000001', 'hi')).status).toBe('NOT_CONFIGURED');
   });
 });
 
