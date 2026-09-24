@@ -30,7 +30,7 @@ export default function MapExplorer({ base, title, subtitle, showCooperative = f
   return (
     <div>
       <PageHeader title={title} subtitle={subtitle} />
-      <div className="mb-4 grid gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:grid-cols-3">
+      <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:grid-cols-3">
         <div>
           <label className="label" htmlFor="map-colorby">{t('extension.shared.filters.colorBy')}</label>
           <select id="map-colorby" className="input" value={colorBy} onChange={(e) => setColorBy(e.target.value)}>
@@ -57,14 +57,14 @@ export default function MapExplorer({ base, title, subtitle, showCooperative = f
       </div>
 
       {q.isLoading ? <PageLoader /> : q.error ? <ErrorState error={q.error} onRetry={q.refetch} /> : (
-        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-          <Card className="overflow-hidden p-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <Card className="min-w-0 overflow-hidden p-2">
             <FarmMap key={`${cooperativeId}-${level}`} farms={farms} height="min(70vh, 640px)" linkTo={(f) => `${base}/farms/${f.id}`} colorBy={colorBy === 'OVERALL' ? undefined : levelOf} />
             <p className="px-1 pt-1 text-xs text-slate-500">
               {t('extension.shared.map.coloredBy', { what: colorBy === 'OVERALL' ? t('extension.shared.filters.overall') : t(`risk.type.${colorBy}`) })}
             </p>
           </Card>
-          <Card className="flex max-h-[min(78vh,720px)] flex-col">
+          <Card className="flex min-w-0 max-h-[min(78vh,720px)] flex-col">
             <div className="border-b border-slate-100 px-4 py-3">
               <h2 className="font-semibold text-slate-900">{t('extension.shared.map.listTitle')}</h2>
               <p className="text-xs text-slate-500">{t('extension.shared.farmsCount', { n: farms.length })}</p>
