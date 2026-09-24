@@ -1,0 +1,1984 @@
+{
+  "app": {
+    "name": "MwaniMlinzi AI",
+    "tagline": "Know the risk. Know the next action."
+  },
+  "risk": {
+    "level": {
+      "LOW": "Low",
+      "MEDIUM": "Medium",
+      "HIGH": "High",
+      "CRITICAL": "Critical"
+    },
+    "levelLong": {
+      "LOW": "Low risk",
+      "MEDIUM": "Medium risk",
+      "HIGH": "High risk",
+      "CRITICAL": "Very high risk"
+    },
+    "type": {
+      "HEAT_ICE_ICE": "Heat / Ice-Ice",
+      "STORM_LINE_DAMAGE": "Storm / Line damage",
+      "POOR_GROWTH": "Poor growth",
+      "HARVEST_WINDOW": "Harvest window"
+    },
+    "confidence": "Confidence",
+    "probability": "Probability",
+    "horizon": "Next {hours} hours",
+    "why": "Why?",
+    "factors": "Risk factors",
+    "model": "Model",
+    "insufficient": "Insufficient data for a reliable prediction",
+    "ruleBaseline": "Rule-based baseline",
+    "flagged": "Flagged for review",
+    "increases": "Increases risk",
+    "decreases": "Lowers risk",
+    "nextAction": "Next action",
+    "actionRecorded": "You recorded this action as done."
+  },
+  "urgency": {
+    "ROUTINE": "Routine",
+    "SOON": "Soon",
+    "URGENT": "Urgent",
+    "IMMEDIATE": "Immediate"
+  },
+  "source": {
+    "LIVE": "Live data",
+    "CACHED": "Cached data",
+    "DEMO": "Demo environmental data",
+    "SIMULATION": "Simulation",
+    "demoBadge": "DEMO DATA",
+    "syntheticBadge": "SYNTHETIC DATA",
+    "modelPrediction": "Model prediction",
+    "fieldValidated": "Field-validated",
+    "real": "Real data"
+  },
+  "actions": {
+    "inspectFarm": "Inspect farm",
+    "recordSymptoms": "Record symptoms",
+    "recordObservation": "Record observation",
+    "recordHarvest": "Record harvest",
+    "viewHistory": "View history",
+    "askAI": "Ask AI",
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "next": "Next",
+    "back": "Back",
+    "close": "Close",
+    "retry": "Try again",
+    "refresh": "Refresh",
+    "edit": "Edit",
+    "create": "Create",
+    "delete": "Delete",
+    "search": "Search",
+    "filter": "Filter",
+    "logout": "Log out",
+    "login": "Log in",
+    "register": "Create account",
+    "yes": "Yes",
+    "no": "No",
+    "viewDetails": "View details",
+    "runNow": "Run now",
+    "loading": "Loading…",
+    "recalculate": "Recalculate risk",
+    "acknowledge": "Acknowledge",
+    "resolve": "Resolve",
+    "markAllRead": "Mark all as read",
+    "contactExtension": "Contact extension officer",
+    "didIt": "I did this",
+    "couldNot": "Could not do it",
+    "ok": "OK"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "farm": "My farm",
+    "risk": "Risk",
+    "observations": "Observations",
+    "harvest": "Harvest",
+    "history": "History",
+    "assistant": "AI assistant",
+    "farms": "Farms",
+    "map": "Map",
+    "forecast": "Forecast",
+    "alerts": "Alerts",
+    "riskMap": "Risk map",
+    "actionLibrary": "Action library",
+    "reviews": "Reviews",
+    "supply": "Supply",
+    "users": "Users",
+    "models": "Models",
+    "settings": "Settings",
+    "audit": "Audit log",
+    "simulation": "AI simulation",
+    "notifications": "Notifications",
+    "home": "Home",
+    "about": "About",
+    "howItWorks": "How it works",
+    "demo": "Demo",
+    "account": "Settings"
+  },
+  "roles": {
+    "FARMER": "Farmer",
+    "COOPERATIVE_ADMIN": "Cooperative",
+    "EXTENSION_OFFICER": "Extension officer",
+    "BUYER": "Buyer",
+    "ADMIN": "Admin"
+  },
+  "common": {
+    "days": "{n} days",
+    "day": "day",
+    "kg": "kg",
+    "cropAge": "Crop age",
+    "plantingDate": "Planting date",
+    "expectedHarvest": "Expected harvest",
+    "lastUpdated": "Last updated {time}",
+    "noData": "No data yet",
+    "error": "Something went wrong",
+    "language": "Language",
+    "demoFarm": "Demo farm",
+    "farm": "Farm",
+    "farmer": "Farmer",
+    "cooperative": "Cooperative",
+    "district": "District",
+    "status": "Status",
+    "date": "Date",
+    "notes": "Notes",
+    "total": "Total",
+    "optional": "optional",
+    "required": "required",
+    "unread": "unread",
+    "all": "All",
+    "none": "None",
+    "range": "Range",
+    "uncertainty": "Uncertainty",
+    "pendingValidation": "Pending local expert validation",
+    "validated": "Validated"
+  },
+  "errors": {
+    "network": "Cannot reach the server. Check your connection.",
+    "forbidden": "You do not have permission to view this.",
+    "notFound": "Not found.",
+    "generic": "Something went wrong. Please try again.",
+    "invalidValue": "invalid value",
+    "title": "Something went wrong",
+    "codes": {
+      "VALIDATION_ERROR": "Some of the information you entered is not valid.",
+      "UNAUTHORIZED": "Please sign in to continue.",
+      "INVALID_CREDENTIALS": "Wrong phone/email or password.",
+      "ACCOUNT_DISABLED": "This account has been disabled. Contact your cooperative.",
+      "FORBIDDEN": "You do not have permission to do this.",
+      "NOT_FOUND": "We could not find what you asked for.",
+      "CONFLICT": "This already exists or was changed by someone else.",
+      "RATE_LIMITED": "Too many attempts. Please wait a moment and try again.",
+      "DATABASE_UNAVAILABLE": "The service is temporarily unavailable. Please try again soon.",
+      "INTERNAL_ERROR": "Something went wrong on our side. Please try again.",
+      "NETWORK_ERROR": "Cannot reach the server. Check your connection.",
+      "UPLOAD_ERROR": "The file could not be uploaded. Please try again.",
+      "PAYLOAD_TOO_LARGE": "The file or data is too large.",
+      "NOT_CONFIGURED": "This feature is not set up yet.",
+      "PROVIDER_ERROR": "An outside service did not respond. Please try again later.",
+      "WRONG_PASSWORD": "The current password is not correct."
+    }
+  },
+  "demoNotice": "Demo mode: farms, farmers and environmental data are illustrative demo data, not real measurements.",
+  "farmer": {
+    "switcher": {
+      "label": "Choose farm"
+    },
+    "noFarm": {
+      "title": "You have no farm yet",
+      "message": "Add your seaweed farm to see risks and advice for it.",
+      "cta": "Add my farm"
+    },
+    "alerts": {
+      "none": "No active alerts for this farm."
+    },
+    "riskTiles": {
+      "up": "Higher",
+      "down": "Lower",
+      "was": "Was: {level}"
+    },
+    "action": {
+      "didIt": "I did this",
+      "couldNot": "Could not do it",
+      "recordedDone": "Saved: you did this action.",
+      "recordedNotDone": "Saved: you could not do this action.",
+      "outcomePrompt": "In a few days, tell us what happened on your farm. This helps improve future advice.",
+      "recordOutcomeLink": "Record the outcome",
+      "later": "Later"
+    },
+    "dashboard": {
+      "greeting": "Hello, {name}",
+      "subtitle": "Know the risk. Know the next action.",
+      "daysToHarvest": "Days to harvest",
+      "harvestNow": "Ready now",
+      "noCycle": "No active planting on this farm.",
+      "currentRisks": "Current risks",
+      "nextAction": "Next action",
+      "model": "Model",
+      "calculated": "Calculated {time}",
+      "recalculated": "Risk recalculated.",
+      "environment": "Sea and weather now",
+      "alerts": "Alerts for this farm",
+      "currentRisk": "Current risk",
+      "insufficient": "Not enough data to give reliable advice.",
+      "keepChecking": "No special action needed. Keep checking your farm.",
+      "when": "When",
+      "before": "before {date}",
+      "about": "about {kg}",
+      "importantAlert": "Important alert",
+      "recentObservation": "Last farm report",
+      "noObservation": "No report yet.",
+      "condition": {
+        "good": "Seaweed looks good",
+        "fair": "Some problems seen",
+        "poor": "Seaweed looks bad"
+      },
+      "symptom": {
+        "whitening": "whitening",
+        "breakage": "breakage",
+        "epiphytes": "dirt on seaweed"
+      },
+      "details": "See details"
+    },
+    "risk": {
+      "title": "Farm risk",
+      "subtitle": "All four risks, why they are high or low, and what to do.",
+      "recommendation": "Approved advice",
+      "dueBy": "Do by {time}",
+      "noPredictions": "No risk prediction yet.",
+      "historyTitle": "Risk over the last 30 days",
+      "historySubtitle": "Probability (%) for each risk. Dashed lines show medium, high and critical levels.",
+      "noHistory": "No risk history yet.",
+      "chartAria": "Line chart of risk probability over the last 30 days for each risk type"
+    },
+    "obs": {
+      "title": "Report farm condition",
+      "subtitle": "Answer a few quick questions. Your report updates the risk at once.",
+      "tabNew": "New report",
+      "tabPast": "Past reports",
+      "stepOf": "Step {n} of {total}",
+      "q": {
+        "condition": "How is the seaweed?",
+        "whitening": "Do you see white seaweed?",
+        "breakage": "Are seaweed or lines breaking?",
+        "unusualGrowth": "Is the growth unusual?",
+        "details": "More details",
+        "photo": "Add a photo",
+        "review": "Check and send"
+      },
+      "hint": {
+        "whitening": "White or pale tips can be a sign of ice-ice.",
+        "breakage": "Broken branches, lines or ropes.",
+        "unusualGrowth": "Very slow, soft or strange growth.",
+        "details": "Optional. Skip if you are not sure.",
+        "photo": "Optional. A clear photo helps the extension officer."
+      },
+      "moreDetails": "Add more details",
+      "skip": "Skip",
+      "f": {
+        "epiphytes": "Other plants growing on the seaweed (epiphytes)?",
+        "disease": "Other signs of disease?",
+        "percent": "How much of the crop is affected?",
+        "percentUnset": "Not set — move the slider to add it.",
+        "water": "How does the water look?",
+        "line": "Condition of lines",
+        "anchor": "Condition of anchors / stakes",
+        "confidence": "How sure are you?"
+      },
+      "addPhoto": "Take or choose a photo",
+      "changePhoto": "Change photo",
+      "removePhoto": "Remove",
+      "photoRules": "JPEG, PNG or WebP, up to 5 MB",
+      "photoType": "Only JPEG, PNG or WebP photos are allowed.",
+      "photoSize": "The photo is too large. Maximum 5 MB.",
+      "photoAlt": "Photo of the seaweed farm",
+      "r": {
+        "condition": "Seaweed condition",
+        "whitening": "White seaweed",
+        "breakage": "Breakage",
+        "unusualGrowth": "Unusual growth",
+        "photo": "Photo"
+      },
+      "needCondition": "Please answer the first question.",
+      "submit": "Send report",
+      "sending": "Sending…",
+      "success": "Observation recorded",
+      "successSub": "Thank you. The risk was recalculated with your report.",
+      "updatedRisk": "Updated risk",
+      "levelChanged": "{type}: changed from {from} to {to}.",
+      "noLevelChange": "No risk level changed after your report.",
+      "newAlerts": "New alerts",
+      "done": "Done",
+      "another": "Record another",
+      "noPast": "No reports yet.",
+      "noSigns": "No problems reported",
+      "affected": "{n}% affected",
+      "reviewer": "Reviewer",
+      "sign": {
+        "whitening": "White seaweed",
+        "breakage": "Breakage",
+        "unusualGrowth": "Unusual growth",
+        "epiphytes": "Epiphytes",
+        "disease": "Disease signs"
+      }
+    },
+    "harvest": {
+      "title": "Harvest and losses",
+      "subtitle": "Record what you harvested or lost. This improves future forecasts.",
+      "forecastTitle": "Harvest forecast",
+      "forecastSub": "System estimate for the current crop",
+      "estimate": "Estimate",
+      "expectedKg": "Expected (risk-adjusted)",
+      "range": "Range: {low}–{high} kg",
+      "forecastNote": "This is an estimate with uncertainty, not a promise.",
+      "noForecast": "No forecast yet. Record a planting to get one.",
+      "tabHarvest": "Record harvest",
+      "tabLoss": "Record loss",
+      "f": {
+        "date": "Harvest date",
+        "unit": "Unit",
+        "actual": "Actual quantity (kg)",
+        "estimated": "Your estimate (kg)",
+        "estimatedHint": "If empty, the system uses its own forecast.",
+        "grade": "Quality grade",
+        "buyer": "Buyer",
+        "price": "Price per kg (TZS)",
+        "moisture": "Moisture (%)",
+        "drying": "Drying method",
+        "dryDays": "Drying days",
+        "groundContact": "Seaweed touched the ground",
+        "rain": "Rain during drying",
+        "closeCycle": "This ends the current planting",
+        "lossDate": "Date of loss",
+        "cause": "Cause",
+        "percentLost": "Percent lost (%)",
+        "quantityKg": "Quantity lost (kg)"
+      },
+      "noCycle": "No active planting — the harvest will be saved without a cycle.",
+      "save": "Save harvest",
+      "saved": "Harvest saved",
+      "m": {
+        "expected": "Expected",
+        "actual": "Actual",
+        "difference": "Difference",
+        "loss": "Loss",
+        "value": "Total value",
+        "noEstimate": "No estimate"
+      },
+      "lossIntro": "Record seaweed lost to disease, storms, grazing or theft.",
+      "bigLossWarn": "A loss of 90% or more will mark the current planting as failed.",
+      "saveLoss": "Save loss",
+      "lossSaved": "Loss saved",
+      "pastHarvests": "Past harvests",
+      "pastLosses": "Past losses",
+      "noHarvests": "No harvests recorded yet.",
+      "noLosses": "No losses recorded.",
+      "lostPct": "{n}% lost"
+    },
+    "history": {
+      "title": "Farm history",
+      "subtitle": "Everything that happened on your farm.",
+      "timeline": "Timeline",
+      "noEvents": "Nothing recorded yet.",
+      "showMore": "Show more ({n})",
+      "feedback": "Advice → action → result",
+      "feedbackWhy": "When you record what happened after an action, the system learns and future predictions improve.",
+      "actionsTitle": "Your actions",
+      "noActions": "No actions recorded yet.",
+      "allOutcomes": "All your actions have a result recorded. Thank you!",
+      "recordOutcome": "Record what happened",
+      "whatHappened": "What happened on the farm?",
+      "lossPercent": "Percent lost (%)",
+      "outcomeSaved": "Result saved. Thank you!",
+      "outcomesTitle": "Results recorded",
+      "noOutcomes": "No results recorded yet.",
+      "predicted": "Predicted",
+      "noLinkedPrediction": "Not linked to a prediction",
+      "recsTitle": "Recent advice",
+      "noRecs": "No advice yet.",
+      "ev": {
+        "observation": "Report: seaweed {cond}",
+        "harvest": "Harvest: {qty}",
+        "lossPct": "{n}% loss",
+        "loss": "Loss: {cause}",
+        "actionDone": "Action done",
+        "actionNotDone": "Action not done",
+        "outcome": "Result: {type}",
+        "planting": "Planting: {n} lines",
+        "prediction": "{type}: {level} ({p})"
+      }
+    },
+    "assistant": {
+      "title": "Farm helper",
+      "subtitle": "Ask about your farm. Answers come from your farm records and approved advice.",
+      "helperName": "MwaniMlinzi farm helper",
+      "grounded": "Using records for {farm}",
+      "intro": "Ask me why your risk is high, what to do next, when to harvest, or about the sea. You can also tell me what you see on the farm.",
+      "clear": "Clear chat",
+      "thinking": "Checking your farm records…",
+      "suggested": "Try asking",
+      "q": {
+        "why": "Why is my risk high?",
+        "todo": "What should I do?",
+        "harvest": "When should I harvest?",
+        "sea": "What are the sea conditions?",
+        "white": "I see white seaweed",
+        "medicine": "What medicine should I use?"
+      },
+      "inputLabel": "Your question",
+      "placeholder": "Type your question…",
+      "send": "Send",
+      "approvedAction": "Approved action",
+      "source": "Source",
+      "draftTitle": "Report to record",
+      "confirmRecord": "Confirm & record",
+      "fromRecords": "Answer from your farm records ({farm})",
+      "noFarmRecords": "No farm records used",
+      "gen": {
+        "template": "Template answer",
+        "safety": "Safety policy",
+        "llm": "Rephrased by AI ({name})"
+      },
+      "footer": "The helper only uses your farm data and approved guidance. It does not give treatment or chemical advice — for that, contact your extension officer."
+    },
+    "farm": {
+      "title": "My farm",
+      "firstTitle": "Add your farm",
+      "firstSubtitle": "Tell us about your seaweed farm to get risk alerts and advice.",
+      "addFarm": "Add farm",
+      "editTitle": "Edit farm",
+      "create": "Save farm",
+      "updated": "Farm updated.",
+      "choose": "Choose…",
+      "location": "Location",
+      "coords": "Coordinates",
+      "useLocation": "Use my location",
+      "geoOk": "Location added.",
+      "geoDenied": "Location permission was denied. Please type the coordinates.",
+      "geoFailed": "Could not get your location. Please type the coordinates.",
+      "geoUnsupported": "This device cannot share location. Please type the coordinates.",
+      "plantingOptional": "Planting (optional)",
+      "map": "Farm location",
+      "demoLocation": "demo location",
+      "currentCycle": "Current planting",
+      "cycleActive": "This planting is active. To start a new one, first record the harvest.",
+      "recordPlanting": "Record planting",
+      "noCycle": "No active planting. Start a new one.",
+      "expectedHint": "If empty, the system uses the usual cycle for this seaweed.",
+      "plantingSaved": "Planting recorded.",
+      "pastCycles": "Past plantings",
+      "noPastCycles": "No past plantings.",
+      "linesN": "{n} lines",
+      "f": {
+        "code": "Farm code",
+        "name": "Farm name",
+        "species": "Seaweed type",
+        "method": "Farming method",
+        "exposure": "Exposure to waves",
+        "anchoring": "Anchoring",
+        "cooperative": "Cooperative",
+        "area": "Area (hectares)",
+        "lines": "Number of lines",
+        "locationName": "Place name",
+        "region": "Region",
+        "lat": "Latitude",
+        "lng": "Longitude",
+        "linesPlanted": "Lines planted",
+        "seedKg": "Seed quantity (kg)"
+      }
+    },
+    "enums": {
+      "cropCondition": {
+        "GOOD": "Good",
+        "FAIR": "Fair",
+        "POOR": "Poor"
+      },
+      "gear": {
+        "GOOD": "Good",
+        "LOOSE": "Loose",
+        "BROKEN": "Broken",
+        "MISSING": "Missing"
+      },
+      "water": {
+        "CLEAR": "Clear",
+        "TURBID": "Muddy",
+        "DISCOLORED": "Changed colour"
+      },
+      "confidence": {
+        "LOW": "Not sure",
+        "MEDIUM": "Fairly sure",
+        "HIGH": "Very sure"
+      },
+      "reviewStatus": {
+        "PENDING": "Waiting for review",
+        "REVIEWED": "Reviewed",
+        "FLAGGED": "Flagged"
+      },
+      "recStatus": {
+        "PENDING": "New",
+        "ACKNOWLEDGED": "Seen",
+        "COMPLETED": "Done",
+        "DISMISSED": "Not done",
+        "SUPERSEDED": "Replaced"
+      },
+      "method": {
+        "OFF_BOTTOM": "Off-bottom (stakes)",
+        "LONG_LINE": "Long line",
+        "RAFT": "Raft",
+        "FLOATING_LINE": "Floating line"
+      },
+      "exposure": {
+        "SHELTERED": "Sheltered",
+        "MODERATE": "Moderate",
+        "EXPOSED": "Exposed"
+      },
+      "anchoring": {
+        "WOODEN_STAKES": "Wooden stakes",
+        "CONCRETE_BLOCKS": "Concrete blocks",
+        "SAND_BAGS": "Sand bags",
+        "ROCKS": "Rocks"
+      },
+      "farmStatus": {
+        "ACTIVE": "Active",
+        "FALLOW": "Resting (fallow)",
+        "INACTIVE": "Inactive"
+      },
+      "cycleStatus": {
+        "ACTIVE": "Active",
+        "HARVESTED": "Harvested",
+        "FAILED": "Failed"
+      },
+      "unit": {
+        "KG_DRY": "kg (dried)",
+        "KG_WET": "kg (wet)"
+      },
+      "unitShort": {
+        "KG_DRY": "dried",
+        "KG_WET": "wet"
+      },
+      "grade": {
+        "A": "Grade A",
+        "B": "Grade B",
+        "C": "Grade C",
+        "REJECT": "Rejected"
+      },
+      "drying": {
+        "RACK": "Rack",
+        "TARPAULIN": "Tarpaulin",
+        "ROPE_HANGING": "Hanging on rope",
+        "GROUND": "On the ground"
+      },
+      "cause": {
+        "ICE_ICE": "Ice-ice disease",
+        "STORM": "Storm",
+        "EPIPHYTES": "Epiphytes",
+        "GRAZING": "Eaten by fish",
+        "THEFT": "Theft",
+        "POOR_GROWTH": "Poor growth",
+        "OTHER": "Other"
+      },
+      "outcome": {
+        "NO_LOSS": "No loss",
+        "MINOR_LOSS": "Small loss",
+        "MAJOR_LOSS": "Big loss",
+        "TOTAL_LOSS": "Lost everything",
+        "HARVESTED": "Harvested"
+      },
+      "event": {
+        "OBSERVATION": "Report",
+        "HARVEST": "Harvest",
+        "LOSS": "Loss",
+        "ACTION": "Action",
+        "OUTCOME": "Result",
+        "ALERT": "Alert",
+        "PLANTING": "Planting",
+        "PREDICTION": "Risk"
+      }
+    }
+  },
+  "coop": {
+    "regenerate": "Regenerate forecasts",
+    "forecastsRegenerated": "{n} harvest forecasts regenerated from the latest risk predictions.",
+    "dashboard": {
+      "title": "Cooperative dashboard",
+      "subtitle": "{members} active members · {district} district",
+      "map": "Cooperative farms",
+      "openMap": "Open full map",
+      "highRisk": "High-risk farms",
+      "highRiskSub": "HIGH or CRITICAL overall risk — contact these farmers first",
+      "recentAlerts": "Recent alerts",
+      "allAlerts": "All alerts"
+    },
+    "perf": {
+      "title": "Farm performance",
+      "subtitle": "Top 10 farms by recorded harvest (dried seaweed)",
+      "harvests": "Harvests",
+      "totalKg": "Total",
+      "avgKg": "Avg / harvest",
+      "avgLoss": "Avg loss",
+      "empty": "No harvests recorded yet"
+    },
+    "outcomes": {
+      "title": "Recent outcomes",
+      "subtitle": "What happened after a risk warning and action",
+      "risk": "Risk warned",
+      "result": "Outcome",
+      "loss": "Loss",
+      "materialized": "Risk happened?",
+      "empty": "No outcomes recorded yet"
+    },
+    "farms": {
+      "title": "Cooperative farms",
+      "subtitle": "Search and filter member farms; click a row to open the farm"
+    },
+    "map": {
+      "title": "Farm risk map",
+      "subtitle": "Where the risk is — filter by level or colour by a specific risk type"
+    },
+    "forecast": {
+      "title": "Harvest forecast",
+      "subtitle": "Risk-adjusted expected harvest for your member farms",
+      "window": "Harvest window",
+      "allUpcoming": "All current forecasts",
+      "nextDays": "Next {n} days",
+      "byDistrict": "By district",
+      "perFarm": "Forecast per farm",
+      "perFarmSub": "{n} farms with a current forecast",
+      "expectedDate": "Expected date",
+      "expectedKg": "Expected kg",
+      "riskAdjustedKg": "Risk-adjusted kg",
+      "rangeKg": "Range (kg)",
+      "grade": "Grade",
+      "yieldSource": "Yield basis",
+      "yield": {
+        "FARM_HISTORY": "Farm harvest history",
+        "SPECIES_DEFAULT": "Species default (no history)"
+      },
+      "lossFraction": "Expected loss {pct}",
+      "overdue": "Past expected date",
+      "unitNote": "Unit: {unit}.",
+      "emptyHint": "Farms need an active planting cycle to get a forecast. Try \"Regenerate forecasts\"."
+    },
+    "alerts": {
+      "title": "Alerts",
+      "subtitle": "Risk alerts for member farms — acknowledge when seen, resolve when handled",
+      "open": "Open (active + acknowledged)",
+      "severity": "Severity",
+      "type": "Alert type",
+      "includeSimulations": "Include simulations",
+      "simulationNote": "Simulation alerts come from \"what-if\" runs. They are labelled and are not real warnings.",
+      "count": "{n} alerts",
+      "emptyHint": "Change the filters to see older or resolved alerts."
+    }
+  },
+  "extension": {
+    "shared": {
+      "stats": {
+        "totalFarmers": "Total farmers",
+        "activeFarms": "Active farms",
+        "highRiskFarms": "High-risk farms",
+        "criticalAlerts": "Critical alerts",
+        "activeAlertsSub": "{n} active alerts in total",
+        "expectedHarvest30": "Expected harvest (30 days)",
+        "rangeKg": "Range: {low}–{high} kg (risk-adjusted)",
+        "missingReports": "Missing reports",
+        "missingReportsSub": "Active farms with no recent field report"
+      },
+      "charts": {
+        "riskDistribution": "Farms by overall risk",
+        "riskDistributionSub": "Latest prediction per farm (harvest window excluded)",
+        "byType": "Risk level by risk type",
+        "byTypeSub": "Number of farms at each level",
+        "harvestByWeek": "Harvest forecast by week",
+        "harvestByWeekSub": "Bars: risk-adjusted quantity · whiskers: low–high range · dashed: expected before risk",
+        "activity": "Farm activity (last 30 days)",
+        "activitySub": "Field observations and recorded farmer actions per day",
+        "observationsSeries": "Observations",
+        "actionsSeries": "Farmer actions",
+        "losses": "Losses by cause (last 6 months)",
+        "lossesSub": "Recorded loss events, kg lost",
+        "kgLost": "kg lost",
+        "lossDetail": "{events} events · average {pct}% lost",
+        "noLosses": "No losses recorded",
+        "alertsByType": "Alerts by type (last 30 days)",
+        "alertsByTypeSub": "Simulation alerts are excluded",
+        "count": "Alerts",
+        "symptoms": "Reported symptoms (last 30 days)",
+        "symptomsSub": "Out of {n} field observations",
+        "reports": "Reports",
+        "farms": "Farms",
+        "riskAdjusted": "Risk-adjusted",
+        "riskAdjustedRange": "Risk-adjusted (with range)",
+        "expected": "Expected before risk",
+        "weekOf": "Week of {date}"
+      },
+      "units": {
+        "tonnes": "tonnes"
+      },
+      "short": {
+        "HEAT": "HEAT",
+        "STORM": "STORM",
+        "GROWTH": "GROWTH",
+        "HARVEST": "HARVEST"
+      },
+      "table": {
+        "code": "Code",
+        "name": "Farm",
+        "overallRisk": "Overall risk",
+        "riskByType": "Risk by type",
+        "lastObservation": "Last report"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by farm name or code…",
+        "riskLevel": "Risk level",
+        "allLevels": "All risk levels",
+        "allStatuses": "All statuses",
+        "allCooperatives": "All cooperatives",
+        "colorBy": "Colour markers by",
+        "overall": "Overall risk"
+      },
+      "map": {
+        "listTitle": "Farms (highest risk first)",
+        "coloredBy": "Markers coloured by: {what}"
+      },
+      "alerts": {
+        "empty": "No alerts to show"
+      },
+      "farmStatus": {
+        "ACTIVE": "Active",
+        "FALLOW": "Fallow",
+        "INACTIVE": "Inactive"
+      },
+      "alertType": {
+        "HEAT_HIGH": "Heat — high",
+        "HEAT_CRITICAL": "Heat — critical",
+        "STORM_HIGH": "Storm — high",
+        "STORM_CRITICAL": "Storm — critical",
+        "POOR_GROWTH": "Poor growth",
+        "HARVEST_WINDOW": "Harvest window",
+        "MISSING_REPORT": "Missing report",
+        "RISK_CHANGE": "Risk change"
+      },
+      "alertStatus": {
+        "ACTIVE": "Active",
+        "ACKNOWLEDGED": "Acknowledged",
+        "RESOLVED": "Resolved"
+      },
+      "lossCause": {
+        "ICE_ICE": "Ice-ice",
+        "STORM": "Storm",
+        "EPIPHYTES": "Epiphytes",
+        "GRAZING": "Grazing",
+        "THEFT": "Theft",
+        "POOR_GROWTH": "Poor growth",
+        "OTHER": "Other"
+      },
+      "outcomeType": {
+        "NO_LOSS": "No loss",
+        "MINOR_LOSS": "Minor loss",
+        "MAJOR_LOSS": "Major loss",
+        "TOTAL_LOSS": "Total loss",
+        "HARVESTED": "Harvested"
+      },
+      "recStatus": {
+        "PENDING": "Pending",
+        "ACKNOWLEDGED": "Acknowledged",
+        "COMPLETED": "Completed",
+        "DISMISSED": "Dismissed",
+        "SUPERSEDED": "Superseded"
+      },
+      "reviewStatus": {
+        "PENDING": "Awaiting review",
+        "REVIEWED": "Reviewed",
+        "FLAGGED": "Flagged"
+      },
+      "diseaseType": {
+        "ICE_ICE": "Ice-ice",
+        "EPIPHYTES": "Epiphytes",
+        "GRAZING": "Grazing",
+        "OTHER": "Other"
+      },
+      "cropCondition": {
+        "GOOD": "Good condition",
+        "FAIR": "Fair condition",
+        "POOR": "Poor condition"
+      },
+      "cropStage": {
+        "ANY": "Any crop stage",
+        "EARLY": "Early stage",
+        "GROWING": "Growing",
+        "MATURING": "Maturing",
+        "HARVEST_READY": "Harvest-ready"
+      },
+      "symptom": {
+        "whitening": "Whitening",
+        "breakage": "Breakage",
+        "epiphytes": "Epiphytes",
+        "diseaseSymptoms": "Disease symptoms",
+        "unusualGrowth": "Unusual growth",
+        "poorCondition": "Poor condition"
+      },
+      "feedbackType": {
+        "FLAGGED": "Needs review (general flag)",
+        "FALSE_POSITIVE": "False positive — risk was over-estimated",
+        "FALSE_NEGATIVE": "False negative — risk was under-estimated",
+        "CORRECT": "Prediction looks correct"
+      },
+      "flag": {
+        "button": "Flag prediction",
+        "again": "Add prediction feedback",
+        "title": "Feedback on this prediction",
+        "help": "Your feedback is stored with the prediction and used to monitor and improve the model. It does not change what the farmer was told.",
+        "type": "Feedback type",
+        "reason": "Reason",
+        "reasonPlaceholder": "What did you see in the field?",
+        "submit": "Send feedback",
+        "done": "Prediction feedback recorded."
+      },
+      "note": "Note",
+      "noteRequired": "Please write a short note.",
+      "percentAffected": "{n}% affected",
+      "noSymptoms": "No symptoms reported",
+      "independent": "Independent",
+      "farmsCount": "{n} farms",
+      "farmsN": "{n} farms",
+      "noFarms": "No farms found",
+      "noFarmsFiltered": "Try clearing the search or filters.",
+      "noForecasts": "No harvest forecasts yet",
+      "noHighRisk": "No high-risk farms right now",
+      "noMissingReports": "All active farms have recent reports.",
+      "missingTitle": "Farms missing reports",
+      "never": "never",
+      "horizon": "Next {n} days",
+      "beforeRisk": "Before risk: {v}",
+      "uncertainty": "Forecasts are estimates with uncertainty ranges, not guarantees.",
+      "viewPhoto": "View photo",
+      "imageError": "Photo could not be loaded"
+    },
+    "dashboard": {
+      "title": "Extension officer dashboard",
+      "subtitle": "All farms ({n}) — where to go next and what to review",
+      "pendingObs": "Observations to review",
+      "openReviews": "Open the review queue",
+      "showingLatest": "Showing the latest {n}",
+      "pendingRecs": "High-risk recommendations to review",
+      "pendingRecsSub": "HIGH / CRITICAL actions not yet reviewed",
+      "map": "Risk map",
+      "openMap": "Full map",
+      "visits": "Farm-visit priority",
+      "visitsSub": "Score = highest hazard probability × 70 + unreviewed reports × 5 (max 3) + days since last visit ÷ 2 (max 30 days)",
+      "score": "score",
+      "scoreWhy": "Peak risk {prob} · {reports} unreviewed reports · last visit: {visit}",
+      "noVisitYet": "no visit recorded",
+      "daysAgo": "{n} days ago",
+      "noVisits": "No active farms to prioritise",
+      "highRisk": "High-risk farms",
+      "disease": "Recent disease reports",
+      "diseaseSub": "From farmer and officer observations",
+      "noDisease": "No disease reports.",
+      "recentAlerts": "Recent alerts"
+    },
+    "farms": {
+      "title": "All farms",
+      "subtitle": "Every farm with its latest risk, crop age and harvest forecast"
+    },
+    "riskMap": {
+      "title": "Risk map",
+      "subtitle": "Filter by risk level, colour by a risk type, or focus on one cooperative"
+    },
+    "reviews": {
+      "title": "Reviews",
+      "subtitle": "Check farmer reports and high-risk recommendations before they guide decisions",
+      "tabObservations": "Observations",
+      "tabRecommendations": "Recommendations",
+      "show": "Show",
+      "noObservations": "No observations to show",
+      "noRecommendations": "No recommendations to show",
+      "reportedBy": "Reported by {name}",
+      "photoOf": "Observation photo from {farm}",
+      "reviewNote": "Review note",
+      "review": "Review",
+      "reReview": "Change review",
+      "reviewObservation": "Review observation",
+      "reviewObservationHelp": "Mark as reviewed if the report looks right, or flag it if something needs follow-up (for example a farm visit).",
+      "reviewRecommendation": "Review recommendation",
+      "reviewRecommendationHelp": "Approve if the recommended action fits the situation on this farm, or flag it with a note explaining why.",
+      "markReviewed": "Mark reviewed",
+      "approve": "Approve",
+      "flag": "Flag",
+      "reviewedOk": "Review saved.",
+      "flaggedOk": "Flagged for follow-up.",
+      "recommendedAction": "Recommended action"
+    },
+    "actions": {
+      "title": "Action library",
+      "subtitle": "The approved actions MwaniMlinzi can recommend, and their validation status",
+      "demoWarningTitle": "Demo rules — not yet validated for real farms",
+      "demoWarning": "The seeded actions are demo rules that require local expert validation before real-world deployment. Validate an action only after checking it with local seaweed experts and extension guidance.",
+      "riskType": "Risk type",
+      "validation": "Validation",
+      "summary": "{total} actions · {validated} validated · {demo} demo rules",
+      "empty": "No actions match these filters",
+      "andAbove": "and above",
+      "withinHours": "within {n} h",
+      "disabled": "Disabled",
+      "escalates": "Escalates to extension",
+      "conditions": "Conditions",
+      "noConditions": "None (applies whenever the level matches)",
+      "source": "Source",
+      "validatedBy": "by {name}, {date}",
+      "timesRecommended": "Recommended {n} times",
+      "validate": "Validate",
+      "removeValidation": "Remove validation",
+      "validationNote": "Validation note",
+      "validateHelp": "Confirm this action has been checked with local experts. Your name and note are recorded in the audit log.",
+      "removeHelp": "The action will return to \"pending validation\". Explain why in the note.",
+      "validatedOk": "{code} validated.",
+      "unvalidatedOk": "Validation removed from {code}."
+    },
+    "farm": {
+      "back": "Back to farms",
+      "sections": "Farm sections",
+      "tabs": {
+        "overview": "Overview",
+        "risk": "Risk",
+        "recommendations": "Recommendations",
+        "observations": "Observations",
+        "records": "Harvests & outcomes",
+        "alerts": "Alerts",
+        "notes": "Extension notes"
+      },
+      "demoFarmNote": "This is a demo farm: its location, farmer and environmental data are illustrative, not real.",
+      "profile": "Farm profile",
+      "species": "Species",
+      "method": "Farming method",
+      "methods": {
+        "OFF_BOTTOM": "Off-bottom",
+        "LONG_LINE": "Long line",
+        "RAFT": "Raft",
+        "FLOATING_LINE": "Floating line"
+      },
+      "exposure": "Exposure",
+      "exposures": {
+        "SHELTERED": "Sheltered",
+        "MODERATE": "Moderate",
+        "EXPOSED": "Exposed"
+      },
+      "anchoring": "Anchoring",
+      "anchors": {
+        "WOODEN_STAKES": "Wooden stakes",
+        "CONCRETE_BLOCKS": "Concrete blocks",
+        "SAND_BAGS": "Sand bags",
+        "ROCKS": "Rocks"
+      },
+      "lines": "Lines",
+      "area": "Area",
+      "location": "Location",
+      "cycle": "Current cycle",
+      "daysUnit": "days",
+      "daysToHarvest": "Until harvest",
+      "overdueBy": "Overdue by {n} days",
+      "linesPlanted": "Lines planted",
+      "noCycle": "No active planting cycle.",
+      "forecast": "Harvest forecast (risk-adjusted)",
+      "environment": "Environment",
+      "noEnvironment": "No environmental data yet",
+      "envHistory": "Last {n} readings",
+      "sstAnomaly": "Sea temperature anomaly (°C)",
+      "waveHeight": "Wave height (m)",
+      "wind": "Wind speed (km/h)",
+      "map": "Location",
+      "noLocation": "No location recorded",
+      "allOnMap": "See all farms on the map",
+      "recalculated": "Risk recalculated with the latest data.",
+      "demoDataNote": "These predictions use demo environmental data, not live measurements.",
+      "noPredictions": "No predictions yet — use \"Recalculate risk\".",
+      "review": "Review",
+      "farmerResponse": "Farmer response",
+      "didIt": "Did it",
+      "couldNot": "Could not do it",
+      "dueBy": "Due by",
+      "noRecommendations": "No recommendations yet",
+      "harvests": "Harvests",
+      "losses": "Losses",
+      "actual": "Actual",
+      "estimated": "Estimated",
+      "kgDry": "kg dry",
+      "kgWet": "kg wet",
+      "price": "Price / kg",
+      "cause": "Cause",
+      "actionTaken": "Action taken",
+      "noHarvests": "No harvests recorded.",
+      "noLosses": "No losses recorded.",
+      "addNote": "Add extension note",
+      "note": "Note",
+      "notePlaceholder": "What did you observe or advise?",
+      "visitPriority": "Visit priority",
+      "visitBy": "Visit by",
+      "visitByOn": "Visit by {date}",
+      "saveNote": "Save note",
+      "noteSaved": "Note saved.",
+      "noNotes": "No extension notes yet"
+    }
+  },
+  "buyer": {
+    "tonnes": "{v} tonnes",
+    "tonnesShort": "Tonnes",
+    "grade": "Grade {g}",
+    "privacy": "Supply is shown by cooperative and district only — individual farmers are never identified.",
+    "noSupply": "No forecast supply matches",
+    "postDemand": "Post demand",
+    "byCooperative": "Supply by cooperative",
+    "byDistrict": "Supply by district",
+    "demoNote": "Includes supply from demo farms — illustrative figures, not real stock.",
+    "cards": {
+      "nextDays": "Next {n} days",
+      "range": "Range: {low}–{high} tonnes",
+      "lots": "{n} harvest lots"
+    },
+    "uncertainty": {
+      "title": "How certain is this?",
+      "body": "The main figure is the risk-adjusted estimate: expected yield reduced by current heat, storm and growth risks. The range shows a likely low and high outcome. Wider ranges mean less farm history or less confident predictions. These are estimates, not guaranteed supply."
+    },
+    "dashboard": {
+      "title": "Supply outlook",
+      "subtitle": "Expected dried-seaweed supply from Zanzibar cooperatives",
+      "viewSupply": "View supply lots",
+      "weekly": "Expected supply by week (tonnes)",
+      "weeklySub": "Bars: risk-adjusted · whiskers: low–high range · dashed: before risk",
+      "quality": "Quality history (12 months)",
+      "qualitySub": "Recorded harvests by grade",
+      "qualityRow": "{t} t from {harvests} harvests ({share})",
+      "noQuality": "No graded harvests yet",
+      "demand": "Your demand vs forecast supply",
+      "demandSub": "Supply expected by each need-by date that meets your grade",
+      "noDemand": "No demand posted yet",
+      "noDemandHint": "Post your needs on the Supply page to compare them with the forecast."
+    },
+    "demand": {
+      "neededBy": "Needed by",
+      "what": "Product",
+      "anySpecies": "Any species",
+      "anyGrade": "Any grade",
+      "gradeMin": "min {g}",
+      "quantity": "Needed",
+      "quantityKg": "Quantity (kg)",
+      "pricePerKg": "Price per kg (TZS)",
+      "minimumGrade": "Minimum grade",
+      "forecastSupply": "Forecast supply",
+      "coverage": "Coverage",
+      "likely": "Likely covered",
+      "possible": "Possible",
+      "short": "Likely short",
+      "price": "Price / kg",
+      "status": {
+        "OPEN": "Open",
+        "FULFILLED": "Fulfilled",
+        "CANCELLED": "Cancelled"
+      },
+      "coverageNote": "Coverage compares your quantity with all forecast lots due by that date and meeting your minimum grade. Other buyers may compete for the same supply.",
+      "formSub": "Tell cooperatives what you need. Farmer identities are not shared with you.",
+      "posted": "Demand posted.",
+      "onlyBuyers": "Only buyer accounts can post demand.",
+      "errQuantity": "Enter a quantity of at least 1 kg.",
+      "errDate": "Choose the date you need the seaweed by.",
+      "errPrice": "Price cannot be negative."
+    },
+    "filters": {
+      "grade": "Expected grade",
+      "minKg": "Minimum lot size (kg)",
+      "window": "Time window",
+      "anyTime": "Any time",
+      "from": "From",
+      "to": "To",
+      "apply": "Apply",
+      "reset": "Reset"
+    },
+    "forecast": {
+      "title": "Supply forecast",
+      "subtitle": "Filter expected supply by cooperative, district, date, lot size and grade",
+      "matching": "{n} harvest lots match these filters.",
+      "tryWider": "Try a wider date range or fewer filters."
+    },
+    "supply": {
+      "title": "Supply lots",
+      "subtitle": "Anonymised, risk-adjusted harvest lots — click a column to sort",
+      "tableCaption": "Forecast supply lots",
+      "expectedDate": "Expected",
+      "species": "Species",
+      "riskAdjusted": "Risk-adjusted",
+      "grade": "Grade",
+      "totals": "Total ({n} lots)"
+    }
+  },
+  "admin": {
+    "common": {
+      "showing": "Showing {from}–{to} of {total}",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "feedback": {
+      "FALSE_POSITIVE": "False positive",
+      "FALSE_NEGATIVE": "False negative",
+      "FLAGGED": "Flagged",
+      "CORRECT": "Correct"
+    },
+    "system": {
+      "title": "System",
+      "readOnly": "Read-only — configured in backend/.env",
+      "weather": "Weather provider",
+      "ocean": "Ocean provider",
+      "llm": "Language model",
+      "live": "Live",
+      "demo": "Demo / simulated",
+      "database": "Database",
+      "demoMode": "Demo mode",
+      "demoModeOn": "Demo mode ON",
+      "demoModeOff": "Demo mode off",
+      "jobsEnabled": "Scheduled jobs enabled",
+      "envNote": "Secrets and provider credentials live in backend/.env and are never stored in the database."
+    },
+    "dashboard": {
+      "title": "System overview",
+      "subtitle": "Usage, predictions, models, jobs and system health.",
+      "health": "System health",
+      "users": "Users",
+      "farms": "Farms",
+      "activeFarms": "{n} active",
+      "predictions": "Predictions",
+      "last24h": "{n} in the last 24 h",
+      "simulations": "Simulations",
+      "alertsActive": "Active alerts",
+      "actions": "Action library",
+      "validated": "validated by experts",
+      "observations": "Observations",
+      "harvestsOutcomes": "Harvests / outcomes",
+      "byLevel": "Predictions by risk level",
+      "byLevelSub": "Real predictions, last 7 days (simulations excluded)",
+      "predictionsUnit": "predictions",
+      "noPredictions": "No predictions in the last 7 days",
+      "byRole": "Users by role",
+      "usersUnit": "users",
+      "models": "Risk models",
+      "activeModels": "{n} ML model(s) active",
+      "ruleOnly": "No ML model active — the rule-based baseline is used.",
+      "feedback": "Prediction feedback",
+      "recentJobs": "Recent job runs"
+    },
+    "jobs": {
+      "title": "Scheduled jobs",
+      "subtitle": "Background tasks that keep data, risks and forecasts fresh.",
+      "schedulerOn": "Scheduler on",
+      "schedulerOff": "Scheduler off",
+      "schedulerOffNote": "The automatic scheduler is disabled (ENABLE_JOBS in backend/.env). Jobs only run when started here.",
+      "cron": "Cron schedule (UTC)",
+      "lastRun": "Last run",
+      "neverRun": "Never run",
+      "running": "Running…",
+      "wait": "Running {name} — this can take several seconds…",
+      "result": "Result of {name}",
+      "noRuns": "No job runs yet",
+      "job": "Job",
+      "trigger": "Trigger",
+      "started": "Started",
+      "duration": "Duration",
+      "summary": "Summary"
+    },
+    "users": {
+      "title": "Users & access",
+      "subtitle": "Manage accounts, roles and cooperatives.",
+      "tabUsers": "Users",
+      "tabRoles": "Roles & permissions",
+      "tabCoops": "Cooperatives",
+      "user": "User",
+      "role": "Role",
+      "roles": "Roles",
+      "you": "You",
+      "active": "Active",
+      "disabled": "Disabled",
+      "lastLogin": "Last login",
+      "never": "Never",
+      "created": "Created",
+      "searchPlaceholder": "Name or email",
+      "new": "New user",
+      "none": "No users match these filters",
+      "createTitle": "Create user",
+      "editTitle": "Edit {name}",
+      "needRole": "Choose at least one role.",
+      "passwordShort": "Password must be at least 8 characters.",
+      "passwordHint": "At least 8 characters. Share it securely with the user.",
+      "coopHint": "For cooperative admins: the cooperative they manage. For farmers: their membership.",
+      "rolesNote": "You cannot remove the admin role from your own account.",
+      "updated": "User updated.",
+      "createdMsg": "User created.",
+      "userCount": "{n} users"
+    },
+    "coops": {
+      "new": "New cooperative",
+      "none": "No cooperatives yet",
+      "createTitle": "Create cooperative",
+      "editTitle": "Edit cooperative",
+      "code": "Code",
+      "codeHint": "2–20 letters, digits or dashes (e.g. PAJE). Farmers use it to join.",
+      "name": "Name",
+      "region": "Region",
+      "description": "Description",
+      "members": "Members",
+      "saved": "Cooperative saved."
+    },
+    "actions": {
+      "title": "Action library",
+      "subtitle": "The only source of recommendations shown to farmers. Each entry maps a risk type and level to one approved action.",
+      "new": "New action",
+      "none": "No actions match these filters",
+      "unvalidatedNotice": "{n} of {total} actions are not yet validated by local experts. They can still be recommended (unless \"Require validated actions\" is on in Settings) and are shown to farmers as \"pending validation\".",
+      "unvalidated": "Not validated",
+      "disabled": "Disabled",
+      "escalates": "Escalates to extension",
+      "andAbove": "and above",
+      "sourceLabel": "Source",
+      "used": "used in {n} recommendations",
+      "validatedBy": "validated by {name} on {date}",
+      "createTitle": "New action",
+      "editTitle": "Edit {code}",
+      "createNote": "New actions start as not validated. An extension officer or admin must validate them.",
+      "resetNote": "Changing the action text, explanation, risk type, levels or conditions resets expert validation (the backend does this automatically).",
+      "resetWarning": "You changed what farmers are told. Saving will RESET the expert validation of this action.",
+      "code": "Code",
+      "codeHint": "Upper-case letters, digits and _ (e.g. HEAT_HIGH_INSPECT).",
+      "codeFixed": "The code cannot be changed.",
+      "riskType": "Risk type",
+      "cropStage": "Crop stage",
+      "stage": {
+        "ANY": "Any stage",
+        "EARLY": "Early",
+        "GROWING": "Growing",
+        "MATURING": "Maturing",
+        "HARVEST_READY": "Harvest-ready"
+      },
+      "minLevel": "Minimum risk level",
+      "maxLevel": "Maximum risk level",
+      "noMax": "No maximum",
+      "urgency": "Urgency",
+      "urgencyHours": "Act within (hours)",
+      "priority": "Priority",
+      "priorityHint": "0–100, higher wins when several match",
+      "enabled": "Enabled",
+      "escalate": "Escalate to extension officer",
+      "actionEn": "Action (English)",
+      "actionSw": "Action (Kiswahili)",
+      "explanationEn": "Explanation (English)",
+      "explanationSw": "Explanation (Kiswahili)",
+      "source": "Source / evidence",
+      "sourceHint": "Where this advice comes from (guideline, expert, study).",
+      "conditions": "Extra conditions (all must be true)",
+      "addCondition": "Add condition",
+      "noConditions": "No extra conditions — the action applies whenever the risk type, level and crop stage match.",
+      "conditionsHint": "Feature names come from the risk engine features, e.g. maturityRatio, rainfallMm, sstAnomalyC, waveHeightM, windSpeedKmh, heatProbability, stormProbability, cropAgeDays.",
+      "feature": "Feature",
+      "operator": "Operator",
+      "value": "Value",
+      "badCondition": "Each condition needs a feature name (letters, digits, _) and a value.",
+      "badRange": "The maximum level must be the same as or higher than the minimum level.",
+      "validate": "Validate",
+      "unvalidate": "Remove validation",
+      "validateTitle": "Validate {code}",
+      "unvalidateTitle": "Remove validation from {code}",
+      "validateText": "Confirm that this action has been reviewed by a local expert and is safe and appropriate for Zanzibar seaweed farmers.",
+      "unvalidateText": "The action will be marked as pending validation again.",
+      "note": "Validation note",
+      "updated": "Action updated.",
+      "created": "Action created (pending validation).",
+      "validationSaved": "Validation status saved."
+    },
+    "models": {
+      "title": "AI risk models",
+      "subtitle": "Rule-based baseline, trained ML models and their measured performance.",
+      "currentStatus": "Current risk model",
+      "ruleBaseline": "Rule-based baseline",
+      "ruleInfo": "Rule baseline {version} · {n} real predictions made with the rule engine",
+      "aiModeLabel": "Setting ai.mode",
+      "changeMode": "Change in Settings",
+      "hybridNoActive": "ai.mode is HYBRID, but no model is ACTIVE — so every prediction uses the rule-based baseline. Activate a model to blend it in.",
+      "ruleOnlyMode": "ai.mode is RULE_ONLY — ML models are ignored even when active.",
+      "none": "No ML models trained yet",
+      "noneText": "The rule engine is in use. To train models, run this command on the server:",
+      "status": {
+        "ACTIVE": "Active",
+        "TRAINED": "Trained (inactive)",
+        "RETIRED": "Retired"
+      },
+      "inactiveByMode": "Not used: ai.mode is RULE_ONLY",
+      "trainedAt": "Trained",
+      "trainRecords": "Training records",
+      "testRecords": "Test records",
+      "usage": "Predictions / feedback",
+      "usageValue": "{p} / {f}",
+      "testMetrics": "Test-set metrics (as computed at training)",
+      "precision": "Precision",
+      "recall": "Recall",
+      "accuracy": "Accuracy",
+      "confusionTest": "Test confusion matrix",
+      "fieldMetrics": "Field metrics",
+      "noFieldMetrics": "No field metrics yet — computed from real outcomes by the model-monitoring job.",
+      "noMatrix": "No confusion matrix available.",
+      "predYes": "Predicted: risk",
+      "predNo": "Predicted: no risk",
+      "actualYes": "Actual: risk",
+      "actualNo": "Actual: no risk",
+      "tp": "True +",
+      "fn": "False −",
+      "fp": "False +",
+      "tn": "True −",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "retire": "Retire",
+      "oneActive": "Only one model per risk type can be active.",
+      "fieldTitle": "Field evaluation (real outcomes)",
+      "fieldSubtitle": "Predictions compared with {n} recorded outcomes",
+      "falsePositives": "{n} false positives",
+      "fpText": "Risk was predicted but no loss happened — may cause unnecessary work for farmers.",
+      "falseNegatives": "{n} false negatives",
+      "fnText": "A loss happened that was not predicted — the most costly error.",
+      "fieldNote": "Field metrics are computed by the backend from recorded outcomes. With few outcomes they are highly uncertain.",
+      "feedbackTitle": "Prediction feedback",
+      "feedbackSubtitle": "Flags from extension officers and farmers",
+      "noFeedback": "No feedback recorded yet.",
+      "retrain": "To (re)train models:"
+    },
+    "settings": {
+      "title": "Settings",
+      "subtitle": "Runtime settings stored in the database. Every change is audit-logged.",
+      "groups": {
+        "risk": "Risk levels & AI",
+        "actions": "Actions & alerts",
+        "environment": "Environment & notifications"
+      },
+      "keys": {
+        "risk": {
+          "thresholds": "Risk level thresholds"
+        },
+        "ai": {
+          "mode": "AI mode",
+          "mlBlendWeight": "ML blend weight",
+          "minTrainingRecords": "Minimum training records"
+        },
+        "actions": {
+          "requireValidated": "Require validated actions"
+        },
+        "alerts": {
+          "missingReportDays": "Missing report after (days)",
+          "dedupHours": "Alert de-duplication window (hours)"
+        },
+        "environment": {
+          "maxCacheAgeHours": "Max cache age (hours)",
+          "preferLive": "Prefer live environmental data"
+        },
+        "notifications": {
+          "smsEnabled": "SMS notifications"
+        }
+      },
+      "mode": {
+        "RULE_ONLY": "Rule engine only",
+        "HYBRID": "Blend rules with an ACTIVE ML model"
+      },
+      "on": "On",
+      "off": "Off",
+      "default": "Default",
+      "useDefault": "Use default",
+      "updated": "Updated {time}",
+      "savedMsg": "Saved",
+      "thresholdNumber": "Enter a number for each level.",
+      "thresholdRange": "Each threshold must be between 0 and 1 (exclusive).",
+      "thresholdOrder": "Thresholds must be ascending: MEDIUM < HIGH < CRITICAL.",
+      "intRange": "Enter a whole number within the allowed range.",
+      "floatRange": "Enter a number between 0 and 1.",
+      "previewAria": "Preview of risk level bands",
+      "previewInvalid": "Fix the values to see the preview",
+      "unknownKeys": "Other settings: {keys}"
+    },
+    "audit": {
+      "title": "Audit log",
+      "subtitle": "Who did what, and when. Also message delivery logs.",
+      "tabAudit": "Audit log",
+      "tabDelivery": "Notification delivery",
+      "action": "Action",
+      "entity": "Entity type",
+      "clear": "Clear filters",
+      "none": "No audit entries match these filters",
+      "user": "User",
+      "ip": "IP address",
+      "details": "Show details",
+      "system": "System",
+      "deliveryIntro": "Latest SMS and other notification deliveries. \"SIMULATED\" means no real message was sent (no provider configured).",
+      "noDelivery": "No notifications delivered yet",
+      "channel": "Channel",
+      "provider": "Provider",
+      "recipient": "Recipient",
+      "error": "Error",
+      "entities": {
+        "User": "User",
+        "Farm": "Farm",
+        "Cooperative": "Cooperative",
+        "ActionLibrary": "Action library",
+        "SystemSetting": "System setting",
+        "MlModel": "AI model",
+        "Job": "Background job",
+        "RiskPrediction": "Risk prediction",
+        "Alert": "Alert",
+        "BuyerDemand": "Buyer demand",
+        "HarvestForecast": "Harvest forecast",
+        "UploadedFile": "Uploaded file",
+        "Assistant": "AI assistant"
+      }
+    },
+    "at": {
+      "title": "Africa's Talking (SMS & USSD)",
+      "subtitle": "Status of the SMS and USSD connection. The API key is never shown.",
+      "connection": {
+        "CONNECTED": "Connected",
+        "NOT_CONFIGURED": "Not configured",
+        "ERROR": "Error",
+        "UNKNOWN": "No messages sent yet"
+      },
+      "environment": "Environment",
+      "username": "Username",
+      "apiKey": "API key",
+      "set": "Set",
+      "notSet": "Not set",
+      "default": "Default",
+      "configured": "Configured",
+      "notConfigured": "Not configured",
+      "serviceCode": "USSD code",
+      "senderId": "Sender ID",
+      "lastSend": "Last SMS attempt",
+      "lastError": "Last error",
+      "last7": "SMS in the last 7 days",
+      "callbacks": "Callback URLs to enter in Africa's Talking",
+      "callbacksHint": "Replace the placeholders with your public API address and the callback secret from the server settings.",
+      "callback": {
+        "ussd": "USSD callback",
+        "smsInbound": "Incoming SMS callback",
+        "smsDelivery": "Delivery reports callback"
+      },
+      "noSecret": "AT_CALLBACK_SECRET is not set: USSD and SMS callbacks are refused until it is configured.",
+      "testPhone": "Test SMS to",
+      "testHint": "Sends one real SMS through Africa's Talking.",
+      "testSend": "Send test SMS",
+      "result": {
+        "QUEUED": "Accepted by Africa's Talking for {to}. Delivery will be confirmed by a delivery report.",
+        "SENT": "Sent to the network for {to}.",
+        "DELIVERED": "Delivered to {to}.",
+        "FAILED": "Not sent to {to}.",
+        "UNKNOWN": "Unclear answer from Africa's Talking for {to}.",
+        "NOT_CONFIGURED": "Not sent: Africa's Talking is not configured (AT_USERNAME / AT_API_KEY)."
+      }
+    }
+  },
+  "demo": {
+    "sim": {
+      "title": "AI simulation",
+      "subtitle": "Change the ocean and weather conditions for a farm and see how the risk engine and action engine respond.",
+      "label": "SIMULATION — not real data",
+      "noFarms": "No farms available to simulate.",
+      "currentRisks": "Current risks (real)",
+      "currentRisksSub": "Latest stored prediction for this farm",
+      "currentEnv": "Current environment",
+      "currentEnvSub": "Starting values for the sliders",
+      "envNeeded": "Environmental data is needed to start a simulation.",
+      "controlsTitle": "Scenario inputs",
+      "controlsSubtitle": "Start from current conditions, then change them",
+      "presets": "Presets",
+      "preset": {
+        "heatwave": "Marine heatwave",
+        "storm": "Storm",
+        "rain": "Heavy rain",
+        "reset": "Reset to current"
+      },
+      "fields": {
+        "sstAnomalyC": "Sea temperature anomaly",
+        "sstAnomalyDays": "Days of elevated sea temperature",
+        "waveHeightM": "Wave height",
+        "windSpeedKmh": "Wind speed",
+        "rainfallMm": "Rainfall (24 h)",
+        "currentVelocityMs": "Current velocity",
+        "salinityPsu": "Salinity"
+      },
+      "run": "Run AI",
+      "running": "Running the risk engine and action engine…",
+      "neverOverwrite": "Simulations are stored separately and flagged as simulations. They never overwrite real predictions, alerts or farm records.",
+      "readyTitle": "Ready to simulate",
+      "readyText": "Choose a preset or move the sliders, then press \"Run AI\".",
+      "banner": "Simulation — not real data",
+      "bannerText": "These results come from the real risk and action engines, but use the values you entered. They are not a forecast for this farm.",
+      "compareTitle": "Before → after",
+      "compareSubtitle": "Latest real prediction compared with the simulated result",
+      "riskType": "Risk type",
+      "before": "Before (real)",
+      "after": "After (simulated)",
+      "change": "Change",
+      "noBaseline": "No earlier prediction exists for this farm, so there is nothing to compare with.",
+      "recBefore": "Recommendation before (real)",
+      "recAfter": "Recommendation after",
+      "factorsTitle": "Why? — explained factors",
+      "factorsSubtitle": "Structured factors from the simulated prediction",
+      "noFactors": "No strong factors for this risk.",
+      "alertsTitle": "Simulation alerts",
+      "alertsSubtitle": "Alerts the system would raise — marked as simulation, never sent to farmers",
+      "noAlerts": "No alert would be raised for these conditions.",
+      "noAction": "No action selected",
+      "pipelineTitle": "What the system did",
+      "pipelineSubtitle": "The pipeline steps executed for this simulation",
+      "simEnvTitle": "Simulated environment used",
+      "steps": {
+        "receive": "Received the scenario values",
+        "features": "Calculated features",
+        "featuresDetail": "{n} features from environment, crop stage, farm profile, observations and history",
+        "engine": "Ran the risk engine",
+        "probability": "Estimated probabilities",
+        "level": "Assigned risk levels (using the configured thresholds)",
+        "explanation": "Generated the explanation from structured factors",
+        "recommendation": "Selected a recommendation from the Action Library",
+        "alert": "Checked alert rules",
+        "alertDetail": "{n} simulation alert(s) generated"
+      }
+    }
+  },
+  "public": {
+    "hero": {
+      "eyebrow": "Seaweed decision support · Zanzibar",
+      "tagline": "Know the risk. Know the next action.",
+      "description": "AI-powered seaweed risk, harvest and decision support for Zanzibar.",
+      "tryDemo": "Try demo",
+      "channelWeb": "Web app",
+      "channelSms": "SMS",
+      "channelUssd": "USSD"
+    },
+    "preview": {
+      "aria": "Example of the farmer screen",
+      "example": "Example",
+      "farmLabel": "My farm",
+      "reason": "Sea temperature above normal for 8 days",
+      "nextAction": "Next action",
+      "action": "Inspect lines within 24 hours and record whitening or breakage.",
+      "done": "I did this",
+      "report": "Report symptoms",
+      "sea": "Sea temp",
+      "waves": "Waves",
+      "demoLabel": "Illustration only — not a live prediction",
+      "caption": "Illustrative farmer screen. Values are an example, not real data."
+    },
+    "loop": {
+      "aria": "Loop: Monitor, Predict, Act, Learn",
+      "centre1": "Risk → Action",
+      "centre2": "→ Outcome",
+      "eyebrow": "The decision loop",
+      "title": "Monitor → Predict → Act → Learn",
+      "subtitle": "Every prediction leads to an approved action, and every action is followed by an outcome that improves the next prediction.",
+      "monitor": "Monitor",
+      "predict": "Predict",
+      "act": "Act",
+      "learn": "Learn",
+      "monitorText": "Sea temperature, waves, wind and rain for each farm, combined with what farmers see on their lines.",
+      "predictText": "A transparent risk engine estimates heat / ice-ice, storm, poor-growth and harvest-window risk for the next 72 hours, with reasons.",
+      "actText": "The action engine picks one clear next step from an expert-reviewed action library — never free-form AI advice.",
+      "learnText": "Farmers record what they did and what happened. Real outcomes measure how good the predictions were and train better models."
+    },
+    "flow": {
+      "title": "The full data loop",
+      "farmData": "Farm data",
+      "environment": "Environment",
+      "observations": "Observations",
+      "aiRisk": "AI risk",
+      "validatedAction": "Validated action",
+      "farmerResponse": "Farmer response",
+      "outcome": "Outcome",
+      "learningData": "Learning data",
+      "loopNote": "Learning data flows back into the next risk calculation."
+    },
+    "audiences": {
+      "title": "Built for everyone in the seaweed value chain",
+      "subtitle": "Each role sees what it needs, and nothing more.",
+      "farmers": {
+        "title": "Farmers",
+        "b1": "Farm-specific risk and one clear next action, in Kiswahili.",
+        "b2": "Works on smartphones, SMS and basic phones (USSD).",
+        "b3": "Record symptoms, actions and harvests in a few taps."
+      },
+      "cooperatives": {
+        "title": "Cooperatives",
+        "b1": "See which member farms are at risk today, on a map.",
+        "b2": "Risk-adjusted harvest forecasts with uncertainty ranges.",
+        "b3": "Follow up on alerts and missing reports."
+      },
+      "extension": {
+        "title": "Extension officers",
+        "b1": "Prioritise farm visits by risk level and urgency.",
+        "b2": "Review farmer reports and recommendations.",
+        "b3": "Validate the action library that drives all advice."
+      },
+      "buyers": {
+        "title": "Buyers",
+        "b1": "Anonymised supply forecasts by district and cooperative.",
+        "b2": "Expected quantity ranges and quality grades.",
+        "b3": "Post demand so cooperatives can plan harvests."
+      }
+    },
+    "honesty": {
+      "eyebrow": "Data honesty",
+      "title": "We show what we know — and what we don't",
+      "subtitle": "MwaniMlinzi is decision support, not a guarantee. Every number is labelled with where it comes from.",
+      "demo": {
+        "title": "Demo data is labelled",
+        "text": "Demo farms, demo environmental data and simulations are always marked as such in the app, and never mixed up with real records."
+      },
+      "model": {
+        "title": "Transparent model",
+        "text": "Risk comes from a transparent rule-based baseline, optionally blended with an ML model. Each prediction shows its reasons and the model used."
+      },
+      "library": {
+        "title": "Validated action library",
+        "text": "Recommendations only come from an action library reviewed by local experts. Rules that are not yet validated are marked clearly."
+      },
+      "claims": {
+        "title": "No unproven claims",
+        "text": "We make no accuracy or loss-reduction claims until they are measured in a field evaluation with real outcomes."
+      }
+    },
+    "cta": {
+      "title": "See it working with demo farms",
+      "text": "Log in with a demo account and follow the risk → action → outcome loop end to end."
+    },
+    "about": {
+      "title": "Farm-specific decisions for Zanzibar's seaweed farmers",
+      "subtitle": "Seaweed farming supports thousands of coastal households in Zanzibar, most of them women. A changing ocean makes every season harder to predict.",
+      "problemTitle": "The problem",
+      "problem1": "Farmers can find general weather and ocean information, but it rarely tells them what it means for their own lines, this week, and what to do about it.",
+      "problem2": "Losses often come from events that give warning signs days in advance. Without timely, farm-specific and actionable advice, those signs are missed.",
+      "challenges": {
+        "heat": {
+          "title": "Heat stress and ice-ice",
+          "text": "Warm sea temperatures over several days stress the seaweed and trigger ice-ice disease, which can wipe out a crop."
+        },
+        "storm": {
+          "title": "Storms and line damage",
+          "text": "Strong winds and waves break lines and pull out stakes, especially on exposed farms."
+        },
+        "growth": {
+          "title": "Poor growth",
+          "text": "Low nutrients, heavy rain and epiphytes slow growth and reduce the harvest."
+        },
+        "harvest": {
+          "title": "Harvest timing",
+          "text": "Harvesting too early or too late lowers yield and quality; drying in the rain reduces price."
+        }
+      },
+      "answerTitle": "Our answer",
+      "answer": "MwaniMlinzi AI turns environmental data and farmers' own observations into a risk level for each farm, a short explanation of why, and one approved next action. It then records what the farmer did and what happened, so advice can be checked against reality and improved.",
+      "servesTitle": "Who it serves",
+      "serves": {
+        "farmers": "Get risk and advice for their own farm on web, SMS or USSD, and keep a record of their farm history.",
+        "cooperatives": "Monitor member farms, respond to alerts and plan collective harvests and sales.",
+        "extension": "Focus limited field time on the farms that need it and keep the advice library correct.",
+        "buyers": "Plan procurement from anonymised, risk-adjusted supply forecasts."
+      },
+      "privacyTitle": "Data honesty and privacy",
+      "privacyIntro": "Farm data belongs to farmers. We only collect what is needed to give useful advice.",
+      "privacy": {
+        "consent": {
+          "title": "Consent first",
+          "text": "Every account is created with explicit consent explaining how farm records are used."
+        },
+        "rbac": {
+          "title": "Role-based access",
+          "text": "Farmers see their own farms; cooperatives and extension officers see member farms; admins manage the system. Every change is audit-logged."
+        },
+        "ownership": {
+          "title": "Farmers own their data",
+          "text": "Records are used to give the farmer advice and to improve the risk models — not sold."
+        },
+        "buyers": {
+          "title": "Buyers see anonymised supply",
+          "text": "Buyers only see aggregated quantities by district and cooperative — never farmer names or farm locations."
+        }
+      },
+      "honestyNote": "This deployment may run in demo mode. Demo farms and demo environmental data are illustrative only and are always labelled in the app."
+    },
+    "how": {
+      "title": "How MwaniMlinzi works",
+      "subtitle": "A transparent pipeline from ocean data to an approved action — and back again through real outcomes.",
+      "pipelineTitle": "From data to decision",
+      "optional": "Optional",
+      "steps": {
+        "environment": {
+          "title": "Environmental data",
+          "text": "Sea surface temperature and anomaly, waves, wind, rain, currents and salinity per farm — from live providers when configured, otherwise cached or clearly labelled demo data."
+        },
+        "risk": {
+          "title": "Risk engine",
+          "text": "A rule-based baseline scores each risk using known drivers (e.g. days of elevated temperature, crop age, exposure). An ML model can be blended in when one is trained and activated."
+        },
+        "action": {
+          "title": "Action engine",
+          "text": "For the highest risk, the engine selects a matching entry from the approved Action Library — by risk type, level, crop stage and conditions."
+        },
+        "approved": {
+          "title": "Approved recommendation",
+          "text": "The farmer receives one clear next action, the reasons behind it, its urgency and whether an extension officer should be contacted."
+        },
+        "llm": {
+          "title": "Language model (explanation only)",
+          "text": "If configured, a language model may rephrase or translate the approved answer. It never invents risks, numbers or actions."
+        },
+        "farmer": {
+          "title": "Farmer action",
+          "text": "The farmer records whether the action was taken, and reports symptoms from the farm."
+        },
+        "outcome": {
+          "title": "Outcome",
+          "text": "Harvests and losses are recorded, showing whether the predicted risk actually happened."
+        },
+        "learning": {
+          "title": "Learning",
+          "text": "Outcomes and feedback measure precision and recall in the field and become training data for future models."
+        }
+      },
+      "guardrail": "Guardrail: every recommendation shown to a farmer comes from the Action Library. Entries not yet validated by local experts are marked \"pending validation\".",
+      "channelsTitle": "Channels",
+      "channels": {
+        "web": {
+          "title": "Web app",
+          "text": "Mobile-first app for farmers and dashboards for cooperatives, extension officers, buyers and admins."
+        },
+        "sms": {
+          "title": "SMS",
+          "text": "Commands such as RISK FARM001 or RIPOTI FARM001 WEUPE 20%, plus automatic alert messages."
+        },
+        "ussd": {
+          "title": "USSD",
+          "text": "Dial the MwaniMlinzi USSD code on any phone: check risk, report symptoms, record harvests, get advice and change language."
+        }
+      },
+      "rolesTitle": "Roles",
+      "role": "Role",
+      "canDo": "What they can do",
+      "roles": {
+        "FARMER": "View own farm risk and next action, record observations, actions and harvests, use SMS/USSD and the assistant.",
+        "COOPERATIVE_ADMIN": "Monitor member farms on a map, manage alerts, see harvest forecasts.",
+        "EXTENSION_OFFICER": "Review reports and recommendations, flag predictions, validate the action library.",
+        "BUYER": "See anonymised supply forecasts and post demand.",
+        "ADMIN": "Manage users, cooperatives, settings, models, jobs and the audit log."
+      }
+    },
+    "demo": {
+      "title": "Demo guide",
+      "subtitle": "Explore the full risk → action → outcome loop with demo accounts and five scenario farms. All demo data is illustrative.",
+      "accountsTitle": "Demo accounts",
+      "accountsSubtitle": "Pick an account — the login form will be filled with its email.",
+      "useAccount": "Use this account",
+      "passwordPrefix": "Password: printed by",
+      "passwordSee": "see",
+      "walkTitle": "Suggested walk-through",
+      "walkSubtitle": "About 15 minutes, covering every role and channel.",
+      "open": "Open",
+      "loginRequired": "Links open pages that require login with the matching role.",
+      "steps": {
+        "loginFarmer": {
+          "title": "Log in as the farmer",
+          "text": "Use farmer@demo.mwanimlinzi.local (farms FARM001 and FARM002)."
+        },
+        "viewRisk": {
+          "title": "View farm, risk, explanation and recommendation",
+          "text": "Open \"Why?\" on a risk card to see the factors, then read the next action."
+        },
+        "observation": {
+          "title": "Submit an observation",
+          "text": "Report whitening or breakage on FARM001."
+        },
+        "recalc": {
+          "title": "Risk is recalculated and an alert is raised",
+          "text": "The new report changes the risk and may create an alert and an SMS."
+        },
+        "recordAction": {
+          "title": "Record the action",
+          "text": "Press \"I did this\" (or \"Could not do it\") on the next action."
+        },
+        "harvest": {
+          "title": "Record a harvest or outcome",
+          "text": "Record a harvest for FARM002, which is near harvest."
+        },
+        "coop": {
+          "title": "Cooperative dashboard, map and forecast",
+          "text": "Log in as the cooperative to see member farms at risk and the harvest forecast."
+        },
+        "extension": {
+          "title": "Extension review",
+          "text": "Log in as the extension officer to review reports and recommendations."
+        },
+        "buyer": {
+          "title": "Buyer forecast",
+          "text": "Log in as the buyer to see anonymised, risk-adjusted supply."
+        },
+        "simulation": {
+          "title": "AI simulation",
+          "text": "Change sea temperature, waves or rain and see how risk and the recommended action change."
+        },
+        "atChannels": {
+          "title": "SMS and USSD",
+          "text": "Real SMS and USSD go through Africa's Talking. Use the Africa's Talking sandbox simulator with a registered phone number (see docs/AFRICASTALKING.md)."
+        }
+      },
+      "healthTitle": "Backend status",
+      "healthSubtitle": "Live from /api/health",
+      "status": "Status",
+      "database": "Database",
+      "demoModeOn": "Demo mode on",
+      "weather": "Weather provider",
+      "ocean": "Ocean provider",
+      "llm": "Language model",
+      "providerLegend": "Green = live provider, purple = demo provider. SMS and USSD are never simulated: they work only when Africa's Talking is configured.",
+      "scenariosTitle": "Scenario farms",
+      "scenariosSubtitle": "Seeded demo farms, each showing a different situation.",
+      "scenarios": {
+        "heat": {
+          "title": "Marine heat stress",
+          "text": "Sea temperature above normal for several days — high heat / ice-ice risk."
+        },
+        "harvest": {
+          "title": "Near harvest",
+          "text": "Crop close to maturity — harvest-window advice."
+        },
+        "storm": {
+          "title": "Storm",
+          "text": "Strong wind and waves on an exposed farm — high line-damage risk."
+        },
+        "growth": {
+          "title": "Poor growth",
+          "text": "Slow growth and epiphytes — high poor-growth risk."
+        },
+        "normal": {
+          "title": "Normal conditions",
+          "text": "Calm conditions — low risk, routine monitoring. Good for simulations."
+        }
+      },
+      "scenarioNote": "Risk levels shown here describe the seeded scenario; the app always shows the latest calculated value.",
+      "notConfigured": "Not configured"
+    },
+    "form": {
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "fullName": "Full name",
+      "phone": "Phone number",
+      "language": "Preferred language",
+      "cooperative": "Cooperative",
+      "village": "Village",
+      "district": "District",
+      "companyName": "Company name",
+      "phoneOrEmail": "Phone number or email"
+    },
+    "login": {
+      "title": "Log in",
+      "subtitle": "Welcome back to MwaniMlinzi AI.",
+      "missing": "Enter your phone number (or email) and password.",
+      "signingIn": "Logging in…",
+      "noAccount": "No account yet?",
+      "demoHint": "Just exploring?",
+      "demoLink": "Open the demo guide",
+      "identifierHint": "Use the phone number you registered with, e.g. 0777 123 456."
+    },
+    "register": {
+      "title": "Create an account",
+      "subtitle": "Farmers and buyers can register here. Cooperative, extension and admin accounts are created by an administrator.",
+      "iAm": "I am a…",
+      "roleHint": {
+        "FARMER": "Get risk alerts and advice for my farm",
+        "BUYER": "See anonymised supply forecasts"
+      },
+      "phoneHint": "Your mobile number, e.g. 0777 123 456. Used to log in and for SMS/USSD.",
+      "passwordHint": "At least 8 characters, with a letter and a number.",
+      "coopHint": "Your cooperative can then see your farm and help you.",
+      "noCoop": "No cooperative / choose later",
+      "coopLoadError": "Could not load cooperatives. You can join one later.",
+      "consentTitle": "Data use consent (required)",
+      "consentText": "I agree that MwaniMlinzi stores my farm records to give me risk advice; my cooperative and extension officers can see my farm data; buyers only see anonymised supply.",
+      "consentMore": "You can ask your cooperative or the administrator to see or correct your data at any time.",
+      "haveAccount": "Already have an account?",
+      "errors": {
+        "required": "This field is required.",
+        "email": "Enter a valid email address.",
+        "phone": "Enter a valid Tanzanian mobile number, e.g. 0777 123 456.",
+        "passwordLength": "Password must be at least 8 characters.",
+        "passwordMix": "Password must contain a letter and a number.",
+        "passwordMatch": "Passwords do not match.",
+        "consent": "You must agree to data use to create an account."
+      },
+      "emailHint": "Optional.",
+      "optionalTitle": "More details (optional)",
+      "smsOptIn": "Send me SMS alerts about my farm",
+      "smsOptInHint": "Only important messages. You can change this later in Settings."
+    },
+    "notFound": {
+      "title": "Page not found",
+      "text": "The page you are looking for does not exist or has moved.",
+      "home": "Go to home page"
+    }
+  },
+  "env": {
+    "seaTemp": "Sea temp",
+    "vsNormal": "{value} vs normal",
+    "waves": "Waves",
+    "wind": "Wind",
+    "rain": "Rain",
+    "elevatedDays": "Elevated sea temperature for {n} day(s)"
+  },
+  "map": {
+    "lastObservation": "Last observation",
+    "demoLocations": "Farm locations are demo data — they do not represent real farms."
+  },
+  "languageName": {
+    "en": "English",
+    "sw": "Kiswahili"
+  },
+  "a11y": {
+    "mainNav": "Main navigation",
+    "closeMenu": "Close menu",
+    "openMenu": "Open menu",
+    "menu": "Menu",
+    "farmerNav": "Farmer navigation",
+    "language": "Language",
+    "publicNav": "Site navigation",
+    "mapCredit": "Map data © OpenStreetMap contributors"
+  },
+  "offline": {
+    "banner": "You are offline. You are seeing the last saved information. New records need a connection."
+  },
+  "account": {
+    "title": "Settings",
+    "subtitle": "Your language, phone number, SMS alerts and password.",
+    "languageTitle": "Language",
+    "languageText": "The app, SMS and USSD will use this language.",
+    "contactTitle": "Phone number",
+    "contactText": "Your phone number is used to log in and to receive SMS and USSD.",
+    "smsTitle": "SMS alerts",
+    "smsText": "Choose which important messages we send to your phone. You always see all alerts in the app.",
+    "prefs": {
+      "smsEnabled": "Send me SMS",
+      "smsEnabledText": "Turn off to stop all SMS from MwaniMlinzi.",
+      "risk": "Risk alerts",
+      "riskText": "Only high and very high risk on your farm.",
+      "harvest": "Harvest reminders",
+      "harvestText": "When your seaweed is ready to harvest.",
+      "system": "Important system messages",
+      "systemText": "For example account or service changes."
+    },
+    "noPhone": "Add a phone number to receive SMS.",
+    "passwordTitle": "Change password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "changePassword": "Change password",
+    "saved": "Saved"
+  }
+}
