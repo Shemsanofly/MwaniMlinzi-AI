@@ -22,10 +22,11 @@ export class EnvironmentalProvider {
     };
   }
 
-  async fetch(loc) {
+  /** `useLive: false` (admin setting environment.preferLive) skips live providers and uses demo data. */
+  async fetch(loc, { useLive = true } = {}) {
     const [weather, ocean] = await Promise.all([
-      this.#withFallback('weather', this.weatherLive, this.weatherDemo, loc),
-      this.#withFallback('ocean', this.oceanLive, this.oceanDemo, loc),
+      this.#withFallback('weather', useLive ? this.weatherLive : null, this.weatherDemo, loc),
+      this.#withFallback('ocean', useLive ? this.oceanLive : null, this.oceanDemo, loc),
     ]);
     return { weather, ocean };
   }

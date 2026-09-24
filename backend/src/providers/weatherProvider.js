@@ -35,7 +35,7 @@ export class OpenMeteoWeatherProvider {
       observedAt: new Date(),
       airTemperatureC: c.temperature_2m ?? null,
       rainfallMm: maxOf(d.daily?.precipitation_sum),
-      windSpeedKmh: Math.max(c.wind_speed_10m ?? 0, maxOf(d.daily?.wind_speed_10m_max) ?? 0),
+      windSpeedKmh: maxOf([c.wind_speed_10m, maxOf(d.daily?.wind_speed_10m_max)]),
       windDirectionDeg: c.wind_direction_10m ?? null,
       humidityPct: c.relative_humidity_2m ?? null,
       condition: WMO[c.weather_code] || 'Unknown',
@@ -63,7 +63,10 @@ export class OpenWeatherMapProvider {
   }
 }
 
-const maxOf = (arr) => (Array.isArray(arr) && arr.length ? Math.max(...arr.filter((v) => v != null)) : null);
+const maxOf = (arr) => {
+  const vals = Array.isArray(arr) ? arr.filter((v) => v != null && Number.isFinite(v)) : [];
+  return vals.length ? Math.max(...vals) : null;
+};
 
 /** Returns the configured live provider, or null when not configured / DEMO_MODE. */
 export function createLiveWeatherProvider(config = env) {

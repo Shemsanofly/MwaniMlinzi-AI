@@ -10,6 +10,7 @@ import { RiskService, serializePrediction, serializeRecommendation } from '../se
 import { EnvironmentService } from '../services/environmentService.js';
 import { HarvestForecastService } from '../services/harvestForecastService.js';
 import { pageParams } from '../utils/pagination.js';
+import { getSetting } from '../services/settingsService.js';
 
 const farmId = (req) => {
   if (!isUuid(req.params.id)) throw notFound('Farm');
@@ -167,7 +168,8 @@ export async function riskHistory(req, res) {
     orderBy: { createdAt: 'asc' },
     select: { id: true, riskType: true, probability: true, riskLevel: true, confidence: true, modelType: true, createdAt: true, trigger: true },
   });
-  return ok(res, { predictions });
+  // Effective level thresholds so charts draw the same bands the backend uses.
+  return ok(res, { predictions, thresholds: await getSetting('risk.thresholds') });
 }
 
 export async function listRecommendations(req, res) {

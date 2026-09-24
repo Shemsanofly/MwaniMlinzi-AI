@@ -57,7 +57,8 @@ export const EnvironmentService = {
   async refreshForFarm(farm) {
     const loc = farm.location;
     if (!loc) return null;
-    const { weather, ocean } = await getEnvironmentalProvider().fetch({ latitude: loc.latitude, longitude: loc.longitude, profile: farm.demoScenario || 'NORMAL' });
+    const useLive = (await getSetting('environment.preferLive')) !== false;
+    const { weather, ocean } = await getEnvironmentalProvider().fetch({ latitude: loc.latitude, longitude: loc.longitude, profile: farm.demoScenario || 'NORMAL' }, { useLive });
     const isDemoW = weather.source === 'DEMO';
     const isDemoO = ocean.source === 'DEMO';
     const w = await prisma.weatherObservation.create({

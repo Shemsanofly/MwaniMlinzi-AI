@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import prisma from '../config/prisma.js';
 import { env } from '../config/env.js';
 import { ok, created } from '../utils/response.js';
@@ -241,7 +242,11 @@ export async function ussdSimulate(req, res) {
 export async function ussdCallback(req, res) {
   const provider = getUSSDProvider();
   if (!provider.isLive) return res.status(404).type('text/plain').send('END USSD gateway not configured');
-  if (env.ussd.apiKey && req.query.key !== env.ussd.apiKey) return res.status(401).type('text/plain').send('END Unauthorized');
+  // A shared secret is mandatory: without it anyone could submit reports as any registered phone.
+  if (!env.ussd.apiKey) return res.status(503).type('text/plain').send('END USSD gateway secret not configured');
+  const given = String(req.query.key || req.get('x-ussd-key') || '');
+  const a = Buffer.from(given); const b = Buffer.from(env.ussd.apiKey);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return res.status(401).type('text/plain').send('END Unauthorized');
   const parsed = provider.parse(req.body || {});
   if (!parsed.sessionId || !parsed.phoneNumber) return res.status(400).type('text/plain').send('END Invalid request');
   const { response } = await processUssd(parsed);

@@ -16,7 +16,7 @@
 | Audit logging | `audit_logs` records logins, logouts, registration, farm/record creation, reviews, validations, setting changes (before/after), model activation, job runs, uploads, simulations and AI chats (intent only, not message text). Viewable in Admin → Audit. |
 | AI safety | Recommendations only come from the Action Library; the LLM can only rephrase and never answers treatment questions; the safety policy redirects to extension officers; insufficient data yields no recommendation. |
 | Data honesty | Every environmental record and prediction carries `source` (LIVE/CACHED/DEMO/SIMULATION); demo/synthetic data flags are stored and shown in the UI. |
-| SMS/USSD | Farmers are identified by registered phone numbers; simulators require login and farmers may only use their own number. The live USSD callback is disabled unless configured and can require a shared `?key=`. |
+| SMS/USSD | Farmers are identified by registered phone numbers; simulators require login and farmers may only use their own number. The live USSD callback is disabled unless configured and always requires the shared secret `USSD_API_KEY` (`?key=` or `X-USSD-Key` header, constant-time compared, redacted from access logs). |
 
 ## Privacy
 

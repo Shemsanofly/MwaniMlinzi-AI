@@ -20,7 +20,11 @@ export function createApp() {
   }));
   app.use(express.json({ limit: '200kb' }));
   app.use(express.urlencoded({ extended: false, limit: '50kb' })); // USSD gateway callbacks
-  if (!env.isTest) app.use(morgan(env.isProduction ? 'combined' : 'dev'));
+  if (!env.isTest) {
+    // Never write query-string secrets (e.g. the USSD gateway ?key=) to access logs.
+    morgan.token('url', (req) => (req.originalUrl || req.url).replace(/([?&](?:key|token|apiKey)=)[^&]*/gi, '$1[REDACTED]'));
+    app.use(morgan(env.isProduction ? 'combined' : 'dev'));
+  }
 
   app.get('/', (_req, res) => res.json({ success: true, data: { name: 'MwaniMlinzi AI API', docs: '/api/docs', health: '/api/health' }, message: 'Know the risk. Know the next action.' }));
   app.get('/api/docs.json', (_req, res) => res.json(openApiSpec));

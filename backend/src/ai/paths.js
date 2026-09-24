@@ -11,6 +11,8 @@ export const DATASETS_DIR = process.env.DATASETS_DIR ? path.resolve(process.env.
 export function resolveModelPath(filePath) {
   const abs = path.isAbsolute(filePath) ? filePath : path.join(REPO_ROOT, filePath);
   const normalized = path.resolve(abs);
-  if (!normalized.startsWith(path.resolve(MODELS_DIR))) throw new Error('Model path is outside the models directory');
+  const root = path.resolve(MODELS_DIR);
+  // Compare with a trailing separator so e.g. /data/models_backup cannot pass as /data/models.
+  if (!normalized.startsWith(root + path.sep)) throw new Error('Model path is outside the models directory');
   return normalized;
 }

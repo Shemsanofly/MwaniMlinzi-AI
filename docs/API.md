@@ -45,7 +45,7 @@ admins see all farms; buyers never see farm-level data (only anonymised aggregat
 | GET | `/health` | `{ status, database, demoMode, providers{weather,ocean,llm,sms,ussd}, time }` (503 if DB down) |
 | GET | `/species` | Seaweed species |
 | GET | `/cooperatives/public` | `[{ code, name, district }]` for registration |
-| POST | `/ussd/callback` | Live USSD gateway callback (Africa's Talking form fields). 404 unless `USSD_PROVIDER` configured and `DEMO_MODE=false`; optional `?key=USSD_API_KEY` |
+| POST | `/ussd/callback` | Live USSD gateway callback (Africa's Talking form fields). 404 unless `USSD_PROVIDER` configured and `DEMO_MODE=false`; requires `?key=USSD_API_KEY` (or `X-USSD-Key` header), 503 if no key is configured |
 
 ## Auth
 

@@ -72,12 +72,13 @@ export async function runJob(name, trigger = 'MANUAL') {
   if (!job) throw new Error(`Unknown job ${name}`);
   if (running.has(name)) return { skipped: true, reason: 'Job is already running' };
   running.add(name);
-  const row = await prisma.jobRun.create({ data: { jobName: name, trigger, status: 'RUNNING' } });
+  let row = null;
   try {
+    row = await prisma.jobRun.create({ data: { jobName: name, trigger, status: 'RUNNING' } });
     const summary = await job.run();
     return await prisma.jobRun.update({ where: { id: row.id }, data: { status: 'SUCCESS', finishedAt: new Date(), summary } });
   } catch (err) {
-    await prisma.jobRun.update({ where: { id: row.id }, data: { status: 'FAILED', finishedAt: new Date(), error: err.message } });
+    if (row) await prisma.jobRun.update({ where: { id: row.id }, data: { status: 'FAILED', finishedAt: new Date(), error: err.message } }).catch(() => {});
     throw err;
   } finally {
     running.delete(name);

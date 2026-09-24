@@ -74,7 +74,7 @@ function RiskBody({ ff }) {
         <div className="p-3">
           {histQ.isLoading ? <div className="flex justify-center p-6"><Spinner /></div>
             : histQ.error ? <ErrorState error={histQ.error} onRetry={histQ.refetch} compact />
-            : histQ.data?.predictions?.length ? <RiskHistoryChart predictions={histQ.data.predictions} />
+            : histQ.data?.predictions?.length ? <RiskHistoryChart predictions={histQ.data.predictions} thresholds={histQ.data.thresholds} />
             : <EmptyState title={t('farmer.risk.noHistory')} />}
         </div>
       </Card>

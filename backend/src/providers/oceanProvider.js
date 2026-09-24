@@ -29,12 +29,12 @@ export class OpenMeteoMarineProvider {
     const d = await fetchJson(url);
     const c = d.current || {};
     const sst = c.sea_surface_temperature ?? null;
-    const waveMax = Array.isArray(d.daily?.wave_height_max) ? Math.max(...d.daily.wave_height_max.filter((v) => v != null)) : null;
+    const waves = [c.wave_height, ...(Array.isArray(d.daily?.wave_height_max) ? d.daily.wave_height_max : [])].filter((v) => v != null && Number.isFinite(v));
     return {
       observedAt: new Date(),
       seaSurfaceTempC: sst,
       sstAnomalyC: sst == null ? null : Math.round((sst - climatologySst()) * 100) / 100,
-      waveHeightM: Math.max(c.wave_height ?? 0, waveMax ?? 0) || c.wave_height || null,
+      waveHeightM: waves.length ? Math.max(...waves) : null,
       currentVelocityMs: c.ocean_current_velocity != null ? Math.round((c.ocean_current_velocity / 3.6) * 100) / 100 : null,
       salinityPsu: null,
       chlorophyllMgM3: null,
