@@ -9,6 +9,6 @@ const r = Router();
 r.post('/register', authLimiter, validate(registerSchema), c.register);
 r.post('/login', authLimiter, validate(loginSchema), c.login);
 r.get('/me', authenticate, c.me);
-r.patch('/me', authenticate, validate(profileSchema), c.updateMe);
+r.patch('/me', authenticate, validate(profileSchema, 'body', { partial: true }), c.updateMe);
 r.post('/logout', authenticate, c.logout);
 export default r;

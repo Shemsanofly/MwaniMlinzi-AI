@@ -28,7 +28,7 @@ export default function Ussd() {
   const seq = useRef(0);
   const nextId = () => { seq.current += 1; return seq.current; };
 
-  useEffect(() => { logEnd.current?.scrollIntoView?.({ block: 'nearest' }); }, [log]);
+  useEffect(() => { const el = logEnd.current; if (el) el.scrollTop = el.scrollHeight; }, [log]);
 
   const reset = () => {
     setMode('idle'); setSessionId(null); setInputs([]); setBuffer(''); setScreen(''); setError(null);
@@ -174,7 +174,7 @@ export default function Ussd() {
 
           <Card>
             <CardHeader title={t('demo.ussd.logTitle')} subtitle={t('demo.ussd.logSubtitle')} action={log.length > 0 && <Button size="sm" variant="ghost" onClick={() => setLog([])}>{t('demo.clear')}</Button>} />
-            <div className="max-h-80 space-y-2 overflow-y-auto p-4 font-mono text-xs sm:p-5">
+            <div ref={logEnd} className="max-h-80 space-y-2 overflow-y-auto p-4 font-mono text-xs sm:p-5">
               {!log.length && <p className="font-sans text-sm text-slate-500">{t('demo.ussd.logEmpty')}</p>}
               {log.map((e) => (
                 <div key={e.id} className={cx('rounded-lg p-2', e.dir === 'out' ? 'bg-ocean-50 text-ocean-900' : e.dir === 'err' ? 'bg-red-50 text-red-800' : 'bg-slate-50 text-slate-800')}>
@@ -183,7 +183,6 @@ export default function Ussd() {
                     : <><span className="font-semibold">← {e.state || 'ERROR'}</span><pre className="mt-1 whitespace-pre-wrap">{e.response}</pre></>}
                 </div>
               ))}
-              <div ref={logEnd} />
             </div>
           </Card>
         </div>

@@ -297,7 +297,7 @@ export default function AdminActions() {
       <PageHeader
         title={t('admin.actions.title')}
         subtitle={t('admin.actions.subtitle')}
-        actions={<Button icon={Plus} onClick={() => setModal({ open: true, action: null })}>{t('admin.actions.new')}</Button>}
+        actions={<Button icon={Plus} className="whitespace-nowrap" onClick={() => setModal({ open: true, action: null })}>{t('admin.actions.new')}</Button>}
       />
       {unvalidated > 0 && (
         <Notice tone="warning" icon={ShieldAlert}>{t('admin.actions.unvalidatedNotice', { n: unvalidated, total: all.length })}</Notice>

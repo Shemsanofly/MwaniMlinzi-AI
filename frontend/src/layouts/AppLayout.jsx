@@ -122,10 +122,10 @@ export default function AppLayout() {
           </div>
         )}
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-[900] flex h-16 items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6">
+          <header className="sticky top-0 z-[900] flex h-16 min-w-0 items-center gap-2 border-b border-slate-200 bg-white/95 px-3 backdrop-blur sm:gap-3 sm:px-6">
             <button type="button" className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu"><Menu /></button>
-            <div className="lg:hidden"><Logo /></div>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="min-w-0 truncate lg:hidden"><Logo /></div>
+            <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
               <LanguageSwitch />
               <NotificationBell />
               <button type="button" onClick={async () => { await logout(); navigate('/login'); }} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100">

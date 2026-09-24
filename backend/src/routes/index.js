@@ -43,7 +43,7 @@ api.post('/risk/predictions/:id/flag', authorize('EXTENSION_OFFICER', 'ADMIN'), 
 api.get('/actions', authorize(...STAFF, 'FARMER'), admin.listActionLibrary);
 api.get('/actions/:id', authorize(...STAFF, 'FARMER'), admin.getActionLibrary);
 api.post('/actions', authorize('ADMIN'), validate(s.actionLibrarySchema), admin.createActionLibrary);
-api.patch('/actions/:id', authorize('ADMIN'), validate(s.actionLibraryUpdateSchema), admin.updateActionLibrary);
+api.patch('/actions/:id', authorize('ADMIN'), validate(s.actionLibraryUpdateSchema, 'body', { partial: true }), admin.updateActionLibrary);
 api.post('/actions/:id/validate', authorize('EXTENSION_OFFICER', 'ADMIN'), validate(s.actionValidateSchema), admin.validateActionLibrary);
 
 api.get('/alerts', core.listAlerts);
@@ -55,7 +55,7 @@ api.patch('/notifications/:id/read', core.readNotification);
 
 api.get('/cooperatives', dash.listCooperatives);
 api.post('/cooperatives', authorize('ADMIN'), validate(s.cooperativeSchema), admin.createCooperative);
-api.patch('/cooperatives/:id', authorize('ADMIN'), validate(s.cooperativeSchema.partial()), admin.updateCooperative);
+api.patch('/cooperatives/:id', authorize('ADMIN'), validate(s.cooperativeSchema.partial(), 'body', { partial: true }), admin.updateCooperative);
 api.get('/cooperatives/mine/dashboard', authorize(...STAFF), dash.myCooperativeDashboard);
 api.get('/cooperatives/:id/dashboard', authorize(...STAFF), dash.cooperativeDashboard);
 api.get('/cooperatives/:id/farmers', authorize(...STAFF), dash.cooperativeFarmers);
@@ -88,7 +88,7 @@ adm.use(authorize('ADMIN'));
 adm.get('/dashboard', dash.adminDashboard);
 adm.get('/users', admin.listUsers);
 adm.post('/users', validate(s.adminUserCreateSchema), admin.createUser);
-adm.patch('/users/:id', validate(s.adminUserUpdateSchema), admin.updateUser);
+adm.patch('/users/:id', validate(s.adminUserUpdateSchema, 'body', { partial: true }), admin.updateUser);
 adm.get('/roles', admin.listRoles);
 adm.get('/settings', admin.getSettings);
 adm.put('/settings/:key', validate(s.settingUpdateSchema), admin.updateSetting);

@@ -104,14 +104,14 @@ export function ProviderList({ providers }) {
   return (
     <ul className="divide-y divide-slate-100">
       {rows.map((r) => (
-        <li key={r.k} className="flex items-center justify-between gap-3 py-2 text-sm">
-          <span className="text-slate-600">{r.label}</span>
-          <span className="flex min-w-0 items-center gap-2">
-            <span className="truncate font-mono text-xs text-slate-800">{r.name || '—'}</span>
+        <li key={r.k} className="py-2 text-sm">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-slate-600">{r.label}</span>
             <Badge className={r.live ? 'bg-seaweed-50 text-seaweed-700 ring-seaweed-500/30' : 'bg-violet-50 text-violet-800 ring-violet-300'}>
               <CircleDot className="h-3 w-3" aria-hidden />{r.live ? t('admin.system.live') : t('admin.system.demo')}
             </Badge>
-          </span>
+          </div>
+          <p className="mt-0.5 break-all font-mono text-xs text-slate-800">{r.name || '—'}</p>
         </li>
       ))}
     </ul>

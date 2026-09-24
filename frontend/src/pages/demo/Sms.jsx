@@ -42,7 +42,7 @@ export default function Sms() {
     },
   });
 
-  useEffect(() => { bottom.current?.scrollIntoView?.({ block: 'nearest' }); }, [history.data, send.isPending]);
+  useEffect(() => { const el = bottom.current; if (el) el.scrollTop = el.scrollHeight; }, [history.data, send.isPending]);
 
   const submit = (e) => {
     e.preventDefault();
@@ -73,7 +73,7 @@ export default function Sms() {
                 <RefreshCw className={cx('h-4 w-4', history.isFetching && 'animate-spin')} />
               </button>
             </div>
-            <div className="h-[26rem] space-y-2 overflow-y-auto bg-sand-100 p-3" role="log" aria-live="polite" aria-label={t('demo.sms.conversation')}>
+            <div ref={bottom} className="h-[26rem] space-y-2 overflow-y-auto bg-sand-100 p-3" role="log" aria-live="polite" aria-label={t('demo.sms.conversation')}>
               {history.isLoading && <div className="flex justify-center py-8"><Spinner /></div>}
               {history.error && <ErrorState error={history.error} onRetry={history.refetch} compact />}
               {!history.isLoading && !history.error && !messages.length && <p className="py-8 text-center text-sm text-slate-500">{t('demo.sms.empty')}</p>}
@@ -95,7 +95,6 @@ export default function Sms() {
               {send.isPending && (
                 <div className="flex justify-end"><div className="rounded-2xl rounded-br-sm bg-ocean-700/70 px-3 py-2 text-sm text-white">{send.variables}</div></div>
               )}
-              <div ref={bottom} />
             </div>
             <form onSubmit={submit} className="flex items-center gap-2 border-t border-slate-200 p-2">
               <label htmlFor="sms-text" className="sr-only">{t('demo.sms.message')}</label>

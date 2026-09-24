@@ -15,7 +15,7 @@ r.get('/', farmViewers, c.listFarms);
 r.post('/', authorize('FARMER', 'ADMIN', 'EXTENSION_OFFICER'), validate(s.farmSchema), c.createFarm);
 r.get('/predictions/:predictionId', farmViewers, c.latestPrediction);
 r.get('/:id', farmViewers, c.getFarm);
-r.patch('/:id', recorders, validate(s.farmUpdateSchema), c.updateFarm);
+r.patch('/:id', recorders, validate(s.farmUpdateSchema, 'body', { partial: true }), c.updateFarm);
 
 r.get('/:id/cycles', farmViewers, c.listCycles);
 r.post('/:id/cycles', recorders, validate(s.cycleSchema), c.createCycle);

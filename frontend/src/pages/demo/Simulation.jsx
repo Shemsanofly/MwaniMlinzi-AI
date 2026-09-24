@@ -106,7 +106,7 @@ function Results({ result, overrides }) {
         </div>
       </Card>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-5 2xl:grid-cols-2">
         <div className="space-y-2">
           <p className="text-sm font-semibold text-slate-700">{t('demo.sim.recBefore')}</p>
           <NextActionCard nextAction={result.baseline?.nextAction} insufficientDataMessage={result.baseline?.insufficientDataMessage} />
@@ -117,7 +117,7 @@ function Results({ result, overrides }) {
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-5 2xl:grid-cols-2">
         <Card>
           <CardHeader title={t('demo.sim.factorsTitle')} subtitle={t('demo.sim.factorsSubtitle')} />
           <div className="space-y-3 p-4 sm:p-5">

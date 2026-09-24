@@ -63,3 +63,21 @@ describe('role-based access control', () => {
     expect((await api().get('/api/farms/00000000-0000-4000-8000-000000000000').set(auth(admin))).status).toBe(404);
   });
 });
+
+describe('partial updates', () => {
+  test('PATCH only changes the fields that were sent', async () => {
+    const admin = await login('admin');
+    const farm = await farmByCode(admin, 'FARM004');
+    const before = (await api().get(`/api/farms/${farm.id}`).set(auth(admin))).body.data.farm;
+    const res = await api().patch(`/api/farms/${farm.id}`).set(auth(admin)).send({ notes: 'updated note' });
+    expect(res.status).toBe(200);
+    expect(res.body.data.farm.notes).toBe('updated note');
+    expect(res.body.data.farm.lineCount).toBe(before.lineCount);
+    expect(res.body.data.farm.exposure).toBe(before.exposure);
+    const actions = (await api().get('/api/actions').set(auth(admin))).body.data.actions;
+    const a = actions.find((x) => x.urgency !== 'ROUTINE');
+    const upd = await api().patch(`/api/actions/${a.id}`).set(auth(admin)).send({ enabled: true });
+    expect(upd.body.data.action.urgency).toBe(a.urgency);
+    expect(upd.body.data.action.urgencyHours).toBe(a.urgencyHours);
+  });
+});

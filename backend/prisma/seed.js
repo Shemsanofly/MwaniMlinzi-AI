@@ -325,7 +325,7 @@ async function main() {
     '',
     'Demo farmer phone (SMS/USSD simulators): +255777000001  farms: FARM001 (heat risk), FARM002 (near harvest)',
   ].join('\n');
-  fs.writeFileSync(path.join(here, '..', 'DEMO_CREDENTIALS.local.txt'), `${creds}\n`, { mode: 0o600 });
+  if (!env.isTest) fs.writeFileSync(path.join(here, '..', 'DEMO_CREDENTIALS.local.txt'), `${creds}\n`, { mode: 0o600 });
   console.log(`\n${creds}\n`);
   if (generated) console.log('[seed] A random demo password was generated (set DEMO_PASSWORD in .env to choose one). Saved to backend/DEMO_CREDENTIALS.local.txt');
   console.log(`[seed] done in ${((Date.now() - t0) / 1000).toFixed(1)}s`);

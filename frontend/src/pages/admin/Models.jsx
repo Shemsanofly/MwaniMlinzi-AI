@@ -56,12 +56,12 @@ function ModelCard({ m, aiMode }) {
             <Metric label="ROC AUC" value={tm.rocAuc} format="raw" />
           </div>
         </div>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        <div className="flex flex-wrap items-start gap-4">
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('admin.models.confusionTest')}</p>
             <ConfusionMatrix cm={m.confusionMatrix} />
           </div>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-[12rem] flex-1">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('admin.models.fieldMetrics')}</p>
             {hasField ? (
               <div className="grid grid-cols-2 gap-2">
