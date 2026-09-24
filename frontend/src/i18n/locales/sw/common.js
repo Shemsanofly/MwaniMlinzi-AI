@@ -11,6 +11,7 @@ export default {
     factors: 'Sababu za hatari',
     model: 'Modeli',
     insufficient: 'Taarifa hazitoshi kwa utabiri wa uhakika',
+    ruleBaseline: 'Modeli ya kanuni (msingi)',
     flagged: 'Imewekwa alama kwa ukaguzi',
   },
   urgency: { ROUTINE: 'Kawaida', SOON: 'Hivi karibuni', URGENT: 'Haraka', IMMEDIATE: 'Mara moja' },

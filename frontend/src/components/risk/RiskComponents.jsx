@@ -90,7 +90,7 @@ export function RiskCard({ prediction, compact = false, defaultOpen = false }) {
 
 export function ModelStatusBadge({ modelType, version, label }) {
   const { t } = useI18n();
-  const text = label || (modelType === 'HYBRID' ? `${t('source.modelPrediction')}: ${version}` : 'Rule-based baseline');
+  const text = label || (modelType === 'HYBRID' ? `${t('source.modelPrediction')}: ${version}` : t('risk.ruleBaseline'));
   return <Badge className="bg-slate-50 text-slate-700 ring-slate-200" title={version}><BrainCircuit className="h-3 w-3" aria-hidden />{text}</Badge>;
 }
 

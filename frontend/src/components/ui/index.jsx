@@ -49,7 +49,7 @@ export function CardHeader({ title, subtitle, action, icon: Icon, className }) {
 }
 
 export function Badge({ className, children, title }) {
-  return <span title={title} className={cx('inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset', className || 'bg-slate-100 text-slate-700 ring-slate-200')}>{children}</span>;
+  return <span title={title} className={cx('inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-0.5 text-left text-xs font-semibold ring-1 ring-inset', className || 'bg-slate-100 text-slate-700 ring-slate-200')}>{children}</span>;
 }
 
 export function RiskBadge({ level, long = false, size = 'sm' }) {

@@ -11,6 +11,7 @@ export default {
     factors: 'Risk factors',
     model: 'Model',
     insufficient: 'Insufficient data for a reliable prediction',
+    ruleBaseline: 'Rule-based baseline',
     flagged: 'Flagged for review',
   },
   urgency: { ROUTINE: 'Routine', SOON: 'Soon', URGENT: 'Urgent', IMMEDIATE: 'Immediate' },

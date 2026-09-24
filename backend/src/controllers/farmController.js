@@ -231,7 +231,7 @@ export async function farmHistoryTimeline(req, res) {
     prisma.farmObservation.findMany({ where: { farmId: id }, orderBy: { observedAt: 'desc' }, take: 50 }),
     prisma.harvestRecord.findMany({ where: { farmId: id }, orderBy: { harvestDate: 'desc' }, take: 20 }),
     prisma.lossRecord.findMany({ where: { farmId: id }, orderBy: { lossDate: 'desc' }, take: 20 }),
-    prisma.farmerAction.findMany({ where: { farmId: id }, orderBy: { performedAt: 'desc' }, take: 50 }),
+    prisma.farmerAction.findMany({ where: { farmId: id }, orderBy: { performedAt: 'desc' }, take: 50, include: { recommendation: { select: { actionLibrary: { select: { action: true, actionSw: true } } } } } }),
     prisma.actionOutcome.findMany({ where: { farmId: id }, orderBy: { outcomeDate: 'desc' }, take: 50 }),
     prisma.alert.findMany({ where: { farmId: id, isSimulation: false }, orderBy: { createdAt: 'desc' }, take: 30 }),
     prisma.plantingCycle.findMany({ where: { farmId: id }, orderBy: { plantingDate: 'desc' } }),
@@ -241,7 +241,11 @@ export async function farmHistoryTimeline(req, res) {
     ...obs.map((o) => ({ type: 'OBSERVATION', date: o.observedAt, id: o.id, data: o })),
     ...harvests.map((h) => ({ type: 'HARVEST', date: h.harvestDate, id: h.id, data: h })),
     ...losses.map((l) => ({ type: 'LOSS', date: l.lossDate, id: l.id, data: l })),
-    ...actions.map((a) => ({ type: 'ACTION', date: a.performedAt, id: a.id, data: a })),
+    ...actions.map(({ recommendation, ...a }) => ({
+      type: 'ACTION', date: a.performedAt, id: a.id,
+      // Library actions are bilingual; free-text descriptions stay as written.
+      data: { ...a, descriptionSw: recommendation?.actionLibrary && a.description === recommendation.actionLibrary.action ? recommendation.actionLibrary.actionSw : a.description },
+    })),
     ...outcomes.map((o) => ({ type: 'OUTCOME', date: o.outcomeDate, id: o.id, data: o })),
     ...alerts.map((a) => ({ type: 'ALERT', date: a.createdAt, id: a.id, data: a })),
     ...cycles.map((c) => ({ type: 'PLANTING', date: c.plantingDate, id: c.id, data: c })),
