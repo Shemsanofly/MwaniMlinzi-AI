@@ -61,7 +61,7 @@ export default function SupplyFilters({ value, onApply, options, showDates = tru
           </div>
         </>
       )}
-      <div className="flex items-end gap-2">
+      <div className="flex min-w-0 flex-wrap items-end gap-2">
         <Button type="submit" icon={Filter} className="flex-1">{t('buyer.filters.apply')}</Button>
         <Button variant="ghost" icon={X} onClick={reset} aria-label={t('buyer.filters.reset')}>{t('buyer.filters.reset')}</Button>
       </div>
