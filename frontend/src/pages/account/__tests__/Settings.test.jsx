@@ -25,7 +25,7 @@ test('saves SMS preferences; sub-options are disabled when SMS is off', async ()
   await u.click(screen.getByLabelText(/Harvest reminders/));
   await u.click(screen.getByLabelText(/Send me SMS/));
   expect(screen.getByLabelText(/Risk alerts/)).toBeDisabled();
-  await u.click(screen.getAllByRole('button', { name: 'Save' })[1]);
+  await u.click(screen.getByRole('button', { name: 'Save SMS settings' }));
   await waitFor(() => expect(authApi.updateMe).toHaveBeenCalledWith({ smsEnabled: false, notifyRiskAlerts: true, notifyHarvest: false, notifySystem: true }));
   expect(await screen.findByRole('status')).toHaveTextContent('Saved');
 });
@@ -44,12 +44,12 @@ test('phone is validated and normalised before saving', async () => {
   const phone = screen.getByLabelText(/Phone number/);
   await u.clear(phone);
   await u.type(phone, '123');
-  await u.click(screen.getAllByRole('button', { name: 'Save' })[0]);
+  await u.click(screen.getByRole('button', { name: 'Save phone and email' }));
   expect(authApi.updateMe).not.toHaveBeenCalled();
   expect(screen.getByText(/valid Tanzanian mobile number/)).toBeInTheDocument();
   await u.clear(phone);
   await u.type(phone, '0655 123 456');
-  await u.click(screen.getAllByRole('button', { name: 'Save' })[0]);
+  await u.click(screen.getByRole('button', { name: 'Save phone and email' }));
   await waitFor(() => expect(authApi.updateMe).toHaveBeenCalledWith({ phone: '+255655123456', email: null }));
 });
 

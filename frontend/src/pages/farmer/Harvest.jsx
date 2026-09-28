@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { AlertOctagon, CheckCircle2, LineChart, Truck } from 'lucide-react';
+import { AlertOctagon, CheckCircle2, ChevronDown, LineChart, Truck } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { useFarmerFarm } from '../../hooks/useFarmerFarm.js';
 import { buyerApi, farmApi } from '../../api/endpoints.js';
@@ -82,6 +82,7 @@ function HarvestForm({ farmId, hasCycle }) {
   const { t, lang } = useI18n();
   const invalidate = useInvalidateFarm();
   const [f, setF] = useState(HARVEST_EMPTY);
+  const [more, setMore] = useState(false);
   const set = (patch) => setF((s) => ({ ...s, ...patch }));
   const buyersQ = useQuery({ queryKey: ['buyers'], queryFn: () => buyerApi.list() });
   const save = useMutation({
@@ -119,57 +120,68 @@ function HarvestForm({ farmId, hasCycle }) {
           <Field label={t('farmer.harvest.f.actual')} htmlFor="h-actual" required>
             <input id="h-actual" type="number" inputMode="decimal" min={0} step="0.1" className="input" required value={f.actualQuantity} onChange={(e) => set({ actualQuantity: e.target.value })} />
           </Field>
-          <Field label={t('farmer.harvest.f.estimated')} htmlFor="h-est" hint={t('farmer.harvest.f.estimatedHint')}>
-            <input id="h-est" type="number" inputMode="decimal" min={0} step="0.1" className="input" value={f.estimatedQuantity} onChange={(e) => set({ estimatedQuantity: e.target.value })} />
-          </Field>
           <Field label={t('farmer.harvest.f.grade')} htmlFor="h-grade">
             <select id="h-grade" className="input" value={f.qualityGrade} onChange={(e) => set({ qualityGrade: e.target.value })}>
               <option value="">—</option>
               {GRADES.map((g) => <option key={g} value={g}>{t(`farmer.enums.grade.${g}`)}</option>)}
             </select>
           </Field>
-          <Field label={t('farmer.harvest.f.buyer')} htmlFor="h-buyer" error={buyersQ.error ? apiErrorMessage(buyersQ.error, t, lang) : undefined}>
-            <select id="h-buyer" className="input" value={f.buyerId} onChange={(e) => set({ buyerId: e.target.value })} disabled={buyersQ.isLoading}>
-              <option value="">{buyersQ.isLoading ? t('actions.loading') : '—'}</option>
-              {(buyersQ.data?.buyers || []).map((b) => <option key={b.id} value={b.id}>{b.companyName}{b.district ? ` (${b.district})` : ''}</option>)}
-            </select>
-          </Field>
-          <Field label={t('farmer.harvest.f.price')} htmlFor="h-price">
-            <input id="h-price" type="number" inputMode="decimal" min={0} className="input" value={f.pricePerKg} onChange={(e) => set({ pricePerKg: e.target.value })} />
-          </Field>
-          <Field label={t('farmer.harvest.f.moisture')} htmlFor="h-moist">
-            <input id="h-moist" type="number" inputMode="decimal" min={0} max={100} className="input" value={f.moisturePercent} onChange={(e) => set({ moisturePercent: e.target.value })} />
-          </Field>
-          <Field label={t('farmer.harvest.f.drying')} htmlFor="h-dry">
-            <select id="h-dry" className="input" value={f.dryingMethod} onChange={(e) => set({ dryingMethod: e.target.value, groundContact: e.target.value === 'GROUND' })}>
-              <option value="">—</option>
-              {DRYING.map((d) => <option key={d} value={d}>{t(`farmer.enums.drying.${d}`)}</option>)}
-            </select>
-          </Field>
-          <Field label={t('farmer.harvest.f.dryDays')} htmlFor="h-drydays">
-            <input id="h-drydays" type="number" inputMode="numeric" min={0} max={60} className="input" value={f.dryingDurationDays} onChange={(e) => set({ dryingDurationDays: e.target.value })} />
-          </Field>
         </div>
-        {f.dryingMethod && (
-          <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">
-            <Toggle id="h-ground" checked={f.groundContact} onChange={(v) => set({ groundContact: v })} label={t('farmer.harvest.f.groundContact')} />
-            <Toggle id="h-rain" checked={f.rainDuringDrying} onChange={(v) => set({ rainDuringDrying: v })} label={t('farmer.harvest.f.rain')} />
+        <button type="button" onClick={() => setMore((m) => !m)} aria-expanded={more} aria-controls="harvest-more"
+          className="flex min-h-11 w-full items-center justify-between rounded-lg px-1 text-left text-sm font-semibold text-ocean-700">
+          {t('farmer.harvest.moreDetails')}
+          <ChevronDown className={`h-4 w-4 transition ${more ? 'rotate-180' : ''}`} aria-hidden />
+        </button>
+        {more && (
+          <div id="harvest-more" className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label={t('farmer.harvest.f.estimated')} htmlFor="h-est" hint={t('farmer.harvest.f.estimatedHint')}>
+                <input id="h-est" type="number" inputMode="decimal" min={0} step="0.1" className="input" value={f.estimatedQuantity} onChange={(e) => set({ estimatedQuantity: e.target.value })} />
+              </Field>
+              <Field label={t('farmer.harvest.f.buyer')} htmlFor="h-buyer" error={buyersQ.error ? apiErrorMessage(buyersQ.error, t, lang) : undefined}>
+                <select id="h-buyer" className="input" value={f.buyerId} onChange={(e) => set({ buyerId: e.target.value })} disabled={buyersQ.isLoading}>
+                  <option value="">{buyersQ.isLoading ? t('actions.loading') : '—'}</option>
+                  {(buyersQ.data?.buyers || []).map((b) => <option key={b.id} value={b.id}>{b.companyName}{b.district ? ` (${b.district})` : ''}</option>)}
+                </select>
+              </Field>
+              <Field label={t('farmer.harvest.f.price')} htmlFor="h-price">
+                <input id="h-price" type="number" inputMode="decimal" min={0} className="input" value={f.pricePerKg} onChange={(e) => set({ pricePerKg: e.target.value })} />
+              </Field>
+              <Field label={t('farmer.harvest.f.moisture')} htmlFor="h-moist">
+                <input id="h-moist" type="number" inputMode="decimal" min={0} max={100} className="input" value={f.moisturePercent} onChange={(e) => set({ moisturePercent: e.target.value })} />
+              </Field>
+              <Field label={t('farmer.harvest.f.drying')} htmlFor="h-dry">
+                <select id="h-dry" className="input" value={f.dryingMethod} onChange={(e) => set({ dryingMethod: e.target.value, groundContact: e.target.value === 'GROUND' })}>
+                  <option value="">—</option>
+                  {DRYING.map((d) => <option key={d} value={d}>{t(`farmer.enums.drying.${d}`)}</option>)}
+                </select>
+              </Field>
+              <Field label={t('farmer.harvest.f.dryDays')} htmlFor="h-drydays">
+                <input id="h-drydays" type="number" inputMode="numeric" min={0} max={60} className="input" value={f.dryingDurationDays} onChange={(e) => set({ dryingDurationDays: e.target.value })} />
+              </Field>
+            </div>
+            {f.dryingMethod && (
+              <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">
+                <Toggle id="h-ground" checked={f.groundContact} onChange={(v) => set({ groundContact: v })} label={t('farmer.harvest.f.groundContact')} />
+                <Toggle id="h-rain" checked={f.rainDuringDrying} onChange={(v) => set({ rainDuringDrying: v })} label={t('farmer.harvest.f.rain')} />
+              </div>
+            )}
+            <Field label={t('common.notes')} htmlFor="h-notes">
+              <textarea id="h-notes" rows={2} maxLength={2000} className="input" value={f.notes} onChange={(e) => set({ notes: e.target.value })} />
+            </Field>
           </div>
         )}
-        <Field label={t('common.notes')} htmlFor="h-notes">
-          <textarea id="h-notes" rows={2} maxLength={2000} className="input" value={f.notes} onChange={(e) => set({ notes: e.target.value })} />
-        </Field>
         <div>
           <Toggle id="h-close" checked={f.closeCycle} onChange={(v) => set({ closeCycle: v })} label={t('farmer.harvest.f.closeCycle')} />
           {!hasCycle && <p className="mt-1 text-xs text-slate-500">{t('farmer.harvest.noCycle')}</p>}
         </div>
         <FormError error={save.error} />
-        <Button type="submit" size="lg" variant="success" icon={Truck} className="min-h-14 w-full" loading={save.isPending}>{t('farmer.harvest.save')}</Button>
+        <Button type="submit" size="lg" variant="success" icon={Truck} className="min-h-14 w-full" loading={save.isPending}>{save.isPending ? t('farmer.harvest.saving') : t('farmer.harvest.save')}</Button>
       </form>
       {h && (
         <div className="mt-4">
           <Notice tone="success" icon={CheckCircle2}>
-            <p className="font-bold">{t('farmer.harvest.saved')}</p>
+            <p className="font-bold" role="status">{t('farmer.harvest.savedKg', { kg: num(h.actualQuantity, 1) })}</p>
           </Notice>
           <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
             <Metric label={t('farmer.harvest.m.expected')} value={h.estimatedQuantity != null ? kg(h.estimatedQuantity) : t('farmer.harvest.m.noEstimate')} />

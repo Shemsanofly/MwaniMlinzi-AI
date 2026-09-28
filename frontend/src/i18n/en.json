@@ -34,7 +34,8 @@
     "increases": "Increases risk",
     "decreases": "Lowers risk",
     "nextAction": "Next action",
-    "actionRecorded": "You recorded this action as done."
+    "actionRecorded": "You recorded this action as done.",
+    "hybridModel": "Rules + machine-learning model"
   },
   "urgency": {
     "ROUTINE": "Routine",
@@ -88,7 +89,8 @@
     "contactExtension": "Contact extension officer",
     "didIt": "I did this",
     "couldNot": "Could not do it",
-    "ok": "OK"
+    "ok": "OK",
+    "saving": "Saving…"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -116,7 +118,16 @@
     "about": "About",
     "howItWorks": "How it works",
     "demo": "Demo",
-    "account": "Settings"
+    "account": "Settings",
+    "more": "More",
+    "integrations": "Integrations",
+    "groups": {
+      "main": "Main",
+      "insights": "Insights",
+      "system": "System",
+      "account": "Account",
+      "demo": "Training & demo"
+    }
   },
   "roles": {
     "FARMER": "Farmer",
@@ -159,7 +170,7 @@
     "network": "Cannot reach the server. Check your connection.",
     "forbidden": "You do not have permission to view this.",
     "notFound": "Not found.",
-    "generic": "Something went wrong. Please try again.",
+    "generic": "Sorry, something went wrong. Please try again.",
     "invalidValue": "invalid value",
     "title": "Something went wrong",
     "codes": {
@@ -178,8 +189,10 @@
       "PAYLOAD_TOO_LARGE": "The file or data is too large.",
       "NOT_CONFIGURED": "This feature is not set up yet.",
       "PROVIDER_ERROR": "An outside service did not respond. Please try again later.",
-      "WRONG_PASSWORD": "The current password is not correct."
-    }
+      "WRONG_PASSWORD": "The current password is not correct.",
+      "INVALID_CODE": "The code is wrong or has expired. Request a new code."
+    },
+    "loadFailed": "Sorry, we couldn't load this information. Please try again."
   },
   "demoNotice": "Demo mode: farms, farmers and environmental data are illustrative demo data, not real measurements.",
   "farmer": {
@@ -240,18 +253,31 @@
         "breakage": "breakage",
         "epiphytes": "dirt on seaweed"
       },
-      "details": "See details"
+      "details": "See details",
+      "viewAlerts": "See all alerts"
     },
     "risk": {
       "title": "Farm risk",
-      "subtitle": "All four risks, why they are high or low, and what to do.",
+      "subtitle": "Each risk to your farm, why it matters, and what to do.",
       "recommendation": "Approved advice",
       "dueBy": "Do by {time}",
       "noPredictions": "No risk prediction yet.",
       "historyTitle": "Risk over the last 30 days",
       "historySubtitle": "Probability (%) for each risk. Dashed lines show medium, high and critical levels.",
       "noHistory": "No risk history yet.",
-      "chartAria": "Line chart of risk probability over the last 30 days for each risk type"
+      "chartAria": "Line chart of risk probability over the last 30 days for each risk type",
+      "loading": "Checking farm risk…",
+      "noPredictionsText": "Record your farm condition so MwaniMlinzi can check the risk.",
+      "checking": "Checking…",
+      "checkAgain": "Check risk again",
+      "technical": "Technical details",
+      "showHistory": "Show the last 30 days",
+      "harvestLevel": {
+        "LOW": "Not yet time to harvest",
+        "MEDIUM": "Get ready to harvest soon",
+        "HIGH": "Good time to harvest now",
+        "CRITICAL": "Harvest as soon as possible"
+      }
     },
     "obs": {
       "title": "Report farm condition",
@@ -375,7 +401,10 @@
       "pastLosses": "Past losses",
       "noHarvests": "No harvests recorded yet.",
       "noLosses": "No losses recorded.",
-      "lostPct": "{n}% lost"
+      "lostPct": "{n}% lost",
+      "moreDetails": "Add more details (optional)",
+      "saving": "Recording harvest…",
+      "savedKg": "✓ Done. A harvest of {{kg}} kg has been saved."
     },
     "history": {
       "title": "Farm history",
@@ -408,7 +437,8 @@
         "outcome": "Result: {type}",
         "planting": "Planting: {n} lines",
         "prediction": "{type}: {level} ({p})"
-      }
+      },
+      "saveOutcome": "Save result"
     },
     "assistant": {
       "title": "Farm helper",
@@ -487,7 +517,8 @@
         "lng": "Longitude",
         "linesPlanted": "Lines planted",
         "seedKg": "Seed quantity (kg)"
-      }
+      },
+      "saveFarm": "Save farm details"
     },
     "enums": {
       "cropCondition": {
@@ -609,7 +640,9 @@
       "highRisk": "High-risk farms",
       "highRiskSub": "HIGH or CRITICAL overall risk — contact these farmers first",
       "recentAlerts": "Recent alerts",
-      "allAlerts": "All alerts"
+      "allAlerts": "All alerts",
+      "moreAnalysis": "More analysis",
+      "moreAnalysisSub": "Charts, harvest performance and outcomes"
     },
     "perf": {
       "title": "Farm performance",
@@ -1887,7 +1920,8 @@
       "noAccount": "No account yet?",
       "demoHint": "Just exploring?",
       "demoLink": "Open the demo guide",
-      "identifierHint": "Use the phone number you registered with, e.g. 0777 123 456."
+      "identifierHint": "Use the phone number you registered with, e.g. 0777 123 456.",
+      "forgot": "Forgot your password?"
     },
     "register": {
       "title": "Create an account",
@@ -1924,6 +1958,26 @@
       "title": "Page not found",
       "text": "The page you are looking for does not exist or has moved.",
       "home": "Go to home page"
+    },
+    "reset": {
+      "title": "Reset your password",
+      "subtitle": "Enter your phone number. We will send you a 6-digit code by SMS.",
+      "phoneHint": "The phone number you registered with, e.g. 0777 123 456.",
+      "sendCode": "Send code by SMS",
+      "sending": "Sending code…",
+      "codeSent": "If {{phone}} is registered, a 6-digit code has been sent by SMS. It is valid for 15 minutes.",
+      "code": "6-digit code from the SMS",
+      "newPassword": "New password",
+      "save": "Save new password",
+      "saving": "Saving…",
+      "resend": "Did not get the SMS? Send a new code",
+      "backToLogin": "Back to log in",
+      "doneTitle": "Password changed",
+      "doneText": "Your new password is saved. You can now log in.",
+      "errors": {
+        "code": "Enter the 6 digits from the SMS.",
+        "password": "At least 8 characters, with a letter and a number."
+      }
     }
   },
   "env": {
@@ -1979,6 +2033,37 @@
     "currentPassword": "Current password",
     "newPassword": "New password",
     "changePassword": "Change password",
-    "saved": "Saved"
+    "saved": "Saved",
+    "saveContact": "Save phone and email",
+    "savePrefs": "Save SMS settings"
+  },
+  "notifications": {
+    "title": "Alerts & notifications",
+    "subtitle": "Risk alerts, advice and reminders for your farms.",
+    "filter": "Show",
+    "filters": {
+      "all": "All",
+      "important": "Important",
+      "unread": "Unread"
+    },
+    "priority": {
+      "CRITICAL": "Critical",
+      "HIGH": "Important",
+      "WARNING": "Warning",
+      "MEDIUM": "Warning",
+      "INFO": "Information",
+      "LOW": "Information"
+    },
+    "new": "New",
+    "markRead": "Mark as read",
+    "viewAll": "See all notifications",
+    "loading": "Loading notifications…",
+    "empty": "No notifications yet.",
+    "emptyTitle": {
+      "all": "No notifications yet",
+      "important": "No important alerts",
+      "unread": "You have read everything"
+    },
+    "emptyText": "When there is a risk to your farm or a reminder, it will appear here and by SMS."
   }
 }

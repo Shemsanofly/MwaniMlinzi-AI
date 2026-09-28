@@ -95,7 +95,7 @@ function Results({ result, overrides }) {
         <CardHeader
           title={t('demo.sim.compareTitle')}
           subtitle={t('demo.sim.compareSubtitle')}
-          action={<div className="flex flex-wrap gap-1.5"><SimLabel /><ModelStatusBadge label={result.modelStatus?.label} /></div>}
+          action={<div className="flex flex-wrap gap-1.5"><SimLabel /><ModelStatusBadge status={result.modelStatus} /></div>}
         />
         <div className="p-4 sm:p-5">
           <div className="mb-2 hidden grid-cols-[1.3fr_1fr_auto_1fr] gap-2 px-3 text-xs font-semibold uppercase tracking-wide text-slate-500 sm:grid">
@@ -252,7 +252,7 @@ export default function Simulation() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>
-              <CardHeader title={t('demo.sim.currentRisks')} subtitle={t('demo.sim.currentRisksSub')} action={risks.data?.modelStatus && <ModelStatusBadge label={risks.data.modelStatus.label} />} />
+              <CardHeader title={t('demo.sim.currentRisks')} subtitle={t('demo.sim.currentRisksSub')} action={risks.data?.modelStatus && <ModelStatusBadge status={risks.data.modelStatus} />} />
               <div className="p-4 sm:p-5">
                 {risks.isLoading ? <Spinner /> : risks.error ? <ErrorState error={risks.error} onRetry={risks.refetch} compact /> : risks.data?.predictions?.length ? (
                   <div className="grid gap-3 sm:grid-cols-2">{risks.data.predictions.map((p) => <RiskCard key={p.id} prediction={p} compact />)}</div>

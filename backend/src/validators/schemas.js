@@ -52,6 +52,13 @@ export const changePasswordSchema = z.object({
   newPassword: password,
 });
 
+export const forgotPasswordSchema = z.object({ phone });
+export const resetPasswordSchema = z.object({
+  phone,
+  code: z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code from the SMS'),
+  newPassword: password,
+});
+
 export const farmSchema = z.object({
   name: trimmed(120),
   farmCode: z.string().trim().toUpperCase().regex(/^[A-Z0-9-]{3,20}$/).optional(),

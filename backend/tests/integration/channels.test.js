@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { api, auth, login, farmByCode } from '../helpers.js';
 import prisma from '../../src/config/prisma.js';
 import { SMSService, setSMSClient, getSMSClient } from '../../src/services/smsService.js';
@@ -39,18 +40,42 @@ describe("Africa's Talking USSD callback", () => {
     expect(await prisma.integrationEvent.count({ where: { kind: 'USSD', status: 'REJECTED' } })).toBeGreaterThanOrEqual(4);
   });
 
-  test('unknown phone numbers are asked to register', async () => {
-    const r = await ussd(newSession(), '', { phoneNumber: '+255699999999' });
-    expect(r.status).toBe(200);
-    expect(r.headers['content-type']).toMatch(/text\/plain/);
-    expect(r.text).toBe('END Simu hii haijasajiliwa MwaniMlinzi. Tafadhali jisajili kwanza.');
+  test('unknown phone numbers choose a language, then are asked to register (no private data)', async () => {
+    const opts = { phoneNumber: '+255699999999' };
+    const sw = newSession();
+    const first = await ussd(sw, '', opts);
+    expect(first.status).toBe(200);
+    expect(first.headers['content-type']).toMatch(/text\/plain/);
+    expect(first.text).toBe('CON MWANIMLINZI\n1. Kiswahili\n2. English');
+    expect((await ussd(sw, '1', opts)).text).toBe('END Namba hii haijasajiliwa MwaniMlinzi. Tafadhali jisajili kwanza.');
+    const en = newSession();
+    await ussd(en, '', opts);
+    expect((await ussd(en, '2', opts)).text).toBe('END This phone number is not registered with MwaniMlinzi. Please register first.');
+    const bad = newSession();
+    await ussd(bad, '', opts);
+    expect((await ussd(bad, '7', opts)).text).toMatch(/^CON Chaguo si sahihi\.\nMWANIMLINZI\n1\. Kiswahili/);
+    expect((await ussd(bad, '7*8', opts)).text).toMatch(/^END Namba hii haijasajiliwa/);
+    const s = await prisma.ussdSession.findUnique({ where: { sessionId: en } });
+    expect(s).toMatchObject({ userId: null, language: 'en', status: 'ENDED' });
+  });
+
+  test('a database failure ends the session with a simple message (no technical details)', async () => {
+    const spy = jest.spyOn(prisma.user, 'findFirst').mockRejectedValueOnce(new Error('connection refused at 10.0.0.1:5432'));
+    try {
+      const r = await ussd(newSession(), '');
+      expect(r.status).toBe(200);
+      expect(r.text).toBe('END Samahani, kuna tatizo. Tafadhali jaribu tena.');
+      expect(await prisma.integrationEvent.findFirst({ where: { kind: 'USSD', status: 'ERROR' }, orderBy: { createdAt: 'desc' } })).toBeTruthy();
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   test('main menu in the farmer’s language, farm selection, risk summary', async () => {
     const { replies, sessionId } = await walk(['1', '1']);
-    expect(replies[0]).toMatch(/^CON MwaniMlinzi\n1\. Hatari ya Shamba\n2\. Ripoti Dalili\n3\. Mavuno\n4\. Ushauri\n5\. Lugha/);
-    expect(replies[1]).toMatch(/^CON Chagua shamba:\n1\. FARM001/);
-    expect(replies[2]).toMatch(/^END FARM001: Hatari (ndogo|ya kati|kubwa|kubwa sana) \(/);
+    expect(replies[0]).toBe('CON MWANIMLINZI\n1. Hali ya shamba\n2. Ripoti dalili\n3. Rekodi mavuno\n4. Ushauri\n5. Lugha');
+    expect(replies[1]).toMatch(/^CON Chagua shamba\n1\. FARM001/);
+    expect(replies[2]).toMatch(/^END FARM001\nHatari: (NDOGO|YA KATI|KUBWA|KUBWA SANA) \(/);
     expect(replies[2]).toMatch(/Hatua: /);
     expect(replies[2]).not.toMatch(/probability|%|risk/i);
     expect(replies[2].length).toBeLessThanOrEqual(186);
@@ -93,37 +118,36 @@ describe("Africa's Talking USSD callback", () => {
 
   test('3 → record harvest with validation and confirmation (source USSD)', async () => {
     const before = await prisma.harvestRecord.count({ where: { channel: 'USSD' } });
-    const { replies } = await walk(['3', '2', '1', 'abc', '0', '120', '1']);
-    expect(replies[2]).toMatch(/^CON Mavuno\n1\. Rekodi mavuno\n2\. Makadirio ya mavuno/);
-    expect(replies[3]).toMatch(/Weka kilo/);
-    expect(replies[4]).toMatch(/Kiasi si sahihi/);
-    expect(replies[5]).toMatch(/^CON MwaniMlinzi/); // '0' goes back to the main menu
+    const { replies } = await walk(['3', '2', 'abc', '0', '120', '1']);
+    expect(replies[2]).toMatch(/^CON Ingiza kiasi cha mavuno kwa kilo/);
+    expect(replies[3]).toMatch(/Kiasi si sahihi/);
+    expect(replies[4]).toMatch(/^CON MWANIMLINZI/); // '0' goes back to the main menu
     expect(await prisma.harvestRecord.count({ where: { channel: 'USSD' } })).toBe(before);
 
-    const ok = await walk(['3', '2', '1', '120', '1']);
-    expect(ok.replies[4]).toMatch(/Thibitisha mavuno ya kg 120 kwa FARM002\?/);
+    const ok = await walk(['3', '2', '120', '1']);
+    expect(ok.replies[3]).toMatch(/Thibitisha mavuno ya kg 120 kwa FARM002\?/);
     expect(ok.last).toBe('END Asante. Mavuno ya kg 120 yamerekodiwa kwa FARM002.');
     const h = await prisma.harvestRecord.findFirst({ where: { channel: 'USSD' }, orderBy: { createdAt: 'desc' } });
     expect(h).toMatchObject({ actualQuantity: 120, unit: 'KG_DRY' });
     expect(await prisma.harvestRecord.count({ where: { channel: 'USSD' } })).toBe(before + 1);
 
-    const cancelled = await walk(['3', '2', '1', '50', '2']);
+    const cancelled = await walk(['3', '2', '50', '2']);
     expect(cancelled.last).toBe('END Mavuno hayajarekodiwa.');
     expect(await prisma.harvestRecord.count({ where: { channel: 'USSD' } })).toBe(before + 1);
   });
 
-  test('3 → expected harvest and 4 → approved advice', async () => {
-    expect((await walk(['3', '1', '2'])).last).toMatch(/^END (FARM001: Mavuno yanayotarajiwa ni takriban kg \d+|Hakuna makadirio)/);
+  test('4 → approved advice', async () => {
     expect((await walk(['4', '1'])).last).toMatch(/^END FARM001\n?(:| )?.*(Hatua: |Data haitoshi|Endelea)/s);
   });
 
   test('5 → language change is saved to the user and used immediately', async () => {
     const { last } = await walk(['5', '2']);
-    expect(last).toMatch(/^CON Language changed to English\.\nMwaniMlinzi\n1\. Farm risk/);
+    expect(last).toMatch(/^CON Language changed to English\.\nMWANIMLINZI\n1\. Farm status/);
     expect((await prisma.user.findUnique({ where: { phone: PHONE } })).preferredLanguage).toBe('en');
     const next = await walk(['1', '1']);
-    expect(next.replies[0]).toMatch(/1\. Farm risk/);
-    expect(next.last).toMatch(/^END FARM001: (Low|Medium|High|Very high) risk/);
+    expect(next.replies[0]).toMatch(/1\. Farm status/);
+    expect(next.last).toMatch(/^END FARM001\nRisk: (LOW|MEDIUM|HIGH|CRITICAL) \(/);
+    expect(next.last).toMatch(/Action: /);
     await walk(['5', '1']);
     expect((await prisma.user.findUnique({ where: { phone: PHONE } })).preferredLanguage).toBe('sw');
   });

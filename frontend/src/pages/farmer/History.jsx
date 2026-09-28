@@ -280,7 +280,7 @@ function OutcomeForm({ farmId, actionId, onCancel }) {
       <FormError error={save.error} />
       {save.isSuccess && <Notice tone="success" icon={CheckCircle2}>{t('farmer.history.outcomeSaved')}</Notice>}
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" variant="success" className="min-h-11" loading={save.isPending} disabled={!outcomeType}>{t('actions.save')}</Button>
+        <Button type="submit" variant="success" className="min-h-11" loading={save.isPending} disabled={!outcomeType}>{save.isPending ? t('actions.saving') : t('farmer.history.saveOutcome')}</Button>
         <Button variant="ghost" className="min-h-11" onClick={onCancel}>{t('actions.cancel')}</Button>
       </div>
     </form>

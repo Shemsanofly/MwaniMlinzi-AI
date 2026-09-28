@@ -34,7 +34,8 @@
     "increases": "Inaongeza hatari",
     "decreases": "Inapunguza hatari",
     "nextAction": "Hatua inayofuata",
-    "actionRecorded": "Umerekodi kwamba umechukua hatua hii."
+    "actionRecorded": "Umerekodi kwamba umechukua hatua hii.",
+    "hybridModel": "Kanuni + modeli ya kujifunza (ML)"
   },
   "urgency": {
     "ROUTINE": "Kawaida",
@@ -88,7 +89,8 @@
     "contactExtension": "Wasiliana na afisa ugani",
     "didIt": "Nimefanya hatua hii",
     "couldNot": "Sikuweza kufanya",
-    "ok": "Sawa"
+    "ok": "Sawa",
+    "saving": "Inahifadhi…"
   },
   "nav": {
     "dashboard": "Mwanzo",
@@ -116,7 +118,16 @@
     "about": "Kuhusu",
     "howItWorks": "Inavyofanya kazi",
     "demo": "Demo",
-    "account": "Mipangilio"
+    "account": "Mipangilio",
+    "more": "Zaidi",
+    "integrations": "Miunganisho",
+    "groups": {
+      "main": "Kuu",
+      "insights": "Uchambuzi",
+      "system": "Mfumo",
+      "account": "Akaunti",
+      "demo": "Mafunzo na demo"
+    }
   },
   "roles": {
     "FARMER": "Mkulima",
@@ -159,7 +170,7 @@
     "network": "Hatuwezi kufikia seva. Angalia mtandao wako.",
     "forbidden": "Huna ruhusa ya kuona hili.",
     "notFound": "Haikupatikana.",
-    "generic": "Kuna hitilafu. Tafadhali jaribu tena.",
+    "generic": "Samahani, kuna tatizo. Tafadhali jaribu tena.",
     "invalidValue": "thamani si sahihi",
     "title": "Kuna hitilafu",
     "codes": {
@@ -178,8 +189,10 @@
       "PAYLOAD_TOO_LARGE": "Faili au taarifa ni kubwa mno.",
       "NOT_CONFIGURED": "Huduma hii bado haijawekwa.",
       "PROVIDER_ERROR": "Huduma ya nje haikujibu. Tafadhali jaribu tena baadaye.",
-      "WRONG_PASSWORD": "Nenosiri la sasa si sahihi."
-    }
+      "WRONG_PASSWORD": "Nenosiri la sasa si sahihi.",
+      "INVALID_CODE": "Namba si sahihi au muda wake umekwisha. Omba namba mpya."
+    },
+    "loadFailed": "Samahani, taarifa haikuweza kupakiwa. Tafadhali jaribu tena."
   },
   "demoNotice": "Hali ya demo: mashamba, wakulima na taarifa za mazingira ni za mfano (demo), si vipimo halisi.",
   "farmer": {
@@ -240,18 +253,31 @@
         "breakage": "kukatika",
         "epiphytes": "uchafu juu ya mwani"
       },
-      "details": "Angalia maelezo"
+      "details": "Angalia maelezo",
+      "viewAlerts": "Angalia tahadhari zote"
     },
     "risk": {
       "title": "Hatari za shamba",
-      "subtitle": "Hatari zote nne, sababu zake, na nini cha kufanya.",
+      "subtitle": "Kila hatari kwa shamba lako, sababu zake, na nini cha kufanya.",
       "recommendation": "Ushauri ulioidhinishwa",
       "dueBy": "Fanya kabla ya {time}",
       "noPredictions": "Bado hakuna utabiri wa hatari.",
       "historyTitle": "Hatari kwa siku 30 zilizopita",
       "historySubtitle": "Uwezekano (%) wa kila hatari. Mistari ya vistari inaonyesha viwango vya kati, kubwa na muhimu.",
       "noHistory": "Bado hakuna historia ya hatari.",
-      "chartAria": "Chati ya mistari ya uwezekano wa hatari kwa siku 30 zilizopita kwa kila aina ya hatari"
+      "chartAria": "Chati ya mistari ya uwezekano wa hatari kwa siku 30 zilizopita kwa kila aina ya hatari",
+      "loading": "Tunaangalia hatari ya shamba…",
+      "noPredictionsText": "Rekodi hali ya shamba lako ili MwaniMlinzi iangalie hatari.",
+      "checking": "Inaangalia…",
+      "checkAgain": "Angalia hatari tena",
+      "technical": "Maelezo ya kiufundi",
+      "showHistory": "Onyesha siku 30 zilizopita",
+      "harvestLevel": {
+        "LOW": "Bado si wakati wa kuvuna",
+        "MEDIUM": "Jiandae kuvuna hivi karibuni",
+        "HIGH": "Ni wakati mzuri wa kuvuna",
+        "CRITICAL": "Vuna haraka iwezekanavyo"
+      }
     },
     "obs": {
       "title": "Ripoti hali ya shamba",
@@ -375,7 +401,10 @@
       "pastLosses": "Hasara za zamani",
       "noHarvests": "Bado hakuna mavuno yaliyorekodiwa.",
       "noLosses": "Hakuna hasara iliyorekodiwa.",
-      "lostPct": "{n}% imepotea"
+      "lostPct": "{n}% imepotea",
+      "moreDetails": "Ongeza maelezo zaidi (si lazima)",
+      "saving": "Inarekodi mavuno…",
+      "savedKg": "✓ Imefanikiwa. Taarifa ya mavuno ya kilo {{kg}} imehifadhiwa."
     },
     "history": {
       "title": "Historia ya shamba",
@@ -408,7 +437,8 @@
         "outcome": "Matokeo: {type}",
         "planting": "Upandaji: mistari {n}",
         "prediction": "{type}: {level} ({p})"
-      }
+      },
+      "saveOutcome": "Hifadhi matokeo"
     },
     "assistant": {
       "title": "Msaidizi wa shamba",
@@ -487,7 +517,8 @@
         "lng": "Longitudo",
         "linesPlanted": "Mistari iliyopandwa",
         "seedKg": "Kiasi cha mbegu (kg)"
-      }
+      },
+      "saveFarm": "Hifadhi taarifa za shamba"
     },
     "enums": {
       "cropCondition": {
@@ -609,7 +640,9 @@
       "highRisk": "Mashamba yenye hatari kubwa",
       "highRiskSub": "Hatari JUU au MUHIMU — wasiliana na wakulima hawa kwanza",
       "recentAlerts": "Tahadhari za karibuni",
-      "allAlerts": "Tahadhari zote"
+      "allAlerts": "Tahadhari zote",
+      "moreAnalysis": "Uchambuzi zaidi",
+      "moreAnalysisSub": "Chati, utendaji wa mavuno na matokeo"
     },
     "perf": {
       "title": "Utendaji wa mashamba",
@@ -1887,7 +1920,8 @@
       "noAccount": "Huna akaunti bado?",
       "demoHint": "Unajaribu tu?",
       "demoLink": "Fungua mwongozo wa demo",
-      "identifierHint": "Tumia namba ya simu uliyojisajili nayo, mfano 0777 123 456."
+      "identifierHint": "Tumia namba ya simu uliyojisajili nayo, mfano 0777 123 456.",
+      "forgot": "Umesahau nenosiri?"
     },
     "register": {
       "title": "Fungua akaunti",
@@ -1924,6 +1958,26 @@
       "title": "Ukurasa haukupatikana",
       "text": "Ukurasa unaoutafuta haupo au umehamishwa.",
       "home": "Nenda ukurasa wa mwanzo"
+    },
+    "reset": {
+      "title": "Badilisha nenosiri",
+      "subtitle": "Weka namba yako ya simu. Tutakutumia namba ya siri ya tarakimu 6 kwa SMS.",
+      "phoneHint": "Namba ya simu uliyojisajili nayo, mfano 0777 123 456.",
+      "sendCode": "Tuma namba kwa SMS",
+      "sending": "Inatuma namba…",
+      "codeSent": "Kama {{phone}} imesajiliwa, namba ya tarakimu 6 imetumwa kwa SMS. Inafanya kazi kwa dakika 15.",
+      "code": "Namba ya tarakimu 6 kutoka SMS",
+      "newPassword": "Nenosiri jipya",
+      "save": "Hifadhi nenosiri jipya",
+      "saving": "Inahifadhi…",
+      "resend": "Hukupata SMS? Tuma namba mpya",
+      "backToLogin": "Rudi kuingia",
+      "doneTitle": "Nenosiri limebadilishwa",
+      "doneText": "Nenosiri lako jipya limehifadhiwa. Sasa unaweza kuingia.",
+      "errors": {
+        "code": "Weka tarakimu 6 kutoka kwenye SMS.",
+        "password": "Angalau herufi 8, zikiwemo herufi na namba."
+      }
     }
   },
   "env": {
@@ -1979,6 +2033,37 @@
     "currentPassword": "Nenosiri la sasa",
     "newPassword": "Nenosiri jipya",
     "changePassword": "Badilisha nenosiri",
-    "saved": "Imehifadhiwa"
+    "saved": "Imehifadhiwa",
+    "saveContact": "Hifadhi simu na barua pepe",
+    "savePrefs": "Hifadhi mipangilio ya SMS"
+  },
+  "notifications": {
+    "title": "Tahadhari na taarifa",
+    "subtitle": "Tahadhari za hatari, ushauri na vikumbusho vya mashamba yako.",
+    "filter": "Onyesha",
+    "filters": {
+      "all": "Zote",
+      "important": "Muhimu",
+      "unread": "Hazijasomwa"
+    },
+    "priority": {
+      "CRITICAL": "Hatari sana",
+      "HIGH": "Muhimu",
+      "WARNING": "Onyo",
+      "MEDIUM": "Onyo",
+      "INFO": "Taarifa",
+      "LOW": "Taarifa"
+    },
+    "new": "Mpya",
+    "markRead": "Weka kama imesomwa",
+    "viewAll": "Angalia taarifa zote",
+    "loading": "Inapakia taarifa…",
+    "empty": "Bado hakuna taarifa.",
+    "emptyTitle": {
+      "all": "Bado hakuna taarifa",
+      "important": "Hakuna tahadhari muhimu",
+      "unread": "Umesoma taarifa zote"
+    },
+    "emptyText": "Kukiwa na hatari kwa shamba lako au kikumbusho, kitaonekana hapa na kwa SMS."
   }
 }

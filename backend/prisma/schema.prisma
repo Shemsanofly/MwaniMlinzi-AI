@@ -308,6 +308,7 @@ model User {
   @@index([cooperativeId])
   @@index([createdAt])
   @@map("users")
+  passwordResets    PasswordReset[]
 }
 
 model Role {
@@ -1259,4 +1260,19 @@ model SystemSetting {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("system_settings")
+}
+
+/// One-time password-reset codes sent by SMS. Only a hash of the code is stored.
+model PasswordReset {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  codeHash  String    @map("code_hash")
+  expiresAt DateTime  @map("expires_at")
+  attempts  Int       @default(0)
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("password_resets")
 }

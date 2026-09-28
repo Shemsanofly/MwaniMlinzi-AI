@@ -16,6 +16,8 @@ export const authApi = {
   me: () => unwrap(http.get('/auth/me')),
   updateMe: (body) => unwrap(http.patch('/auth/me', body)),
   logout: () => unwrap(http.post('/auth/logout')),
+  forgotPassword: (phone) => unwrap(http.post('/auth/forgot-password', { phone })),
+  resetPassword: (body) => unwrap(http.post('/auth/reset-password', body)),
 };
 
 export const metaApi = {

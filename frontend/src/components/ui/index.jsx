@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
-import { AlertTriangle, Database, FlaskConical, Inbox, Loader2, RefreshCw, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AlertTriangle, ChevronDown, Database, FlaskConical, Inbox, Loader2, RefreshCw, X } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
+import { usePhone } from '../../hooks/useMediaQuery.js';
 import { riskStyle } from '../../utils/risk.js';
 
 const cx = (...c) => c.filter(Boolean).join(' ');
@@ -106,6 +107,10 @@ export function apiErrorMessage(error, t, lang) {
   if (error.status === 0) return t('errors.network');
   if (error.status === 403) return t('errors.forbidden');
   if (error.status === 404) return t('errors.notFound');
+  // Server faults never show technical text (e.g. "Request failed with status code 500").
+  if (error.status >= 500) return t('errors.generic');
+  // No HTTP status: a message built in the browser (already translated), e.g. "Enter your phone number".
+  if (error.status == null) return error.message || t('errors.generic');
   if (lang === 'en' && error.message) return error.message;
   return t('errors.generic');
 }
@@ -123,9 +128,12 @@ function detailLine(d, t, lang) {
   return `${path ? `${path}: ` : ''}${t('errors.invalidValue')}`;
 }
 
+/** Load failure panel: a friendly sentence + "Try again". Technical details go to the console only. */
 export function ErrorState({ error, onRetry, compact = false }) {
   const { t, lang } = useI18n();
-  const message = apiErrorMessage(error, t, lang);
+  let message = apiErrorMessage(error, t, lang);
+  if (message === t('errors.generic')) message = t('errors.loadFailed');
+  useEffect(() => { if (error) console.warn('[load failed]', error?.status ?? '', error?.code ?? '', error?.message ?? error); }, [error]);
   return (
     <div role="alert" className={cx('flex flex-col items-center gap-3 rounded-xl border border-red-200 bg-red-50 text-center text-red-800', compact ? 'p-4' : 'p-8')}>
       <AlertTriangle className="h-6 w-6" aria-hidden />
@@ -274,23 +282,81 @@ export function Toggle({ checked, onChange, label, id }) {
   );
 }
 
-/** Simple responsive table wrapper. */
+/**
+ * Responsive table: a normal table from the `sm` breakpoint up, and one card per row on phones
+ * (first column — or the column marked `primary` — as the card title, the rest as label/value lines).
+ * Columns may set `mobile: false` to leave a low-value column out of the phone card.
+ */
 export function Table({ columns, rows, rowKey = 'id', empty, onRowClick }) {
+  const phone = usePhone();
   if (!rows?.length) return empty || <EmptyState />;
+  const keyOf = (r) => (typeof rowKey === 'function' ? rowKey(r) : r[rowKey]);
+  const cell = (c, r) => (c.render ? c.render(r) : r[c.key]);
+  const primary = columns.find((c) => c.primary) || columns[0];
+  const rest = columns.filter((c) => c !== primary && c.mobile !== false);
+  if (phone) {
+    return (
+      <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+        {rows.map((r) => {
+          const body = (
+            <>
+              <div className="font-semibold text-slate-900">{cell(primary, r)}</div>
+              {rest.length > 0 && (
+                <dl className="mt-1.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+                  {rest.map((c) => (
+                    <div key={c.key} className="contents">
+                      <dt className="text-slate-500">{c.header}</dt>
+                      <dd className="min-w-0 text-right text-slate-800 [overflow-wrap:anywhere]">{cell(c, r)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+            </>
+          );
+          return (
+            <li key={keyOf(r)}>
+              {onRowClick
+                ? <button type="button" onClick={() => onRowClick(r)} className="block w-full px-4 py-3 text-left hover:bg-ocean-50/50">{body}</button>
+                : <div className="px-4 py-3">{body}</div>}
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-      <table className="min-w-full divide-y divide-slate-200 text-sm">
-        <thead className="bg-slate-50">
-          <tr>{columns.map((c) => <th key={c.key} scope="col" className={cx('px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500', c.className)}>{c.header}</th>)}</tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {rows.map((r) => (
-            <tr key={typeof rowKey === 'function' ? rowKey(r) : r[rowKey]} onClick={onRowClick ? () => onRowClick(r) : undefined} className={cx(onRowClick && 'cursor-pointer hover:bg-ocean-50/50')}>
-              {columns.map((c) => <td key={c.key} className={cx('px-3 py-2.5 align-top text-slate-700', c.className)}>{c.render ? c.render(r) : r[c.key]}</td>)}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <thead className="bg-slate-50">
+            <tr>{columns.map((c) => <th key={c.key} scope="col" className={cx('px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500', c.className)}>{c.header}</th>)}</tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {rows.map((r) => (
+              <tr key={keyOf(r)} onClick={onRowClick ? () => onRowClick(r) : undefined} className={cx(onRowClick && 'cursor-pointer hover:bg-ocean-50/50')}>
+                {columns.map((c) => <td key={c.key} className={cx('px-3 py-2.5 align-top text-slate-700', c.className)}>{cell(c, r)}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+  );
+}
+
+/** Collapsible section ("See more analysis"): keeps long pages short on phones. */
+export function Disclosure({ title, subtitle, defaultOpen = false, children, id }) {
+  const [open, setOpen] = useState(defaultOpen);
+  useEffect(() => { setOpen(defaultOpen); }, [defaultOpen]);
+  return (
+    <div>
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls={id}
+        className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl bg-white px-4 py-3 text-left ring-1 ring-slate-200 hover:bg-slate-50">
+        <span className="min-w-0">
+          <span className="block font-semibold text-ocean-800">{title}</span>
+          {subtitle && <span className="block text-sm text-slate-500">{subtitle}</span>}
+        </span>
+        <ChevronDown className={cx('h-5 w-5 shrink-0 text-ocean-700 transition', open && 'rotate-180')} aria-hidden />
+      </button>
+      {open && <div id={id} className="mt-4 space-y-4">{children}</div>}
     </div>
   );
 }

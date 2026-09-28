@@ -61,20 +61,32 @@ Restart the API after changing `.env`.
 
 ## 4. The USSD menu
 
-The menu follows the user's saved language (default Kiswahili). Unknown numbers get
-`END Simu hii haijasajiliwa MwaniMlinzi. Tafadhali jisajili kwanza.`
+USSD runs only on a phone, through Africa's Talking. The web app has no USSD page or simulator.
+
+A registered number gets the menu in the user's saved language (default Kiswahili). An **unknown number**
+first chooses a language (`CON MWANIMLINZI\n1. Kiswahili\n2. English`) and then gets, in that language,
+`END Namba hii haijasajiliwa MwaniMlinzi. Tafadhali jisajili kwanza.` /
+`END This phone number is not registered with MwaniMlinzi. Please register first.` No farm or personal data is shown.
 
 ```
-CON MwaniMlinzi
-1. Hatari ya Shamba      → (choose a farm if you have several) → END risk in words + main reason + approved action
-2. Ripoti Dalili         → 1 Mwani kuwa mweupe · 2 Kukatika · 3 Ukuaji hafifu · 4 Nyingine
-                           → report saved (channel USSD), risk engine re-run, END new risk + action, SMS confirmation
-3. Mavuno                → 1 Rekodi mavuno → kg (validated, 3 tries) → confirm 1/2 → saved (channel USSD) + SMS confirmation
-                           2 Makadirio ya mavuno → expected kg and date
-4. Ushauri               → END the approved next action (or "Data haitoshi kutoa ushauri wa kuaminika.")
-5. Lugha                 → 1 Kiswahili · 2 English → saved to the user's profile, menu shown again in the new language
+CON MWANIMLINZI
+1. Hali ya shamba   → (choose a farm if you have several) → END e.g.
+                      FARM001
+                      Hatari: KUBWA (joto/ice-ice)
+                      Kwa nini: Maji ya bahari yana joto kuliko kawaida.
+                      Hatua: Kagua mistari ya mwani ndani ya saa 24 …
+2. Ripoti dalili    → 1 Mwani kuwa mweupe · 2 Kukatika · 3 Ukuaji hafifu · 4 Nyingine
+                      → report saved (channel USSD), risk engine re-run, END new risk + action, SMS confirmation
+3. Rekodi mavuno    → "Ingiza kiasi cha mavuno kwa kilo" → kg (validated, 3 tries) → confirm 1/2
+                      → saved (channel USSD) + SMS confirmation
+4. Ushauri          → END the approved next action (or "Data haitoshi kutoa ushauri wa kuaminika.")
+5. Lugha            → 1 Kiswahili · 2 English → saved to the user's profile, menu shown again in the new language
 0 = back to the main menu (from any submenu)
 ```
+
+All answers come from the same backend services as the web app (`RiskService`, `RecordService`,
+`SMSService`); the USSD handler contains no risk logic of its own. Errors (database down, unexpected
+input) end the session with `END Samahani, kuna tatizo. Tafadhali jaribu tena.` and never show technical details.
 
 - **State** (menu, farm, language, temporary input such as kg) is stored in `ussd_sessions` with the session ID, phone number, service code, network code, request count and timestamps.
 - **Retries:** if AT re-sends the same `sessionId` + `text`, the stored reply is returned and nothing is recorded twice.
@@ -126,10 +138,12 @@ Automated tests (no AT account needed; a fake client replaces the network):
 | 2 | Wrong key | `AT_USERNAME=sandbox`, wrong `AT_API_KEY`, Test SMS | `FAILED`: "Authentication failed …" (HTTP 401 from AT) |
 | 3 | Sandbox SMS | Correct sandbox key, Test SMS to the simulator phone | `QUEUED`/`SENT`; message appears in the AT simulator; delivery report later sets `DELIVERED` |
 | 4 | USSD main menu | Dial the code from `+255777000001` | Kiswahili main menu with 5 options |
-| 5 | Unknown number | Dial from an unregistered number | "Simu hii haijasajiliwa MwaniMlinzi…" |
-| 6 | Risk | `1` → `1` | Risk words (Hatari ndogo/ya kati/kubwa/kubwa sana), reason and action |
+| 5 | Unknown number | Dial from an unregistered number, choose `1` or `2` | Language menu, then "Namba hii haijasajiliwa MwaniMlinzi…" / "This phone number is not registered…" |
+| 6 | Risk | `1` → `1` | `Hatari: NDOGO/YA KATI/KUBWA/KUBWA SANA`, reason and action |
 | 7 | Symptom report | `2` → farm → `1` | Report saved (web app shows a USSD observation), risk re-run, SMS confirmation |
-| 8 | Harvest | `3` → farm → `1` → `abc` → `120` → `1` | Error for `abc`; then "Mavuno ya kg 120 yamerekodiwa"; harvest has channel USSD |
+| 8 | Harvest | `3` → farm → `abc` → `120` → `1` | Error for `abc`; then "Mavuno ya kg 120 yamerekodiwa"; harvest has channel USSD |
+| 8b | Session timeout | Start a session, wait more than 5 minutes, answer | "Muda wa kipindi umekwisha. Tafadhali piga tena." |
+| 8c | Password reset | Web → Log in → "Forgot your password?" → phone | 6-digit code arrives by SMS (simulator); code + new password → log in. Without `AT_*` the page says SMS is not configured |
 | 9 | Language | `5` → `2` | English menu; profile language is now English (web app follows after the next login) |
 | 10 | Bad secret | Call the callback URL without `?secret=` | HTTP 403 `END Access denied.`; `integration_events` status `REJECTED` |
 | 11 | Incoming SMS | Send `HATARI` to the short code | Reply SMS with risk and action |

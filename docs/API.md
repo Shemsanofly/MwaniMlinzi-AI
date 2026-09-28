@@ -55,6 +55,8 @@ admins see all farms; buyers never see farm-level data (only anonymised aggregat
 | GET | `/auth/me` | `{ user, cooperative, memberships[] }` |
 | PATCH | `/auth/me` | `{ fullName?, phone?, email?, preferredLanguage?, smsEnabled?, notifyRiskAlerts?, notifyHarvest?, notifySystem? }` |
 | POST | `/auth/change-password` | `{ currentPassword, newPassword }` (400 `WRONG_PASSWORD` if the current one is wrong) |
+| POST | `/auth/forgot-password` | `{ phone }` → sends a 6-digit code by SMS (same reply for unknown numbers; 503 `NOT_CONFIGURED` if SMS is not set up, 502 `PROVIDER_ERROR` if sending failed). Max 3 codes per 15 min |
+| POST | `/auth/reset-password` | `{ phone, code, newPassword }` → 400 `INVALID_CODE` if wrong/expired/used; a code expires after 15 min or 5 wrong tries. Only a hash of the code is stored; the SMS log shows `******` |
 | POST | `/auth/logout` | audit only |
 
 ## Farms (FARMER, COOPERATIVE_ADMIN, EXTENSION_OFFICER, ADMIN)

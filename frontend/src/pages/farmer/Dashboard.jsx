@@ -10,7 +10,7 @@ import { useAuth } from '../../stores/AuthContext.jsx';
 import { useFarmerFarm } from '../../hooks/useFarmerFarm.js';
 import { environmentApi, farmApi } from '../../api/endpoints.js';
 import { Button, Card, DemoBadge, ErrorState, FormError, Notice, Spinner, cx } from '../../components/ui/index.jsx';
-import { EnvironmentSummary, RISK_ICON } from '../../components/risk/RiskComponents.jsx';
+import { EnvironmentSummary, RISK_ICON, modelStatusText } from '../../components/risk/RiskComponents.jsx';
 import { dateTime, date as fmtDate, kg, timeAgo } from '../../utils/format.js';
 import { levelRank, riskStyle } from '../../utils/risk.js';
 import { ActionRecordedNotice, AlertList, BigLink, FarmGate, FarmSwitcher, SectionTitle, useInvalidateFarm, useRecordAction } from './components/shared.jsx';
@@ -129,6 +129,7 @@ function ImportantAlert({ alerts = [] }) {
         <p className="font-semibold text-slate-900">{tx(open, 'title')}</p>
         <p className="text-sm text-slate-700">{tx(open, 'message')}</p>
         <p className="mt-1 text-xs text-slate-500">{timeAgo(open.createdAt, lang)}</p>
+        <Link to="/farmer/alerts" className="mt-2 inline-flex min-h-11 items-center font-semibold text-ocean-700">{t('farmer.dashboard.viewAlerts')} →</Link>
       </div>
     </Card>
   );
@@ -160,8 +161,23 @@ function DashboardBody({ ff }) {
     <div>
       <FarmSwitcher ff={ff} />
 
+      {/* Current risk + why (the card carries its own heading) */}
+      {risksQ.isLoading ? <div className="flex justify-center p-6"><Spinner /></div>
+        : risksQ.error ? <ErrorState error={risksQ.error} onRetry={risksQ.refetch} compact />
+        : <CurrentRiskCard risk={risk} />}
+
+      {/* Next action + when */}
+      <SectionTitle>{t('farmer.dashboard.nextAction')}</SectionTitle>
+      {risk && (
+        <div className="space-y-2">
+          <NextActionSimple risk={risk} onRecordAction={onRecordAction} actionLoading={recordAction.isPending} />
+          <FormError error={recordAction.error} />
+          <ActionRecordedNotice action={recorded} onClose={() => setRecorded(null)} />
+        </div>
+      )}
+
       {/* Farm, crop age, expected harvest */}
-      <Card className="p-4">
+      <Card className="mt-4 p-4">
         <div className="flex flex-wrap items-center gap-2">
           <Sprout className="h-5 w-5 text-seaweed-600" aria-hidden />
           <p className="text-lg font-bold text-slate-900">{farm.name}</p>
@@ -188,22 +204,6 @@ function DashboardBody({ ff }) {
           </Notice>
         )}
       </Card>
-
-      {/* Current risk + why (the card carries its own heading) */}
-      <div className="mt-4" />
-      {risksQ.isLoading ? <div className="flex justify-center p-6"><Spinner /></div>
-        : risksQ.error ? <ErrorState error={risksQ.error} onRetry={risksQ.refetch} compact />
-        : <CurrentRiskCard risk={risk} />}
-
-      {/* Next action + when */}
-      <SectionTitle>{t('farmer.dashboard.nextAction')}</SectionTitle>
-      {risk && (
-        <div className="space-y-2">
-          <NextActionSimple risk={risk} onRecordAction={onRecordAction} actionLoading={recordAction.isPending} />
-          <FormError error={recordAction.error} />
-          <ActionRecordedNotice action={recorded} onClose={() => setRecorded(null)} />
-        </div>
-      )}
 
       {/* The single most important open alert */}
       {alertsQ.data && <ImportantAlert alerts={alertsQ.data.alerts} />}
@@ -256,7 +256,7 @@ function DetailsSection({ risk, farmId, alertsQ, onRecalculated }) {
           </div>
           <Card className="p-3">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-slate-600">
-              <span className="inline-flex items-center gap-1.5"><BrainCircuit className="h-4 w-4 text-ocean-600" aria-hidden />{t('farmer.dashboard.model')}: <strong className="text-slate-800">{risk.modelStatus?.label || '—'}</strong></span>
+              <span className="inline-flex items-center gap-1.5"><BrainCircuit className="h-4 w-4 text-ocean-600" aria-hidden />{t('farmer.dashboard.model')}: <strong className="text-slate-800">{modelStatusText(risk.modelStatus, t, lang)}</strong></span>
               <span>{t('farmer.dashboard.calculated', { time: dateTime(risk.calculatedAt, lang) })}</span>
               <Button variant="secondary" size="sm" icon={RefreshCw} className="min-h-11 sm:ml-auto" loading={recalc.isPending} onClick={() => recalc.mutate()}>{t('actions.recalculate')}</Button>
             </div>

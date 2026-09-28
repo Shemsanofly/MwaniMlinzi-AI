@@ -58,11 +58,14 @@ describe('Cooperative dashboard', () => {
     expect(screen.getByText('1,862 kg')).toBeInTheDocument();
     expect(screen.getByText('Range: 1,479–2,189 kg (risk-adjusted)')).toBeInTheDocument();
     expect(screen.getByText('Missing reports')).toBeInTheDocument();
+    expect(screen.getByTestId('map')).toHaveTextContent('1 farms on map');
+    expect(screen.getByText('CRITICAL heat risk — FARM001')).toBeInTheDocument();
+    // Charts and performance tables sit behind "More analysis" on small screens (jsdom has no media queries).
+    expect(screen.queryByText('Farms by overall risk')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /More analysis/ }));
     expect(screen.getByText('Farms by overall risk')).toBeInTheDocument();
     expect(screen.getByText('Harvest forecast by week')).toBeInTheDocument();
     expect(screen.getByText('Losses by cause (last 6 months)')).toBeInTheDocument();
-    expect(screen.getByTestId('map')).toHaveTextContent('1 farms on map');
-    expect(screen.getByText('CRITICAL heat risk — FARM001')).toBeInTheDocument();
     expect(screen.getByText('FARM009 · Quiet farm')).toBeInTheDocument();
     expect(screen.getByText('Farm performance')).toBeInTheDocument();
     expect(screen.getByText('Minor loss')).toBeInTheDocument();

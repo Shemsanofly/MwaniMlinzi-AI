@@ -5,6 +5,7 @@ import { HOME_FOR_ROLE, useAuth } from '../../stores/AuthContext.jsx';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { Button, Field, FormError } from '../../components/ui/index.jsx';
 import AuthShell from './components/AuthShell.jsx';
+import { useDemoMode } from '../../hooks/useDemoMode.js';
 
 /** Only allow in-app redirect targets (no protocol-relative or external URLs). */
 function safeFrom(from) {
@@ -15,6 +16,7 @@ function safeFrom(from) {
 export default function Login() {
   const { t } = useI18n();
   const { login } = useAuth();
+  const demo = useDemoMode();
   const navigate = useNavigate();
   const location = useLocation();
   const [params] = useSearchParams();
@@ -49,6 +51,7 @@ export default function Login() {
         <Field label={t('public.form.password')} htmlFor="login-password" required>
           <input id="login-password" type="password" autoComplete="current-password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </Field>
+        <p className="-mt-1 text-right text-sm"><Link to="/forgot-password" className="font-semibold text-ocean-700 hover:text-ocean-900">{t('public.login.forgot')}</Link></p>
         <FormError error={error} />
         <Button type="submit" size="lg" className="w-full" loading={pending} icon={LogIn}>
           {pending ? t('public.login.signingIn') : t('actions.login')}
@@ -56,7 +59,7 @@ export default function Login() {
       </form>
       <div className="mt-6 space-y-2 border-t border-slate-100 pt-4 text-sm text-slate-600">
         <p>{t('public.login.noAccount')} <Link to="/register" className="font-semibold text-ocean-700 hover:text-ocean-900">{t('actions.register')}</Link></p>
-        <p>{t('public.login.demoHint')} <Link to="/demo" className="font-semibold text-ocean-700 hover:text-ocean-900">{t('public.login.demoLink')}</Link></p>
+        {demo && <p>{t('public.login.demoHint')} <Link to="/demo" className="font-semibold text-ocean-700 hover:text-ocean-900">{t('public.login.demoLink')}</Link></p>}
       </div>
     </AuthShell>
   );

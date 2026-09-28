@@ -16,6 +16,7 @@ const HowItWorks = page(() => import('./pages/public/HowItWorks.jsx'));
 const DemoHome = page(() => import('./pages/public/DemoHome.jsx'));
 const Login = page(() => import('./pages/public/Login.jsx'));
 const Register = page(() => import('./pages/public/Register.jsx'));
+const ForgotPassword = page(() => import('./pages/public/ForgotPassword.jsx'));
 const NotFound = page(() => import('./pages/public/NotFound.jsx'));
 // Farmer
 const FarmerDashboard = page(() => import('./pages/farmer/Dashboard.jsx'));
@@ -52,6 +53,7 @@ const AdminAudit = page(() => import('./pages/admin/Audit.jsx'));
 // Demo
 const DemoSimulation = page(() => import('./pages/demo/Simulation.jsx'));
 const AccountSettings = page(() => import('./pages/account/Settings.jsx'));
+const Notifications = page(() => import('./pages/account/Notifications.jsx'));
 
 function HomeRedirect() {
   const { status, homePath } = useAuth();
@@ -70,6 +72,8 @@ export default function App() {
           <Route path="/demo" element={<DemoHome />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ForgotPassword />} />
         </Route>
 
         <Route path="/app" element={<HomeRedirect />} />
@@ -84,6 +88,7 @@ export default function App() {
             <Route path="/farmer/harvest" element={<FarmerHarvest />} />
             <Route path="/farmer/history" element={<FarmerHistory />} />
             <Route path="/farmer/assistant" element={<FarmerAssistant />} />
+            <Route path="/farmer/alerts" element={<Notifications />} />
             <Route path="/farmer/settings" element={<AccountSettings />} />
           </Route>
         </Route>
@@ -137,6 +142,7 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path="/demo/simulation" element={<DemoSimulation />} />
             <Route path="/account/settings" element={<AccountSettings />} />
+            <Route path="/account/notifications" element={<Notifications />} />
           </Route>
         </Route>
 

@@ -38,12 +38,13 @@ export function SupplyHorizonCards({ horizons }) {
 }
 
 export function UncertaintyNote({ note }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   return (
     <Notice tone="warning" icon={Info}>
       <p className="font-semibold">{t('buyer.uncertainty.title')}</p>
       <p>{t('buyer.uncertainty.body')}</p>
-      {note && <p className="mt-1 text-xs">{note}</p>}
+      {/* The backend note is English-only. */}
+      {note && lang === 'en' && <p className="mt-1 text-xs">{note}</p>}
     </Notice>
   );
 }

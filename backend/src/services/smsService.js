@@ -58,8 +58,14 @@ export const SMSService = {
     return this.sendRaw(normalizeTzPhone(user.phone), message, { type, language, notificationId });
   },
 
-  /** Low-level send + log (also used by the admin "Test SMS" and inbound-SMS replies). */
-  async sendRaw(phone, message, { type = 'GENERAL', language = null, notificationId = null, linkId = null } = {}) {
+  /** True when an SMS provider can actually send (Africa's Talking credentials present). */
+  isConfigured() { return client.configured !== false; },
+
+  /**
+   * Low-level send + log (also used by the admin "Test SMS", inbound-SMS replies and reset codes).
+   * `logMessage` replaces the stored text, so secrets such as one-time codes never reach notification_logs.
+   */
+  async sendRaw(phone, message, { type = 'GENERAL', language = null, notificationId = null, linkId = null, logMessage = null } = {}) {
     const to = normalizeTzPhone(phone);
     if (!to) return { status: 'FAILED', reason: 'INVALID_PHONE' };
     const result = await client.send(to, smsText(message), linkId ? { linkId } : undefined);
@@ -67,7 +73,7 @@ export const SMSService = {
       data: {
         notificationId, channel: 'SMS', provider: client.name, recipient: to, status: result.status,
         providerRef: result.providerRef || null, providerStatus: result.providerStatus || null, messageType: type, language,
-        message: smsText(message), cost: result.cost || null, error: result.error || null,
+        message: smsText(logMessage ?? message), cost: result.cost || null, error: result.error || null,
         sentAt: ['QUEUED', 'SENT'].includes(result.status) ? new Date() : null,
       },
     });

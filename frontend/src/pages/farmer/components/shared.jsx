@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { BellRing, CheckCircle2, ChevronRight, MapPin, Sprout } from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nProvider.jsx';
 import { farmApi, alertApi } from '../../../api/endpoints.js';
-import { Badge, Button, DemoBadge, EmptyState, ErrorState, Notice, PageLoader, apiErrorMessage, cx } from '../../../components/ui/index.jsx';
+import { Badge, Button, EmptyState, ErrorState, Notice, PageLoader, apiErrorMessage, cx } from '../../../components/ui/index.jsx';
 import { RISK_TYPES, riskStyle } from '../../../utils/risk.js';
 import { timeAgo } from '../../../utils/format.js';
 
@@ -57,13 +57,12 @@ export function FarmSwitcher({ ff, className }) {
             value={farm.id}
             onChange={(e) => selectFarm(e.target.value)}
           >
-            {farms.map((f) => <option key={f.id} value={f.id}>{f.farmCode} — {f.name}</option>)}
+            {farms.map((f) => <option key={f.id} value={f.id}>{f.name} ({f.farmCode})</option>)}
           </select>
         </>
       ) : (
-        <p className="min-w-0 flex-1 truncate py-2 text-base font-semibold text-slate-900">{farm.farmCode} — {farm.name}</p>
+        <p className="min-w-0 flex-1 truncate py-2 text-base font-semibold text-slate-900">{farm.name} <span className="font-normal text-slate-500">({farm.farmCode})</span></p>
       )}
-      {farm.isDemo && <DemoBadge label={t('common.demoFarm')} />}
     </div>
   );
 }
@@ -76,10 +75,10 @@ export function BigLink({ to, icon: Icon, children, tone = 'ocean' }) {
     light: 'bg-white text-ocean-800 ring-1 ring-inset ring-ocean-200 hover:bg-ocean-50',
   };
   return (
-    <Link to={to} className={cx('flex min-h-14 items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold shadow-sm transition', tones[tone])}>
+    <Link to={to} className={cx('flex min-h-14 items-center gap-2.5 rounded-xl px-3 py-3 text-base font-semibold leading-snug shadow-sm transition min-[380px]:gap-3 min-[380px]:px-4', tones[tone])}>
       {Icon && <Icon className="h-6 w-6 shrink-0" aria-hidden />}
       <span className="min-w-0 flex-1">{children}</span>
-      <ChevronRight className="h-5 w-5 shrink-0 opacity-70" aria-hidden />
+      <ChevronRight className="hidden h-5 w-5 shrink-0 opacity-70 min-[380px]:block" aria-hidden />
     </Link>
   );
 }

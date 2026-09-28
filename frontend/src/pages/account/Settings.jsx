@@ -131,7 +131,7 @@ export default function AccountSettings() {
           </Field>
           <FormError error={errorFor('contact')} />
           <div className="flex items-center gap-3">
-            <Button type="submit" icon={Save} loading={busy('contact')}>{t('actions.save')}</Button>
+            <Button type="submit" icon={Save} loading={busy('contact')}>{busy('contact') ? t('actions.saving') : t('account.saveContact')}</Button>
             <Saved show={state.saved === 'contact'} />
           </div>
         </form>
@@ -149,7 +149,7 @@ export default function AccountSettings() {
           {!user?.phone && <Notice tone="warning">{t('account.noPhone')}</Notice>}
           <FormError error={errorFor('prefs')} />
           <div className="flex items-center gap-3">
-            <Button type="submit" icon={Save} loading={busy('prefs')}>{t('actions.save')}</Button>
+            <Button type="submit" icon={Save} loading={busy('prefs')}>{busy('prefs') ? t('actions.saving') : t('account.savePrefs')}</Button>
             <Saved show={state.saved === 'prefs'} />
           </div>
         </form>

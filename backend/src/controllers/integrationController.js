@@ -94,7 +94,7 @@ export async function ussd(req, res) {
   } catch (err) {
     console.warn(`[ussd] session ${body.sessionId} (${maskPhone(body.phoneNumber)}) failed:`, err.message);
     await logEvent({ kind: 'USSD', reference: body.sessionId, phoneNumber: maskPhone(body.phoneNumber), status: 'ERROR', error: err.message.slice(0, 500), durationMs: Date.now() - started });
-    return res.status(200).type('text/plain').send('END Samahani, kuna hitilafu. Tafadhali jaribu tena baadaye.');
+    return res.status(200).type('text/plain').send(`END ${UssdService.T.sw.error}`);
   }
   await logEvent({
     kind: 'USSD', reference: body.sessionId, phoneNumber: maskPhone(body.phoneNumber),

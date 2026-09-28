@@ -39,7 +39,7 @@ describe('shared UI', () => {
 
   test('ErrorState never shows the English backend message in Kiswahili mode', () => {
     wrap(<ErrorState error={{ status: 418, code: 'SOMETHING_NEW', message: 'Teapot exploded' }} />);
-    expect(screen.getByRole('alert')).toHaveTextContent('Kuna hitilafu. Tafadhali jaribu tena.');
+    expect(screen.getByRole('alert')).toHaveTextContent('Samahani, taarifa haikuweza kupakiwa. Tafadhali jaribu tena.');
     expect(screen.getByRole('alert')).not.toHaveTextContent('Teapot');
   });
 

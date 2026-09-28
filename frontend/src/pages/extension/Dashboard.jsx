@@ -4,8 +4,9 @@ import { AlertTriangle, Bell, ClipboardCheck, ClipboardList, Map as MapIcon, Mic
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { extensionApi } from '../../api/endpoints.js';
 import FarmMap from '../../components/map/FarmMap.jsx';
-import { Badge, Button, EmptyState, ErrorState, PageHeader, PageLoader, RiskBadge, StatCard } from '../../components/ui/index.jsx';
+import { Badge, Button, Disclosure, EmptyState, ErrorState, PageHeader, PageLoader, RiskBadge, StatCard } from '../../components/ui/index.jsx';
 import { num, pct, timeAgo } from '../../utils/format.js';
+import { useDesktop } from '../../hooks/useMediaQuery.js';
 import { AlertList, Section } from './components/common.jsx';
 import { HighRiskFarmsTable, MissingReportsList, PortfolioCharts, PortfolioStats } from './components/Portfolio.jsx';
 
@@ -46,6 +47,7 @@ function VisitPriorityList({ items }) {
 export default function ExtensionDashboard() {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
+  const desktop = useDesktop();
   const q = useQuery({ queryKey: ['extDashboard'], queryFn: extensionApi.dashboard });
   if (q.isLoading) return <PageLoader />;
   if (q.error) return <ErrorState error={q.error} onRetry={q.refetch} />;
@@ -68,7 +70,7 @@ export default function ExtensionDashboard() {
       <div className="grid gap-4 lg:grid-cols-5">
         <Section title={t('extension.dashboard.map')} icon={MapIcon} className="lg:col-span-3" bodyClassName="p-2 sm:p-3"
           action={<Link to={`${BASE}/risk-map`} className="text-sm font-semibold text-ocean-700 hover:underline">{t('extension.dashboard.openMap')} →</Link>}>
-          {d.farms.length ? <FarmMap farms={d.farms} height={420} linkTo={(f) => `${BASE}/farms/${f.id}`} /> : <EmptyState title={t('extension.shared.noFarms')} />}
+          {d.farms.length ? <FarmMap farms={d.farms} height={desktop ? 420 : 260} linkTo={(f) => `${BASE}/farms/${f.id}`} /> : <EmptyState title={t('extension.shared.noFarms')} />}
         </Section>
         <Section title={t('extension.dashboard.visits')} subtitle={t('extension.dashboard.visitsSub')} icon={Navigation} className="lg:col-span-2" bodyClassName="max-h-[520px] overflow-y-auto">
           <VisitPriorityList items={d.visitPriority || []} />
@@ -108,7 +110,9 @@ export default function ExtensionDashboard() {
         </Section>
       </div>
 
-      <PortfolioCharts charts={d.charts} />
+      <Disclosure id="ext-analysis" title={t('coop.dashboard.moreAnalysis')} subtitle={t('coop.dashboard.moreAnalysisSub')} defaultOpen={desktop}>
+        <PortfolioCharts charts={d.charts} />
+      </Disclosure>
     </div>
   );
 }

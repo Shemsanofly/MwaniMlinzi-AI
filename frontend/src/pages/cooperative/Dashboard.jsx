@@ -5,8 +5,9 @@ import { AlertTriangle, Bell, ClipboardX, Map as MapIcon, RefreshCw, Target, Tre
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { cooperativeApi, forecastApi } from '../../api/endpoints.js';
 import FarmMap from '../../components/map/FarmMap.jsx';
-import { Badge, Button, DemoBadge, EmptyState, ErrorState, FormError, Notice, PageHeader, PageLoader, RiskBadge, Table } from '../../components/ui/index.jsx';
+import { Badge, Button, DemoBadge, Disclosure, EmptyState, ErrorState, FormError, Notice, PageHeader, PageLoader, RiskBadge, Table } from '../../components/ui/index.jsx';
 import { date, num } from '../../utils/format.js';
+import { useDesktop } from '../../hooks/useMediaQuery.js';
 import { AlertList, Section, SuccessNote } from '../extension/components/common.jsx';
 import { HighRiskFarmsTable, MissingReportsList, PortfolioCharts, PortfolioStats } from '../extension/components/Portfolio.jsx';
 
@@ -17,6 +18,7 @@ export default function CooperativeDashboard() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [success, setSuccess] = useState(null);
+  const desktop = useDesktop();
   const q = useQuery({ queryKey: ['coopDashboard'], queryFn: cooperativeApi.myDashboard });
   const regen = useMutation({
     mutationFn: forecastApi.generate,
@@ -66,7 +68,7 @@ export default function CooperativeDashboard() {
       <FormError error={regen.error} />
 
       <PortfolioStats cards={d.cards} onNavigate={{ farms: () => navigate(`${BASE}/farms`), alerts: () => navigate(`${BASE}/alerts`), forecast: () => navigate(`${BASE}/forecast`) }} />
-      <Notice tone="info">{d.forecastSummary?.uncertaintyNote || t('extension.shared.uncertainty')}</Notice>
+      <Notice tone="info">{(lang === 'en' && d.forecastSummary?.uncertaintyNote) || t('extension.shared.uncertainty')}</Notice>
 
       <Section
         title={t('coop.dashboard.map')}
@@ -75,7 +77,7 @@ export default function CooperativeDashboard() {
         action={<Link to={`${BASE}/map`} className="text-sm font-semibold text-ocean-700 hover:underline">{t('coop.dashboard.openMap')} →</Link>}
         bodyClassName="p-2 sm:p-3"
       >
-        {d.farms.length ? <FarmMap farms={d.farms} height={380} linkTo={(f) => `${BASE}/farms/${f.id}`} /> : <EmptyState title={t('extension.shared.noFarms')} />}
+        {d.farms.length ? <FarmMap farms={d.farms} height={desktop ? 380 : 260} linkTo={(f) => `${BASE}/farms/${f.id}`} /> : <EmptyState title={t('extension.shared.noFarms')} />}
       </Section>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -95,6 +97,7 @@ export default function CooperativeDashboard() {
         <AlertList alerts={(d.recentAlerts || []).slice(0, 8)} base={BASE} compact />
       </Section>
 
+      <Disclosure id="coop-analysis" title={t('coop.dashboard.moreAnalysis')} subtitle={t('coop.dashboard.moreAnalysisSub')} defaultOpen={desktop}>
       <PortfolioCharts charts={d.charts} />
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -105,6 +108,7 @@ export default function CooperativeDashboard() {
           <Table columns={outcomeColumns} rows={(d.outcomes || []).slice(0, 12)} empty={<div className="p-4"><EmptyState title={t('coop.outcomes.empty')} /></div>} />
         </Section>
       </div>
+      </Disclosure>
     </div>
   );
 }

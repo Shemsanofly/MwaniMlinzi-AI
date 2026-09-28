@@ -1,21 +1,28 @@
-import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Bell } from 'lucide-react';
-import { notificationApi } from '../api/endpoints.js';
 import { useI18n } from '../i18n/I18nProvider.jsx';
-import { timeAgo } from '../utils/format.js';
+import { NotificationItem, useNotifications } from '../components/notifications.jsx';
 
-export default function NotificationBell() {
-  const { t, tx, lang } = useI18n();
+/** Header bell for staff: the five newest notifications plus a link to the full notification centre. */
+export default function NotificationBell({ allPath = '/account/notifications' }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
-  const qc = useQueryClient();
-  const { data } = useQuery({ queryKey: ['notifications'], queryFn: () => notificationApi.list(), refetchInterval: 60_000 });
-  const readAll = useMutation({ mutationFn: notificationApi.readAll, onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }) });
-  const readOne = useMutation({ mutationFn: notificationApi.read, onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }) });
-  const unread = data?.unread || 0;
+  const ref = useRef(null);
+  const { notifications, unread, readAll, readOne } = useNotifications();
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    const onClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onClick);
+    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('mousedown', onClick); };
+  }, [open]);
+
   return (
-    <div className="relative">
-      <button type="button" onClick={() => setOpen((o) => !o)} className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100" aria-label={`${t('nav.notifications')} (${unread} ${t('common.unread')})`}>
+    <div className="relative" ref={ref}>
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100" aria-label={`${t('nav.notifications')} (${unread} ${t('common.unread')})`}>
         <Bell className="h-5 w-5" aria-hidden />
         {unread > 0 && <span className="absolute -right-0.5 -top-0.5 min-w-[18px] rounded-full bg-red-600 px-1 text-center text-[11px] font-bold leading-[18px] text-white">{unread > 99 ? '99+' : unread}</span>}
       </button>
@@ -26,18 +33,10 @@ export default function NotificationBell() {
             {unread > 0 && <button type="button" className="text-xs font-semibold text-ocean-700" onClick={() => readAll.mutate()}>{t('actions.markAllRead')}</button>}
           </div>
           <ul className="max-h-96 divide-y divide-slate-100 overflow-y-auto">
-            {(data?.notifications || []).length === 0 && <li className="px-4 py-6 text-center text-sm text-slate-500">{t('common.noData')}</li>}
-            {(data?.notifications || []).map((n) => (
-              <li key={n.id}>
-                <button type="button" onClick={() => !n.readAt && readOne.mutate(n.id)} className={`w-full px-4 py-2.5 text-left hover:bg-slate-50 ${n.readAt ? '' : 'bg-ocean-50/60'}`}>
-                  {/* Alert-based notifications follow the current UI language; others were written in the user's language. */}
-                  <p className="text-sm font-semibold text-slate-900">{n.alert ? tx(n.alert, 'title') : n.title}</p>
-                  <p className="text-xs text-slate-600">{n.alert ? tx(n.alert, 'message') : n.body}</p>
-                  <p className="mt-0.5 text-[11px] text-slate-400">{timeAgo(n.createdAt, lang)}</p>
-                </button>
-              </li>
-            ))}
+            {notifications.length === 0 && <li className="px-4 py-6 text-center text-sm text-slate-500">{t('notifications.empty')}</li>}
+            {notifications.slice(0, 5).map((n) => <li key={n.id}><NotificationItem n={n} compact onRead={(id) => readOne.mutate(id)} /></li>)}
           </ul>
+          <Link to={allPath} onClick={() => setOpen(false)} className="block border-t border-slate-100 px-4 py-2.5 text-center text-sm font-semibold text-ocean-700 hover:bg-ocean-50">{t('notifications.viewAll')}</Link>
         </div>
       )}
     </div>

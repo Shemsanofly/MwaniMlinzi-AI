@@ -18,3 +18,17 @@ export function timeAgo(d, lang = 'en') {
   if (Math.abs(s) < 86400) return rtf.format(-Math.round(s / 3600), 'hour');
   return rtf.format(-Math.round(s / 86400), 'day');
 }
+
+const SW_VALUE_WORDS = { yes: 'ndiyo', no: 'hapana', poor: 'mbaya', fair: 'wastani', good: 'nzuri', 'loose/broken': 'imelegea/imekatika' };
+/**
+ * Factor values come from the rule engine in English ("8 days", "0.3 m waves", "yes").
+ * In Kiswahili, translate the few words they use so no English leaks onto a Kiswahili screen.
+ */
+export function factorValue(value, lang = 'en') {
+  if (value == null || lang !== 'sw') return value;
+  const v = String(value);
+  if (SW_VALUE_WORDS[v]) return SW_VALUE_WORDS[v];
+  return v
+    .replace(/(\S+) days\b/g, 'siku $1')
+    .replace(/ m waves\b/g, ' m mawimbi');
+}

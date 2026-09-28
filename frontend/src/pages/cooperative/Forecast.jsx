@@ -84,7 +84,7 @@ export default function CooperativeForecast() {
           <HorizonCards horizons={q.data.summary.horizons} />
           <Notice tone="warning" icon={Info}>
             <p className="font-semibold">{t('common.uncertainty')}</p>
-            <p>{q.data.summary.uncertaintyNote}</p>
+            <p>{(lang === 'en' && q.data.summary.uncertaintyNote) || t('extension.shared.uncertainty')}</p>
             <p className="mt-1 text-xs">{t('coop.forecast.unitNote', { unit: q.data.summary.unit })}</p>
           </Notice>
           <Section title={t('extension.shared.charts.harvestByWeek')} subtitle={t('extension.shared.charts.harvestByWeekSub')} icon={BarChart3}>

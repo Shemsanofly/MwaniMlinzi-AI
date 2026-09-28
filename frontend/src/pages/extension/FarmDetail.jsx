@@ -138,7 +138,7 @@ function RiskTab({ farm, canFlag }) {
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-          {data?.modelStatus && <ModelStatusBadge label={data.modelStatus.label} />}
+          {data?.modelStatus && <ModelStatusBadge status={data.modelStatus} />}
           {data?.calculatedAt && <span>{t('common.lastUpdated', { time: dateTime(data.calculatedAt, lang) })}</span>}
         </div>
         <Button icon={RefreshCw} loading={run.isPending} onClick={() => { setMessage(null); run.mutate(); }}>{t('actions.recalculate')}</Button>

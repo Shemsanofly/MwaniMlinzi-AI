@@ -152,7 +152,7 @@ function FarmDetails({ farmId }) {
       ) : <EmptyState title={t('farmer.farm.noPastCycles')} />}
 
       <Modal open={editing} onClose={() => setEditing(false)} title={t('farmer.farm.editTitle')} size="lg">
-        <FarmForm farm={farm} onSubmit={(b) => update.mutate(b)} pending={update.isPending} error={update.error} submitLabel={t('actions.save')} onCancel={() => setEditing(false)} />
+        <FarmForm farm={farm} onSubmit={(b) => update.mutate(b)} pending={update.isPending} error={update.error} submitLabel={t('farmer.farm.saveFarm')} onCancel={() => setEditing(false)} />
       </Modal>
     </div>
   );

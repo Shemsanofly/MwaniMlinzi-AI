@@ -4,7 +4,6 @@ import { RiskService } from './riskService.js';
 import { RecordService } from './recordService.js';
 import { SMSService } from './smsService.js';
 import { normalizeTzPhone, maskPhone } from '../utils/phone.js';
-import { formatDate } from '../utils/dates.js';
 import { runInBackground } from '../utils/background.js';
 
 /**
@@ -26,65 +25,63 @@ const RISK_WAIT_MS = 6000; // answer within AT's timeout even if the risk engine
 
 const T = {
   sw: {
-    notRegistered: 'Simu hii haijasajiliwa MwaniMlinzi. Tafadhali jisajili kwanza.',
+    notRegistered: 'Namba hii haijasajiliwa MwaniMlinzi. Tafadhali jisajili kwanza.',
     noFarm: 'Hakuna shamba lililosajiliwa kwa namba hii. Wasiliana na ushirika wako.',
-    main: 'MwaniMlinzi\n1. Hatari ya Shamba\n2. Ripoti Dalili\n3. Mavuno\n4. Ushauri\n5. Lugha',
+    main: 'MWANIMLINZI\n1. Hali ya shamba\n2. Ripoti dalili\n3. Rekodi mavuno\n4. Ushauri\n5. Lugha',
     invalid: 'Chaguo si sahihi.',
     back: '0. Rudi',
-    pickFarm: 'Chagua shamba:',
+    pickFarm: 'Chagua shamba',
     symptoms: 'Umeona nini?\n1. Mwani kuwa mweupe\n2. Kukatika\n3. Ukuaji hafifu\n4. Nyingine',
-    harvestMenu: 'Mavuno\n1. Rekodi mavuno\n2. Makadirio ya mavuno',
-    enterKg: 'Weka kilo za mwani mkavu uliovuna (mfano 120):',
+    enterKg: 'Ingiza kiasi cha mavuno kwa kilo (mwani mkavu, mfano 120):',
     badKg: `Kiasi si sahihi. Weka namba kati ya 1 na ${MAX_KG}:`,
     confirmKg: (kg, farm) => `Thibitisha mavuno ya kg ${kg} kwa ${farm}?\n1. Ndiyo\n2. Hapana`,
     harvestSaved: (kg, farm) => `Asante. Mavuno ya kg ${kg} yamerekodiwa kwa ${farm}.`,
     harvestCancelled: 'Mavuno hayajarekodiwa.',
     language: 'Chagua lugha:\n1. Kiswahili\n2. English',
+    chooseLanguage: 'MWANIMLINZI\n1. Kiswahili\n2. English',
     languageSaved: 'Lugha imebadilishwa kuwa Kiswahili.',
     obsSaved: 'Asante. Ripoti yako imehifadhiwa.',
     obsProcessing: 'Tunachambua hatari. Utapokea SMS yenye ushauri.',
-    risk: (farm, level, type) => `${farm}: ${level} (${type}).`,
-    reason: 'Sababu',
+    riskLabel: 'Hatari',
+    reason: 'Kwa nini',
     action: 'Hatua',
     noAction: 'Endelea kukagua shamba lako kila siku.',
-    noForecast: 'Hakuna makadirio ya mavuno kwa sasa. Rekodi upandaji na hali ya shamba kwanza.',
-    forecast: (farm, kg, date) => `${farm}: Mavuno yanayotarajiwa ni takriban kg ${kg} (mkavu) karibu ${date}.`,
     insufficient: 'Data haitoshi kutoa ushauri wa kuaminika. Ripoti hali ya shamba (chaguo 2).',
     expired: 'Muda wa kipindi umekwisha. Tafadhali piga tena.',
-    error: 'Samahani, kuna hitilafu. Tafadhali jaribu tena baadaye.',
+    error: 'Samahani, kuna tatizo. Tafadhali jaribu tena.',
     level: { LOW: 'Hatari ndogo', MEDIUM: 'Hatari ya kati', HIGH: 'Hatari kubwa', CRITICAL: 'Hatari kubwa sana' },
+    levelShort: { LOW: 'NDOGO', MEDIUM: 'YA KATI', HIGH: 'KUBWA', CRITICAL: 'KUBWA SANA' },
     type: { HEAT_ICE_ICE: 'joto/ice-ice', STORM_LINE_DAMAGE: 'dhoruba', POOR_GROWTH: 'ukuaji hafifu' },
     smsObs: (farm, level, action) => `MWANIMLINZI: Ripoti ya ${farm} imepokelewa. ${level}.${action ? ` Hatua: ${action}` : ''}`,
     smsHarvest: (kg, farm) => `MWANIMLINZI: Mavuno ya kg ${kg} yamerekodiwa kwa ${farm}. Asante.`,
   },
   en: {
-    notRegistered: 'This phone is not registered with MwaniMlinzi. Please register first.',
+    notRegistered: 'This phone number is not registered with MwaniMlinzi. Please register first.',
     noFarm: 'No farm is registered for this number. Please contact your cooperative.',
-    main: 'MwaniMlinzi\n1. Farm risk\n2. Report symptoms\n3. Harvest\n4. Advice\n5. Language',
+    main: 'MWANIMLINZI\n1. Farm status\n2. Report symptoms\n3. Record harvest\n4. Advice\n5. Language',
     invalid: 'Invalid choice.',
     back: '0. Back',
-    pickFarm: 'Choose a farm:',
+    pickFarm: 'Choose a farm',
     symptoms: 'What did you see?\n1. Whitening\n2. Breakage\n3. Slow growth\n4. Other',
-    harvestMenu: 'Harvest\n1. Record harvest\n2. Expected harvest',
-    enterKg: 'Enter kg of dry seaweed harvested (e.g. 120):',
+    enterKg: 'Enter the harvest amount in kg (dry seaweed, e.g. 120):',
     badKg: `Invalid amount. Enter a number from 1 to ${MAX_KG}:`,
     confirmKg: (kg, farm) => `Confirm harvest of ${kg} kg for ${farm}?\n1. Yes\n2. No`,
     harvestSaved: (kg, farm) => `Thank you. Harvest of ${kg} kg recorded for ${farm}.`,
     harvestCancelled: 'Harvest not recorded.',
     language: 'Choose language:\n1. Kiswahili\n2. English',
+    chooseLanguage: 'MWANIMLINZI\n1. Kiswahili\n2. English',
     languageSaved: 'Language changed to English.',
     obsSaved: 'Thank you. Your report has been saved.',
     obsProcessing: 'We are checking the risk. You will receive advice by SMS.',
-    risk: (farm, level, type) => `${farm}: ${level} (${type}).`,
+    riskLabel: 'Risk',
     reason: 'Why',
     action: 'Action',
     noAction: 'Keep checking your farm every day.',
-    noForecast: 'No harvest estimate yet. Record planting and farm condition first.',
-    forecast: (farm, kg, date) => `${farm}: Expected harvest is about ${kg} kg (dry) around ${date}.`,
     insufficient: 'Not enough data to give reliable advice. Report your farm condition (option 2).',
     expired: 'Your session has expired. Please dial again.',
-    error: 'Sorry, something went wrong. Please try again later.',
+    error: 'Sorry, something went wrong. Please try again.',
     level: { LOW: 'Low risk', MEDIUM: 'Medium risk', HIGH: 'High risk', CRITICAL: 'Very high risk' },
+    levelShort: { LOW: 'LOW', MEDIUM: 'MEDIUM', HIGH: 'HIGH', CRITICAL: 'CRITICAL' },
     type: { HEAT_ICE_ICE: 'heat/ice-ice', STORM_LINE_DAMAGE: 'storm', POOR_GROWTH: 'slow growth' },
     smsObs: (farm, level, action) => `MWANIMLINZI: Report for ${farm} received. ${level}.${action ? ` Action: ${action}` : ''}`,
     smsHarvest: (kg, farm) => `MWANIMLINZI: Harvest of ${kg} kg recorded for ${farm}. Thank you.`,
@@ -139,11 +136,14 @@ function actionText(risk, lang) {
   return lang === 'en' ? a.action : a.actionSw;
 }
 
+/** "Hatari: KUBWA (joto/ice-ice)" — the level in plain words, never a probability. */
+const riskLine = (main, lang) => `${T[lang].riskLabel}: ${T[lang].levelShort[main.riskLevel]} (${T[lang].type[main.riskType]})`;
+
 function riskScreen(farm, risk, lang) {
   const t = T[lang];
   const main = mainRisk(risk);
   if (!main) return end(`${farm.farmCode}: ${t.insufficient}`);
-  const lines = [t.risk(farm.farmCode, t.level[main.riskLevel], t.type[main.riskType])];
+  const lines = [farm.farmCode, riskLine(main, lang)];
   const reason = reasonFor(main, lang);
   if (reason) lines.push(`${t.reason}: ${reason}.`);
   const action = actionText(risk, lang);
@@ -157,13 +157,6 @@ function adviceScreen(farm, risk, lang) {
   if (action) return end(fitScreen(`${farm.farmCode}\n${t.action}: ${action}`));
   if (risk.insufficientDataMessage || !mainRisk(risk)) return end(`${farm.farmCode}: ${t.insufficient}`);
   return end(`${farm.farmCode}: ${t.noAction}`);
-}
-
-async function forecastScreen(farm, lang) {
-  const t = T[lang];
-  const fc = await prisma.harvestForecast.findFirst({ where: { farmId: farm.id, isCurrent: true }, orderBy: { createdAt: 'desc' } });
-  if (!fc) return end(t.noForecast);
-  return end(t.forecast(farm.farmCode, Math.round(fc.riskAdjustedQuantityKg), formatDate(fc.expectedHarvestDate)));
 }
 
 function farmMenu(farms, lang) {
@@ -198,7 +191,7 @@ async function reportSymptom(user, farm, choice, lang) {
   const main = mainRisk(risk);
   const action = actionText(risk, lang);
   const lines = [t.obsSaved];
-  if (main) lines.push(`${farm.farmCode}: ${t.level[main.riskLevel]} (${t.type[main.riskType]}).`);
+  if (main) lines.push(riskLine(main, lang));
   if (action) lines.push(`${t.action}: ${action}`);
   return end(fitScreen(lines.join('\n')));
 }
@@ -221,7 +214,7 @@ export function parseKg(input) {
 
 /**
  * One state-machine step. `state` = { menu, farmId, temp, language }; returns { reply:{text,end}, state }.
- * Menus: MAIN, FARM, SYMPTOM, HARVEST, HARVEST_KG, HARVEST_CONFIRM, LANGUAGE.
+ * Menus: MAIN, FARM, SYMPTOM, HARVEST_KG, HARVEST_CONFIRM, LANGUAGE.
  */
 async function step(user, farms, state, input) {
   let lang = state.language;
@@ -234,7 +227,7 @@ async function step(user, farms, state, input) {
     switch (option) {
       case '1': return { reply: riskScreen(farm, await currentRisk(farm.id), lang), state: next('DONE', { farmId: farm.id }) };
       case '2': return { reply: con(t().symptoms), state: next('SYMPTOM', { farmId: farm.id }) };
-      case '3': return { reply: con(t().harvestMenu), state: next('HARVEST', { farmId: farm.id }) };
+      case '3': return { reply: con(t().enterKg), state: next('HARVEST_KG', { farmId: farm.id, temp: { attempts: 0 } }) };
       case '4': return { reply: adviceScreen(farm, await currentRisk(farm.id), lang), state: next('DONE', { farmId: farm.id }) };
       default: return { reply: con(`${t().invalid}\n${t().main}`), state: next('MAIN') };
     }
@@ -258,12 +251,6 @@ async function step(user, farms, state, input) {
       const farm = farmById(state.farmId);
       if (!SYMPTOMS[input] || !farm) return { reply: con(`${t().invalid}\n${t().symptoms}`), state };
       return { reply: await reportSymptom(user, farm, input, lang), state: next('DONE') };
-    }
-    case 'HARVEST': {
-      const farm = farmById(state.farmId);
-      if (input === '1') return { reply: con(t().enterKg), state: next('HARVEST_KG', { temp: { attempts: 0 } }) };
-      if (input === '2' && farm) return { reply: await forecastScreen(farm, lang), state: next('DONE') };
-      return { reply: con(`${t().invalid}\n${t().harvestMenu}`), state };
     }
     case 'HARVEST_KG': {
       const kg = parseKg(input);
@@ -333,7 +320,18 @@ export const UssdService = {
     }
 
     const user = await findUser(phone);
-    if (!user) return save(end(T.sw.notRegistered), { menu: 'UNREGISTERED' }, null, 'ENDED');
+    if (!user) {
+      // Unknown number: let the caller pick a language, then say (in that language) that it is not registered.
+      // Nothing about any farm or person is revealed.
+      if (!existing || input === '') return save(con(T.sw.chooseLanguage), { menu: 'UNREGISTERED_LANGUAGE' }, null, 'ACTIVE');
+      const choice = input.split('*').pop().trim();
+      const lang = choice === '2' ? 'en' : choice === '1' ? 'sw' : null;
+      if (!lang) {
+        if ((existing.tempData?.attempts || 0) >= 1) return save(end(T.sw.notRegistered), { menu: 'UNREGISTERED' }, null, 'ENDED');
+        return save(con(`${T.sw.invalid}\n${T.sw.chooseLanguage}`), { menu: 'UNREGISTERED_LANGUAGE', temp: { attempts: 1 } }, null, 'ACTIVE');
+      }
+      return save(end(T[lang].notRegistered), { menu: 'UNREGISTERED', language: lang }, null, 'ENDED');
+    }
     const farms = user.farmer?.farms || [];
     const lang0 = existing?.language || (user.preferredLanguage === 'en' ? 'en' : 'sw');
     if (!farms.length) return save(end(T[lang0].noFarm), { menu: 'NO_FARM', language: lang0 }, user.id, 'ENDED');

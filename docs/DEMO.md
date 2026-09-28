@@ -66,7 +66,7 @@ Farms without a recent report generate **missing report** alerts.
 13. **Settings** (menu → *Mipangilio*) — language, phone, SMS alerts (risk alerts, harvest reminders, system messages) and password.
 14. **USSD & SMS** — these are real Africa's Talking channels (no web simulator). With the AT sandbox configured
     ([AFRICASTALKING.md](AFRICASTALKING.md)), open AT's phone simulator as `+255777000001`, dial your USSD code → `1` → `1`
-    (risk + action), `2` (report symptoms), `3` (harvest), `5` (language), or send `HATARI FARM001` / `MAVUNO FARM002 120` by SMS.
+    (farm status: risk + action), `2` (report symptoms), `3` (record harvest), `5` (language), or send `HATARI FARM001` / `MAVUNO FARM002 120` by SMS.
 15. **Admin** — dashboard (system health, jobs **Run now**), users & roles, action library, **models** (metrics, confusion matrix,
     field evaluation from outcomes, SYNTHETIC badge), settings (risk thresholds stored in PostgreSQL; **Africa's Talking** status and a real **Test SMS**), **audit log** of everything above.
 16. **pgAdmin** — open `mwanimlinzi` → `risk_predictions`, `risk_factors`, `action_recommendations`, `farmer_actions`,

@@ -5,34 +5,36 @@ import Logo from './Logo.jsx';
 import LanguageSwitch from './LanguageSwitch.jsx';
 import DemoBanner from './DemoBanner.jsx';
 import OfflineBanner from './OfflineBanner.jsx';
+import { useDemoMode } from '../hooks/useDemoMode.js';
 
 export default function PublicLayout() {
   const { t } = useI18n();
   const { isAuthenticated, homePath } = useAuth();
+  const demo = useDemoMode();
   const link = ({ isActive }) => `rounded-lg px-3 py-2 text-sm font-medium ${isActive ? 'text-ocean-800' : 'text-slate-600 hover:text-ocean-800'}`;
   return (
     <div className="flex min-h-screen flex-col">
       <OfflineBanner />
       <DemoBanner />
       <header className="sticky top-0 z-[900] border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
-          <Logo />
+        <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:gap-4 sm:px-6">
+          <div className="min-w-0"><Logo compact iconOnlyOnPhone="xs" /></div>
           <nav className="ml-6 hidden items-center gap-1 md:flex" aria-label={t('a11y.publicNav')}>
             <NavLink to="/about" className={link}>{t('nav.about')}</NavLink>
             <NavLink to="/how-it-works" className={link}>{t('nav.howItWorks')}</NavLink>
-            <NavLink to="/demo" className={link}>{t('nav.demo')}</NavLink>
+            {demo && <NavLink to="/demo" className={link}>{t('nav.demo')}</NavLink>}
           </nav>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             <LanguageSwitch />
             {isAuthenticated
-              ? <Link to={homePath} className="rounded-lg bg-ocean-700 px-4 py-2 text-sm font-semibold text-white hover:bg-ocean-800">{t('nav.dashboard')}</Link>
-              : <Link to="/login" className="rounded-lg bg-ocean-700 px-4 py-2 text-sm font-semibold text-white hover:bg-ocean-800">{t('actions.login')}</Link>}
+              ? <Link to={homePath} className="whitespace-nowrap rounded-lg bg-ocean-700 px-3 py-2 text-sm font-semibold text-white hover:bg-ocean-800 sm:px-4">{t('nav.dashboard')}</Link>
+              : <Link to="/login" className="whitespace-nowrap rounded-lg bg-ocean-700 px-3 py-2 text-sm font-semibold text-white hover:bg-ocean-800 sm:px-4">{t('actions.login')}</Link>}
           </div>
         </div>
         <nav className="flex gap-1 overflow-x-auto border-t border-slate-100 px-2 md:hidden" aria-label={t('a11y.publicNav')}>
           <NavLink to="/about" className={link}>{t('nav.about')}</NavLink>
           <NavLink to="/how-it-works" className={link}>{t('nav.howItWorks')}</NavLink>
-          <NavLink to="/demo" className={link}>{t('nav.demo')}</NavLink>
+          {demo && <NavLink to="/demo" className={link}>{t('nav.demo')}</NavLink>}
         </nav>
       </header>
       <main className="flex-1"><Outlet /></main>

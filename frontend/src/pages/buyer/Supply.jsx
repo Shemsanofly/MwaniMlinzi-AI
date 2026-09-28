@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowDown, ArrowUp, ArrowUpDown, PackagePlus, Send } from 'lucide-react';
+import { usePhone } from '../../hooks/useMediaQuery.js';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { useAuth } from '../../stores/AuthContext.jsx';
 import { buyerApi, metaApi } from '../../api/endpoints.js';
@@ -34,6 +35,7 @@ function SortHeader({ id, sort, setSort, children, className }) {
 
 function SupplyTable({ supply }) {
   const { t, lang } = useI18n();
+  const phone = usePhone();
   const [sort, setSort] = useState({ key: 'date', dir: 'asc' });
   const rows = useMemo(() => {
     const f = SORTERS[sort.key];
@@ -47,6 +49,34 @@ function SupplyTable({ supply }) {
   const total = (k) => supply.reduce((a, s) => a + (s[k] || 0), 0);
   const avgConf = supply.reduce((a, s) => a + (s.confidence || 0), 0) / supply.length;
   const sp = { sort, setSort };
+  if (phone) {
+    // Phones: one card per supply line, most important numbers first; totals on top.
+    return (
+      <div className="space-y-2">
+        <div className="rounded-xl border border-ocean-100 bg-ocean-50/60 p-3 text-sm font-semibold text-slate-900">
+          {t('buyer.supply.totals', { n: supply.length })}: <span data-testid="supply-total">{tonnesText(total('riskAdjustedQuantityKg'))} t</span>
+          <span className="font-normal text-slate-600"> ({tonnesText(total('lowQuantityKg'))}–{tonnesText(total('highQuantityKg'))} t)</span>
+        </div>
+        <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          {rows.map((s) => (
+            <li key={s.id} className="px-4 py-3">
+              <div className="flex items-start justify-between gap-3">
+                <p className="min-w-0 font-semibold text-slate-900">{s.cooperative?.name || t('extension.shared.independent')}</p>
+                <p className="shrink-0 font-bold text-slate-900">{num(s.riskAdjustedQuantityKg, 0)} kg</p>
+              </div>
+              <p className="text-sm text-slate-600">{date(s.expectedHarvestDate, lang)} · {s.district}{s.species ? ` · ${s.species}` : ''}</p>
+              <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span>{t('common.range')}: {num(s.lowQuantityKg, 0)}–{num(s.highQuantityKg, 0)} kg</span>
+                <span>{t('risk.confidence')}: {pct(s.confidence)}</span>
+                {s.expectedGrade && <Badge>{s.expectedGrade}</Badge>}
+                {s.isDemo && <DemoBadge />}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
       <table className="min-w-full divide-y divide-slate-200 text-sm">
