@@ -7,13 +7,12 @@ import FarmMap from '../../components/map/FarmMap.jsx';
 import { Badge, Button, Disclosure, EmptyState, ErrorState, PageHeader, PageLoader, RiskBadge, StatCard } from '../../components/ui/index.jsx';
 import { num, pct, timeAgo } from '../../utils/format.js';
 import { useDesktop } from '../../hooks/useMediaQuery.js';
-import { AlertList, Section } from './components/common.jsx';
+import { AlertList, Section, useStaffBase } from './components/common.jsx';
 import { HighRiskFarmsTable, MissingReportsList, PortfolioCharts, PortfolioStats } from './components/Portfolio.jsx';
-
-const BASE = '/extension';
 
 function VisitPriorityList({ items }) {
   const { t } = useI18n();
+  const base = useStaffBase();
   if (!items.length) return <EmptyState title={t('extension.dashboard.noVisits')} />;
   return (
     <ol className="divide-y divide-slate-100">
@@ -22,7 +21,7 @@ function VisitPriorityList({ items }) {
           <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ocean-50 text-sm font-bold text-ocean-800">{i + 1}</span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <Link to={`${BASE}/farms/${v.id}`} className="font-semibold text-ocean-700 hover:underline">{v.farmCode} · {v.name}</Link>
+              <Link to={`${base}/farms/${v.id}`} className="font-semibold text-ocean-700 hover:underline">{v.farmCode} · {v.name}</Link>
               <RiskBadge level={v.overallRiskLevel} />
             </div>
             <p className="text-xs text-slate-500">{v.farmer || '—'}{v.location?.locationName ? ` · ${v.location.locationName}` : ''}</p>
@@ -46,6 +45,7 @@ function VisitPriorityList({ items }) {
 
 export default function ExtensionDashboard() {
   const { t, lang } = useI18n();
+  const base = useStaffBase();
   const navigate = useNavigate();
   const desktop = useDesktop();
   const q = useQuery({ queryKey: ['extDashboard'], queryFn: extensionApi.dashboard });
@@ -60,17 +60,17 @@ export default function ExtensionDashboard() {
         subtitle={t('extension.dashboard.subtitle', { n: d.farms.length })}
         actions={<Button variant="secondary" icon={RefreshCw} loading={q.isFetching} onClick={() => q.refetch()}>{t('actions.refresh')}</Button>}
       />
-      <PortfolioStats cards={d.cards} onNavigate={{ farms: () => navigate(`${BASE}/farms`) }} />
+      <PortfolioStats cards={d.cards} onNavigate={{ farms: () => navigate(`${base}/farms`) }} />
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <StatCard label={t('extension.dashboard.pendingObs')} value={num(d.pendingObservations.length, 0)} sub={d.pendingObservations.length >= 30 ? t('extension.dashboard.showingLatest', { n: 30 }) : t('extension.dashboard.openReviews')} icon={ClipboardList} tone={d.pendingObservations.length ? 'amber' : 'slate'} onClick={() => navigate(`${BASE}/reviews?tab=observations`)} />
-        <StatCard label={t('extension.dashboard.pendingRecs')} value={num(d.pendingRecommendations.length, 0)} sub={t('extension.dashboard.pendingRecsSub')} icon={ClipboardCheck} tone={d.pendingRecommendations.length ? 'orange' : 'slate'} onClick={() => navigate(`${BASE}/reviews?tab=recommendations`)} />
+        <StatCard label={t('extension.dashboard.pendingObs')} value={num(d.pendingObservations.length, 0)} sub={d.pendingObservations.length >= 30 ? t('extension.dashboard.showingLatest', { n: 30 }) : t('extension.dashboard.openReviews')} icon={ClipboardList} tone={d.pendingObservations.length ? 'amber' : 'slate'} onClick={() => navigate(`${base}/reviews?tab=observations`)} />
+        <StatCard label={t('extension.dashboard.pendingRecs')} value={num(d.pendingRecommendations.length, 0)} sub={t('extension.dashboard.pendingRecsSub')} icon={ClipboardCheck} tone={d.pendingRecommendations.length ? 'orange' : 'slate'} onClick={() => navigate(`${base}/reviews?tab=recommendations`)} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-5">
         <Section title={t('extension.dashboard.map')} icon={MapIcon} className="lg:col-span-3" bodyClassName="p-2 sm:p-3"
-          action={<Link to={`${BASE}/risk-map`} className="text-sm font-semibold text-ocean-700 hover:underline">{t('extension.dashboard.openMap')} →</Link>}>
-          {d.farms.length ? <FarmMap farms={d.farms} height={desktop ? 420 : 260} linkTo={(f) => `${BASE}/farms/${f.id}`} /> : <EmptyState title={t('extension.shared.noFarms')} />}
+          action={<Link to={`${base}/risk-map`} className="text-sm font-semibold text-ocean-700 hover:underline">{t('extension.dashboard.openMap')} →</Link>}>
+          {d.farms.length ? <FarmMap farms={d.farms} height={desktop ? 420 : 260} linkTo={(f) => `${base}/farms/${f.id}`} /> : <EmptyState title={t('extension.shared.noFarms')} />}
         </Section>
         <Section title={t('extension.dashboard.visits')} subtitle={t('extension.dashboard.visitsSub')} icon={Navigation} className="lg:col-span-2" bodyClassName="max-h-[520px] overflow-y-auto">
           <VisitPriorityList items={d.visitPriority || []} />
@@ -79,7 +79,7 @@ export default function ExtensionDashboard() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Section title={t('extension.dashboard.highRisk')} icon={AlertTriangle} className="lg:col-span-2" bodyClassName="p-0 sm:p-0">
-          <HighRiskFarmsTable farms={d.highRiskFarms} base={BASE} />
+          <HighRiskFarmsTable farms={d.highRiskFarms} base={base} />
         </Section>
         <Section title={t('extension.dashboard.disease')} subtitle={t('extension.dashboard.diseaseSub')} icon={Microscope}>
           {d.diseaseObservations.length === 0 ? <p className="text-sm text-slate-500">{t('extension.dashboard.noDisease')}</p> : (
@@ -92,7 +92,7 @@ export default function ExtensionDashboard() {
                     {o.percentAffected != null && <span className="text-xs text-slate-500">{t('extension.shared.percentAffected', { n: num(o.percentAffected, 0) })}</span>}
                   </div>
                   <p className="mt-0.5 text-xs text-slate-600">
-                    <Link to={`${BASE}/farms/${o.farm?.id || o.farmId}`} className="font-semibold text-ocean-700 hover:underline">{o.farm?.farmCode} · {o.farm?.name}</Link> · {timeAgo(o.createdAt, lang)}
+                    <Link to={`${base}/farms/${o.farm?.id || o.farmId}`} className="font-semibold text-ocean-700 hover:underline">{o.farm?.farmCode} · {o.farm?.name}</Link> · {timeAgo(o.createdAt, lang)}
                   </p>
                 </li>
               ))}
@@ -103,10 +103,10 @@ export default function ExtensionDashboard() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Section title={t('extension.dashboard.recentAlerts')} icon={Bell} className="lg:col-span-2">
-          <AlertList alerts={(d.recentAlerts || []).slice(0, 8)} base={BASE} compact />
+          <AlertList alerts={(d.recentAlerts || []).slice(0, 8)} base={base} compact />
         </Section>
         <Section title={t('extension.shared.missingTitle')} subtitle={t('extension.shared.stats.missingReportsSub')} icon={ClipboardList}>
-          <MissingReportsList farms={d.missingReportFarms} base={BASE} />
+          <MissingReportsList farms={d.missingReportFarms} base={base} />
         </Section>
       </div>
 

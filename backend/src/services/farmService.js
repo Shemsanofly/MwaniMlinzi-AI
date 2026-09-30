@@ -13,8 +13,6 @@ export function serializeFarm(farm, { cycle = null, latestRisks = null, lastObse
     farmCode: farm.farmCode,
     name: farm.name,
     status: farm.status,
-    isDemo: farm.isDemo,
-    demoScenario: farm.demoScenario,
     farmingMethod: farm.farmingMethod,
     exposure: farm.exposure,
     anchoringMethod: farm.anchoringMethod,
@@ -158,9 +156,18 @@ export const FarmService = {
     const { latitude, longitude, locationName, district, region, ...rest } = data;
     if (rest.speciesId && !(await prisma.seaweedSpecies.findUnique({ where: { id: rest.speciesId } }))) throw badRequest('Unknown seaweed species');
     const loc = Object.fromEntries(Object.entries({ latitude, longitude, locationName, district, region }).filter(([, v]) => v !== undefined));
+    let location;
+    if (Object.keys(loc).length) {
+      const existing = await prisma.farmLocation.findUnique({ where: { farmId: id } });
+      if (existing) location = { update: loc };
+      else if (loc.latitude != null && loc.longitude != null) {
+        // e.g. a USSD farm registered with a typed place name gets its map point later
+        location = { create: { locationName: 'Unknown', district: 'Unknown', region: 'Unknown', ...loc } };
+      } else throw badRequest('This farm has no map point yet: send latitude and longitude to set it.');
+    }
     await prisma.farm.update({
       where: { id },
-      data: { ...rest, ...(Object.keys(loc).length ? { location: { update: loc } } : {}) },
+      data: { ...rest, ...(location ? { location } : {}) },
     });
     return this.get(id);
   },

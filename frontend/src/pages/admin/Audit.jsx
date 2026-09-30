@@ -10,7 +10,7 @@ import { JsonBlock, Pagination, Tabs } from './components/shared.jsx';
 const PAGE_SIZE = 50;
 /** Actions and entity types the backend writes (free text is also accepted). */
 const ACTIONS = ['LOGIN', 'LOGOUT', 'REGISTER', 'CREATE', 'UPDATE', 'UPDATE_PROFILE', 'UPDATE_SETTING', 'UPDATE_MODEL_STATUS', 'RUN_JOB', 'RUN_RISK', 'SIMULATE_RISK', 'VALIDATE_ACTION', 'UNVALIDATE_ACTION', 'FLAG_PREDICTION', 'AI_CHAT', 'UPLOAD', 'GENERATE_FORECASTS'];
-const ENTITIES = ['User', 'Farm', 'Cooperative', 'ActionLibrary', 'SystemSetting', 'MlModel', 'Job', 'RiskPrediction', 'Alert', 'BuyerDemand', 'HarvestForecast', 'UploadedFile', 'Assistant'];
+const ENTITIES = ['User', 'Farm', 'Cooperative', 'ActionLibrary', 'SystemSetting', 'MlModel', 'Job', 'RiskPrediction', 'Alert', 'HarvestForecast', 'UploadedFile', 'Assistant'];
 
 function AuditTab() {
   const { t, lang } = useI18n();
@@ -87,7 +87,7 @@ function AuditTab() {
 const DELIVERY_TONE = {
   SENT: 'bg-seaweed-50 text-seaweed-700 ring-seaweed-500/30',
   DELIVERED: 'bg-seaweed-50 text-seaweed-700 ring-seaweed-500/30',
-  SIMULATED: 'bg-violet-50 text-violet-800 ring-violet-300',
+  SIMULATED: 'bg-slate-100 text-slate-700 ring-slate-300',
   FAILED: 'bg-red-50 text-red-800 ring-red-300',
 };
 

@@ -1,20 +1,13 @@
 import { env } from '../config/env.js';
 import { fetchJson } from './http.js';
-import { demoOcean } from './demoProfiles.js';
 import { climatologySst } from './climatology.js';
 
 /**
  * OceanProvider interface:
- *   fetch({ latitude, longitude, profile?, at? }) → { observedAt, seaSurfaceTempC, sstAnomalyC, waveHeightM,
+ *   fetch({ latitude, longitude }) → { observedAt, seaSurfaceTempC, sstAnomalyC, waveHeightM,
  *                                                     currentVelocityMs, salinityPsu, chlorophyllMgM3 }
  * Unavailable variables are returned as null (never invented).
  */
-export class DemoOceanProvider {
-  name = 'demo-ocean';
-  isLive = false;
-  async fetch(loc) { return demoOcean(loc); }
-}
-
 /** Open-Meteo Marine API — free, no API key. Salinity/chlorophyll are not provided (null). */
 export class OpenMeteoMarineProvider {
   name = 'open-meteo-marine';
@@ -66,9 +59,9 @@ export class StormglassOceanProvider {
   }
 }
 
+/** Returns the configured live provider (Open-Meteo Marine by default), or null when disabled / missing its key. */
 export function createLiveOceanProvider(config = env) {
-  if (config.demoMode) return null;
-  switch (config.ocean.provider) {
+  switch (config.ocean.provider || 'open-meteo-marine') {
     case 'open-meteo-marine': return new OpenMeteoMarineProvider();
     case 'stormglass': return config.ocean.apiKey ? new StormglassOceanProvider(config.ocean.apiKey) : null;
     default: return null;

@@ -6,7 +6,7 @@ import DashboardPage from '../Dashboard.jsx';
 import { FARM, farmerFarm, renderPage, riskResult } from './fixtures.jsx';
 
 vi.mock('../../../api/endpoints.js', () => ({
-  farmApi: { risks: vi.fn(), alerts: vi.fn(), addAction: vi.fn(), runRisks: vi.fn() },
+  farmApi: { risks: vi.fn(), alerts: vi.fn(), addAction: vi.fn(), runRisks: vi.fn(), outlook: vi.fn() },
   environmentApi: { current: vi.fn() },
   alertApi: { update: vi.fn() },
 }));
@@ -18,8 +18,9 @@ beforeEach(() => {
   useFarmerFarm.mockReturnValue(farmerFarm());
   farmApi.risks.mockResolvedValue(riskResult('HIGH', 0.72));
   farmApi.alerts.mockResolvedValue({ alerts: [{ id: 'al1', severity: 'HIGH', status: 'ACTIVE', title: 'HIGH heat risk', titleSw: 'Hatari kubwa', message: 'Inspect lines', messageSw: 'Kagua', createdAt: new Date().toISOString() }] });
-  environmentApi.current.mockResolvedValue({ current: { source: 'DEMO', seaSurfaceTempC: 27.5, sstAnomalyC: 1.5, waveHeightM: 0.3, windSpeedKmh: 7, rainfallMm: 0, observedAt: new Date().toISOString() } });
+  environmentApi.current.mockResolvedValue({ current: { source: 'LIVE', seaSurfaceTempC: 27.5, sstAnomalyC: 1.5, waveHeightM: 0.3, windSpeedKmh: 7, rainfallMm: 0, observedAt: new Date().toISOString() } });
   farmApi.addAction.mockResolvedValue({ action: { id: 'act1', actionTaken: true } });
+  farmApi.outlook.mockResolvedValue({ outlook: null });
   alertApi.update.mockResolvedValue({ alert: { id: 'al1', status: 'ACKNOWLEDGED' } });
 });
 
@@ -38,6 +39,9 @@ describe('Farmer dashboard', () => {
     expect(next).toHaveTextContent('Inspect lines within 24 hours');
     expect(next).toHaveTextContent('When: Urgent');
     expect(await screen.findByRole('alert')).toHaveTextContent('HIGH heat risk');
+    // Daily sea outlook card (tides + drying) for the selected farm
+    expect(await screen.findByText('No sea forecast for this farm yet')).toBeInTheDocument();
+    expect(farmApi.outlook).toHaveBeenCalledWith(FARM.id);
     expect(screen.getByText('Some problems seen')).toBeInTheDocument();
     for (const name of ['Inspect farm', 'Record symptoms', 'Record harvest', 'Ask AI']) expect(screen.getByRole('link', { name: new RegExp(name) })).toBeInTheDocument();
     // Technical values are hidden until "See details" is opened.
@@ -55,7 +59,7 @@ describe('Farmer dashboard', () => {
     expect(screen.getByTestId('risk-tile-HEAT_ICE_ICE')).toHaveTextContent('72%');
     expect(screen.getByTestId('risk-tile-STORM_LINE_DAMAGE')).toHaveTextContent('7%');
     expect(screen.getByText('Rule-based baseline')).toBeInTheDocument();
-    expect(await screen.findByText('Demo environmental data')).toBeInTheDocument();
+    expect(await screen.findByText('Live data')).toBeInTheDocument();
   });
 
   it('is fully in Kiswahili when Kiswahili is selected', async () => {
@@ -85,6 +89,30 @@ describe('Farmer dashboard', () => {
     const alert = (await screen.findAllByText('HIGH heat risk')).map((el) => el.closest('li')).find(Boolean);
     await user.click(within(alert).getByRole('button', { name: 'Acknowledge' }));
     await waitFor(() => expect(alertApi.update).toHaveBeenCalledWith('al1', 'ACKNOWLEDGED'));
+  });
+
+  it('says honestly when the risk has not been checked yet and offers the next step', async () => {
+    const user = userEvent.setup();
+    farmApi.risks.mockResolvedValue({ predictions: [], nextAction: null, insufficientData: false, insufficientDataMessage: null, modelStatus: { mode: 'RULE' }, calculatedAt: null });
+    farmApi.runRisks.mockResolvedValue({});
+    renderPage(<DashboardPage />);
+    const risk = await screen.findByTestId('current-risk');
+    expect(risk).toHaveTextContent('Risk not checked yet');
+    const next = screen.getByTestId('next-action');
+    expect(next).toHaveTextContent('No advice yet');
+    expect(next).not.toHaveTextContent('No special action needed');
+    expect(within(next).getByRole('link', { name: /Record symptoms/ })).toHaveAttribute('href', '/farmer/observations');
+    await user.click(within(risk).getByRole('button', { name: 'Check risk now' }));
+    await waitFor(() => expect(farmApi.runRisks).toHaveBeenCalledWith(FARM.id));
+  });
+
+  it('explains when a risk check had no live sea/weather data', async () => {
+    const result = riskResult('HIGH', 0.72);
+    result.predictions = result.predictions.map((p) => ({ ...p, dataSource: 'UNAVAILABLE' }));
+    farmApi.risks.mockResolvedValue(result);
+    renderPage(<DashboardPage />);
+    const risk = await screen.findByTestId('current-risk');
+    expect(risk).toHaveTextContent('No live sea/weather data right now — this check uses your farm details and reports.');
   });
 
   it('shows a create-farm empty state when the farmer has no farm', () => {

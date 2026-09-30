@@ -4,14 +4,13 @@ import { Building2, KeyRound, Pencil, Plus, Search, Users as UsersIcon } from 'l
 import { adminApi, cooperativeApi } from '../../api/endpoints.js';
 import { useAuth } from '../../stores/AuthContext.jsx';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
-import {
-  Badge, Button, Card, CardHeader, DemoBadge, EmptyState, ErrorState, Field, FormError, Modal, Notice, PageHeader, PageLoader, Table, Toggle, cx,
-} from '../../components/ui/index.jsx';
+import { Badge, Button, Card, CardHeader, EmptyState, ErrorState, Field, FormError, Modal, Notice, PageHeader, PageLoader, Table, Toggle, cx, PasswordInput } from '../../components/ui/index.jsx';
 import { date, timeAgo } from '../../utils/format.js';
 import { normalizeTzPhone } from '../../utils/phone.js';
 import { Pagination, Tabs } from './components/shared.jsx';
 
-const ROLES = ['FARMER', 'COOPERATIVE_ADMIN', 'EXTENSION_OFFICER', 'BUYER', 'ADMIN'];
+// Active user roles in the two-role system (farmer and admin).
+const ROLES = ['FARMER', 'ADMIN'];
 const PAGE_SIZE = 20;
 
 function RoleBadges({ roles }) {
@@ -101,7 +100,7 @@ function UserModal({ open, user, onClose }) {
           )}
           {!isEdit && (
             <Field label={t('public.form.password')} htmlFor="u-pass" required hint={t('admin.users.passwordHint')}>
-              <input id="u-pass" type="password" autoComplete="new-password" className="input" value={f.password} onChange={set('password')} required />
+              <PasswordInput id="u-pass" autoComplete="new-password" value={f.password} onChange={set('password')} required />
             </Field>
           )}
           <Field label={t('public.form.fullName')} htmlFor="u-name" required>
@@ -158,7 +157,7 @@ function UsersTab() {
     {
       key: 'name', header: t('admin.users.user'), render: (u) => (
         <div className="min-w-[12rem]">
-          <p className="flex flex-wrap items-center gap-1.5 font-semibold text-slate-900">{u.fullName}{u.isDemo && <DemoBadge />}{u.id === me?.id && <Badge>{t('admin.users.you')}</Badge>}</p>
+          <p className="flex flex-wrap items-center gap-1.5 font-semibold text-slate-900">{u.fullName}{u.id === me?.id && <Badge>{t('admin.users.you')}</Badge>}</p>
           <p className="text-xs text-slate-500">{u.email || ''}</p>
         </div>
       ),
@@ -302,7 +301,7 @@ function CoopsTab() {
           empty={<EmptyState icon={Building2} title={t('admin.coops.none')} />}
           columns={[
             { key: 'code', header: t('admin.coops.code'), render: (c) => <span className="font-mono text-xs font-semibold">{c.code}</span> },
-            { key: 'name', header: t('admin.coops.name'), render: (c) => <span className="flex flex-wrap items-center gap-1.5 font-medium text-slate-900">{c.name}{c.isDemo && <DemoBadge />}</span> },
+            { key: 'name', header: t('admin.coops.name'), render: (c) => <span className="flex flex-wrap items-center gap-1.5 font-medium text-slate-900">{c.name}</span> },
             { key: 'district', header: t('common.district') },
             { key: 'region', header: t('admin.coops.region') },
             { key: 'members', header: t('admin.coops.members'), render: (c) => c._count?.members ?? '—' },

@@ -1,16 +1,17 @@
 import { Link } from 'react-router-dom';
 import {
-  ArrowRight, BookCheck, Building2, Database, Eye, FlaskConical, LineChart, MessageSquare, ScanSearch, ShieldCheck, Smartphone, Sprout, Truck, Users,
+  Activity, ArrowRight, ArrowUpRight, BookCheck, Clock, Database, Eye, Languages, LineChart, MessageSquare, ScanSearch, ShieldCheck, Smartphone, Sprout, Users,
 } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
+import { useAuth } from '../../stores/AuthContext.jsx';
+import { Reveal } from '../../components/ui/index.jsx';
 import FarmerPreview from './components/FarmerPreview.jsx';
 import { LoopDiagram, PipelineFlow } from './components/LoopDiagram.jsx';
+import Waves from './components/Waves.jsx';
 
 const AUDIENCES = [
-  { key: 'farmers', icon: Sprout, tone: 'bg-seaweed-50 text-seaweed-700' },
-  { key: 'cooperatives', icon: Building2, tone: 'bg-ocean-50 text-ocean-700' },
-  { key: 'extension', icon: Users, tone: 'bg-amber-50 text-amber-700' },
-  { key: 'buyers', icon: Truck, tone: 'bg-slate-100 text-slate-700' },
+  { key: 'farmers', icon: Sprout, tone: 'from-seaweed-50 to-white text-seaweed-700 ring-seaweed-100' },
+  { key: 'admins', icon: Users, tone: 'from-ocean-50 to-white text-ocean-700 ring-ocean-100' },
 ];
 
 const LOOP = [
@@ -20,118 +21,139 @@ const LOOP = [
   { key: 'learn', icon: Database },
 ];
 
-const HONESTY = [
-  { key: 'demo', icon: FlaskConical },
+const TRUST = [
+  { key: 'sources', icon: Database },
   { key: 'model', icon: ScanSearch },
   { key: 'library', icon: BookCheck },
   { key: 'claims', icon: ShieldCheck },
 ];
 
+const FACTS = [
+  { key: 'risks', icon: Activity },
+  { key: 'horizon', icon: Clock },
+  { key: 'lang', icon: Languages },
+  { key: 'channels', icon: MessageSquare },
+];
+
+function Eyebrow({ children, light = false }) {
+  return (
+    <p className={`inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] ${light ? 'text-lagoon-300' : 'text-ocean-600'}`}>
+      <span className={`h-px w-6 ${light ? 'bg-lagoon-300/70' : 'bg-ocean-400'}`} aria-hidden />{children}
+    </p>
+  );
+}
+
 export default function Landing() {
   const { t } = useI18n();
+  const { isAuthenticated, homePath } = useAuth();
+  const primary = isAuthenticated ? { to: homePath, label: t('nav.dashboard') } : { to: '/register', label: t('public.hero.getStarted') };
   return (
-    <div>
+    <div className="overflow-x-clip">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-ocean-900 text-white">
-        <svg className="pointer-events-none absolute inset-x-0 bottom-0 h-24 w-full text-ocean-800" viewBox="0 0 1440 96" preserveAspectRatio="none" aria-hidden>
-          <path fill="currentColor" d="M0 64 C 240 16 480 16 720 56 S 1200 96 1440 48 V96 H0 Z" />
-        </svg>
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 pb-20 pt-12 sm:px-6 md:pt-16 lg:grid-cols-[1.15fr_1fr]">
+      <section className="ocean-band relative overflow-hidden text-white">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-4 pb-32 pt-14 sm:px-6 md:pt-20 lg:grid-cols-[1.2fr_1fr] lg:pb-36">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full border border-ocean-600 bg-ocean-800/60 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-ocean-200">
-              {t('public.hero.eyebrow')}
-            </p>
-            <h1 className="mt-5 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">MWANIMLINZI AI</h1>
-            <p className="mt-4 text-2xl font-semibold text-teal-300 sm:text-3xl">{t('public.hero.tagline')}</p>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-ocean-100 sm:text-lg">{t('public.hero.description')}</p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/demo" className="inline-flex items-center gap-2 rounded-lg bg-teal-400 px-5 py-3 text-base font-bold text-ocean-900 hover:bg-teal-300">
-                {t('public.hero.tryDemo')} <ArrowRight className="h-4 w-4" aria-hidden />
+            <div className="animate-rise"><Eyebrow light>{t('public.hero.eyebrow')}</Eyebrow></div>
+            <h1 className="display mt-6 text-[2.75rem] font-medium leading-[1.02] sm:text-6xl lg:text-7xl">
+              <span className="block animate-rise [animation-delay:80ms]">{t('public.hero.headline1')}</span>
+              <span className="block animate-rise italic text-lagoon-300 [animation-delay:180ms]">{t('public.hero.headline2')}</span>
+            </h1>
+            <p className="mt-6 max-w-xl animate-rise text-base leading-relaxed text-ocean-100/90 [animation-delay:280ms] sm:text-lg">{t('public.hero.description')}</p>
+            <div className="mt-9 flex animate-rise flex-wrap gap-3 [animation-delay:380ms]">
+              <Link to={primary.to} className="group inline-flex items-center gap-2 rounded-xl bg-lagoon-400 px-6 py-3.5 text-base font-bold text-ocean-950 shadow-[inset_0_1px_0_rgb(255_255_255/0.4),0_12px_30px_-10px_rgb(69_207_182/0.6)] transition hover:bg-lagoon-300 active:scale-[0.97]">
+                {primary.label} <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
               </Link>
-              <Link to="/login" className="inline-flex items-center gap-2 rounded-lg px-5 py-3 text-base font-semibold text-white ring-1 ring-inset ring-ocean-400 hover:bg-ocean-800">
-                {t('actions.login')}
-              </Link>
+              {!isAuthenticated && (
+                <Link to="/login" className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-base font-semibold text-white ring-1 ring-inset ring-white/25 transition hover:bg-white/10 active:scale-[0.97]">
+                  {t('actions.login')}
+                </Link>
+              )}
             </div>
-            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ocean-200">
-              <li className="flex items-center gap-1.5"><Smartphone className="h-4 w-4" aria-hidden />{t('public.hero.channelWeb')}</li>
-              <li className="flex items-center gap-1.5"><MessageSquare className="h-4 w-4" aria-hidden />{t('public.hero.channelSms')}</li>
-              <li className="flex items-center gap-1.5"><Smartphone className="h-4 w-4" aria-hidden />{t('public.hero.channelUssd')}</li>
+            <ul className="mt-10 grid max-w-xl animate-rise grid-cols-2 gap-x-6 gap-y-3 text-sm text-ocean-100 [animation-delay:480ms] sm:grid-cols-4 sm:gap-x-4">
+              {FACTS.map(({ key, icon: Icon }) => (
+                <li key={key} className="flex items-center gap-2"><Icon className="h-4 w-4 shrink-0 text-lagoon-300" aria-hidden /><span className="leading-tight">{t(`public.hero.facts.${key}`)}</span></li>
+              ))}
             </ul>
           </div>
           <FarmerPreview />
         </div>
+        <Waves />
       </section>
 
       {/* Loop */}
-      <section className="bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-          <div className="max-w-2xl">
-            <p className="text-sm font-bold uppercase tracking-wider text-ocean-600">{t('public.loop.eyebrow')}</p>
-            <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{t('public.loop.title')}</h2>
-            <p className="mt-3 text-slate-600">{t('public.loop.subtitle')}</p>
-          </div>
-          <div className="mt-10 grid items-center gap-10 lg:grid-cols-[320px_1fr]">
-            <div className="flex justify-center"><LoopDiagram /></div>
+      <section className="bg-sand-50">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24">
+          <Reveal className="max-w-2xl">
+            <Eyebrow>{t('public.loop.eyebrow')}</Eyebrow>
+            <h2 className="display mt-4 text-4xl font-medium leading-tight text-ocean-950 sm:text-5xl">{t('public.loop.title')}</h2>
+            <p className="mt-4 text-lg leading-relaxed text-slate-600">{t('public.loop.subtitle')}</p>
+          </Reveal>
+          <div className="mt-14 grid items-center gap-12 lg:grid-cols-[340px_1fr]">
+            <Reveal className="flex justify-center"><LoopDiagram /></Reveal>
             <ol className="grid gap-4 sm:grid-cols-2">
               {LOOP.map(({ key, icon: Icon }, i) => (
-                <li key={key} className="rounded-xl border border-slate-200 bg-sand-50 p-5">
+                <Reveal as="li" key={key} delay={i * 90} className="surface lift group p-6">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-ocean-700 text-sm font-bold text-white">{i + 1}</span>
-                    <Icon className="h-5 w-5 text-ocean-600" aria-hidden />
-                    <h3 className="text-lg font-semibold text-slate-900">{t(`public.loop.${key}`)}</h3>
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-ocean-900 text-lagoon-300 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105"><Icon className="h-5 w-5" aria-hidden /></span>
+                    <span className="font-display text-sm italic text-slate-400">0{i + 1}</span>
                   </div>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{t(`public.loop.${key}Text`)}</p>
-                </li>
+                  <h3 className="mt-4 text-lg font-bold tracking-tight text-slate-900">{t(`public.loop.${key}`)}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{t(`public.loop.${key}Text`)}</p>
+                </Reveal>
               ))}
             </ol>
           </div>
-          <div className="mt-12 rounded-2xl border border-ocean-100 bg-ocean-50/60 p-5 sm:p-8">
-            <h3 className="mb-5 text-center text-sm font-bold uppercase tracking-wider text-ocean-700">{t('public.flow.title')}</h3>
+          <Reveal className="mt-16 rounded-3xl border border-ocean-100 bg-gradient-to-br from-ocean-50/80 via-white to-sand-100/60 p-6 sm:p-10">
+            <h3 className="mb-6 text-center text-xs font-bold uppercase tracking-[0.18em] text-ocean-700">{t('public.flow.title')}</h3>
             <PipelineFlow />
-          </div>
+          </Reveal>
         </div>
       </section>
 
       {/* Audiences */}
-      <section className="bg-sand-50">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900">{t('public.audiences.title')}</h2>
-          <p className="mt-3 max-w-2xl text-slate-600">{t('public.audiences.subtitle')}</p>
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {AUDIENCES.map(({ key, icon: Icon, tone }) => (
-              <article key={key} className="flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <span className={`inline-flex h-10 w-10 items-center justify-center rounded-lg ${tone}`}><Icon className="h-5 w-5" aria-hidden /></span>
-                <h3 className="mt-4 text-lg font-semibold text-slate-900">{t(`public.audiences.${key}.title`)}</h3>
-                <ul className="mt-3 space-y-2 text-sm text-slate-600">
+      <section className="bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24">
+          <Reveal className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="max-w-2xl">
+              <h2 className="display text-4xl font-medium leading-tight text-ocean-950 sm:text-5xl">{t('public.audiences.title')}</h2>
+              <p className="mt-4 text-lg text-slate-600">{t('public.audiences.subtitle')}</p>
+            </div>
+            <Link to="/how-it-works" className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-ocean-700 hover:text-ocean-900">
+              {t('nav.howItWorks')} <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
+            </Link>
+          </Reveal>
+          <div className="mt-12 grid gap-5 md:grid-cols-2">
+            {AUDIENCES.map(({ key, icon: Icon, tone }, i) => (
+              <Reveal as="article" key={key} delay={i * 90} className={`lift group flex flex-col rounded-3xl bg-gradient-to-b p-6 ring-1 ring-inset ${tone}`}>
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-[var(--shadow-soft)] transition-transform duration-500 ease-[var(--ease-spring)] group-hover:scale-110"><Icon className="h-6 w-6" aria-hidden /></span>
+                <h3 className="mt-5 text-xl font-bold tracking-tight text-slate-900">{t(`public.audiences.${key}.title`)}</h3>
+                <ul className="mt-4 space-y-2.5 text-sm text-slate-600">
                   {[1, 2, 3].map((n) => (
-                    <li key={n} className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ocean-400" aria-hidden />{t(`public.audiences.${key}.b${n}`)}</li>
+                    <li key={n} className="flex gap-2.5"><span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-60" aria-hidden />{t(`public.audiences.${key}.b${n}`)}</li>
                   ))}
                 </ul>
-              </article>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Data honesty */}
-      <section className="bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-          <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr]">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-wider text-ocean-600">{t('public.honesty.eyebrow')}</p>
-              <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{t('public.honesty.title')}</h2>
-              <p className="mt-3 text-slate-600">{t('public.honesty.subtitle')}</p>
-              <Link to="/how-it-works" className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-ocean-700 hover:text-ocean-900">
-                {t('nav.howItWorks')} <ArrowRight className="h-4 w-4" aria-hidden />
-              </Link>
-            </div>
+      {/* Trust */}
+      <section className="bg-sand-50">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24">
+          <div className="grid gap-12 lg:grid-cols-[1fr_1.4fr]">
+            <Reveal className="lg:sticky lg:top-28 lg:self-start">
+              <Eyebrow>{t('public.honesty.eyebrow')}</Eyebrow>
+              <h2 className="display mt-4 text-4xl font-medium leading-tight text-ocean-950 sm:text-5xl">{t('public.honesty.title')}</h2>
+              <p className="mt-4 text-lg leading-relaxed text-slate-600">{t('public.honesty.subtitle')}</p>
+            </Reveal>
             <div className="grid gap-4 sm:grid-cols-2">
-              {HONESTY.map(({ key, icon: Icon }) => (
-                <div key={key} className="rounded-xl border border-slate-200 p-5">
-                  <Icon className="h-5 w-5 text-ocean-600" aria-hidden />
-                  <h3 className="mt-3 font-semibold text-slate-900">{t(`public.honesty.${key}.title`)}</h3>
+              {TRUST.map(({ key, icon: Icon }, i) => (
+                <Reveal key={key} delay={i * 90} className="surface lift p-6">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-ocean-50 text-ocean-700 ring-1 ring-inset ring-ocean-100"><Icon className="h-5 w-5" aria-hidden /></span>
+                  <h3 className="mt-4 font-bold tracking-tight text-slate-900">{t(`public.honesty.${key}.title`)}</h3>
                   <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{t(`public.honesty.${key}.text`)}</p>
-                </div>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -139,17 +161,23 @@ export default function Landing() {
       </section>
 
       {/* Closing CTA */}
-      <section className="bg-ocean-800">
-        <div className="mx-auto flex max-w-7xl flex-col items-start gap-5 px-4 py-12 sm:px-6 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-white">{t('public.cta.title')}</h2>
-            <p className="mt-1 text-ocean-200">{t('public.cta.text')}</p>
+      <section className="bg-sand-50 px-4 pb-20 sm:px-6">
+        <Reveal className="ocean-band relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] px-6 py-14 text-white sm:px-12">
+          <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full border border-white/10" aria-hidden />
+          <div className="absolute -right-4 -top-4 h-40 w-40 rounded-full border border-white/10" aria-hidden />
+          <div className="relative flex flex-col items-start gap-8 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-xl">
+              <h2 className="display text-3xl font-medium leading-tight sm:text-4xl">{t('public.cta.title')}</h2>
+              <p className="mt-3 text-ocean-100/90">{t('public.cta.text')}</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link to={primary.to} className="group inline-flex items-center gap-2 rounded-xl bg-lagoon-400 px-6 py-3.5 font-bold text-ocean-950 transition hover:bg-lagoon-300 active:scale-[0.97]">
+                {primary.label} <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
+              </Link>
+              {!isAuthenticated && <Link to="/login" className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 font-semibold text-white ring-1 ring-inset ring-white/25 transition hover:bg-white/10"><Smartphone className="h-4 w-4" aria-hidden />{t('actions.login')}</Link>}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Link to="/demo" className="rounded-lg bg-teal-400 px-5 py-3 font-bold text-ocean-900 hover:bg-teal-300">{t('public.hero.tryDemo')}</Link>
-            <Link to="/register" className="rounded-lg px-5 py-3 font-semibold text-white ring-1 ring-inset ring-ocean-400 hover:bg-ocean-700">{t('actions.register')}</Link>
-          </div>
-        </div>
+        </Reveal>
       </section>
     </div>
   );

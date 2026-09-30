@@ -60,7 +60,6 @@ export function serializePrediction(p) {
     dataSource: p.dataSource,
     trigger: p.trigger,
     isSimulation: p.isSimulation,
-    isDemo: p.isDemo,
     flagged: p.flagged,
     flagReason: p.flagReason,
     features: p.features,
@@ -103,7 +102,7 @@ async function persistRecommendation(tx, farmId, prediction, action, { simulatio
     // Same advice still applies: keep the existing recommendation (and its due date), link it to the newest prediction.
     return tx.actionRecommendation.update({ where: { id: same.id }, data: { predictionId: prediction.id }, include: { actionLibrary: true } });
   }
-  return tx.actionRecommendation.create({ data: { farmId, predictionId: prediction.id, actionLibraryId: action.id, dueBy, isDemo: false }, include: { actionLibrary: true } });
+  return tx.actionRecommendation.create({ data: { farmId, predictionId: prediction.id, actionLibraryId: action.id, dueBy }, include: { actionLibrary: true } });
 }
 
 export const RiskService = {
@@ -127,7 +126,7 @@ export const RiskService = {
     const previousRows = await Promise.all(RISK_TYPES.map((rt) => prisma.riskPrediction.findFirst({ where: { farmId, riskType: rt, isSimulation: false }, orderBy: { createdAt: 'desc' } })));
     const previous = Object.fromEntries(previousRows.filter(Boolean).map((p) => [p.riskType, p]));
 
-    const dataSource = simulation ? 'SIMULATION' : (ctx.environment?.source || 'DEMO');
+    const dataSource = simulation ? 'SIMULATION' : (ctx.environment?.source || 'UNAVAILABLE');
     const saved = await prisma.$transaction(async (tx) => {
       const out = [];
       for (const riskType of RISK_TYPES) {
@@ -152,7 +151,6 @@ export const RiskService = {
             dataSource,
             trigger: simulation ? 'SIMULATION' : trigger,
             isSimulation: simulation,
-            isDemo: ctx.farm.isDemo,
             factors: { create: r.factors.map((f) => ({ code: f.code, label: f.label, labelSw: f.labelSw, value: f.value, contribution: f.contribution, direction: f.direction })) },
           },
           include: { factors: true },

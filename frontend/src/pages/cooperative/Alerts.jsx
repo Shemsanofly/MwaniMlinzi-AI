@@ -8,7 +8,7 @@ import { RISK_LEVELS } from '../../utils/risk.js';
 import { AlertList, useStaffBase } from '../extension/components/common.jsx';
 
 const STATUSES = ['ACTIVE', 'ACKNOWLEDGED', 'RESOLVED'];
-const TYPES = ['HEAT_HIGH', 'HEAT_CRITICAL', 'STORM_HIGH', 'STORM_CRITICAL', 'POOR_GROWTH', 'HARVEST_WINDOW', 'MISSING_REPORT', 'RISK_CHANGE'];
+const TYPES = ['HEAT_HIGH', 'HEAT_CRITICAL', 'STORM_HIGH', 'STORM_CRITICAL', 'POOR_GROWTH', 'HARVEST_WINDOW', 'MISSING_REPORT', 'RISK_CHANGE', 'DRYING_WEATHER'];
 
 export default function CooperativeAlerts() {
   const { t } = useI18n();
@@ -51,7 +51,7 @@ export default function CooperativeAlerts() {
           <Toggle id="al-sim" checked={includeSim} onChange={setIncludeSim} label={t('coop.alerts.includeSimulations')} />
         </div>
       </div>
-      {includeSim && <Notice tone="demo" className="mb-4">{t('coop.alerts.simulationNote')}</Notice>}
+      {includeSim && <Notice tone="warning" className="mb-4">{t('coop.alerts.simulationNote')}</Notice>}
       {q.isLoading ? <PageLoader /> : q.error ? <ErrorState error={q.error} onRetry={q.refetch} /> : alerts.length === 0 ? (
         <EmptyState icon={BellOff} title={t('extension.shared.alerts.empty')} message={t('coop.alerts.emptyHint')} />
       ) : (

@@ -112,8 +112,8 @@ enum DiseaseType {
 enum DataSource {
   LIVE
   CACHED
-  DEMO
   SIMULATION
+  UNAVAILABLE // no environmental reading: the prediction used farm data and farmer reports only
 }
 
 enum RiskType {
@@ -121,6 +121,7 @@ enum RiskType {
   STORM_LINE_DAMAGE
   POOR_GROWTH
   HARVEST_WINDOW
+  DRYING_WEATHER // drying-weather advice only (Action Library); not a farm risk score
 }
 
 enum RiskLevel {
@@ -213,6 +214,7 @@ enum AlertType {
   HARVEST_WINDOW
   MISSING_REPORT
   RISK_CHANGE
+  DRYING_WEATHER
 }
 
 enum AlertStatus {
@@ -274,7 +276,6 @@ model User {
   phone             String?   @unique
   preferredLanguage Language  @default(sw) @map("preferred_language")
   isActive          Boolean   @default(true) @map("is_active")
-  isDemo            Boolean   @default(false) @map("is_demo")
   consentGiven      Boolean   @default(false) @map("consent_given")
   consentAt         DateTime? @map("consent_at")
   lastLoginAt       DateTime? @map("last_login_at")
@@ -283,7 +284,7 @@ model User {
   notifyRiskAlerts  Boolean   @default(true) @map("notify_risk_alerts")
   notifyHarvest     Boolean   @default(true) @map("notify_harvest_reminders")
   notifySystem      Boolean   @default(true) @map("notify_system_alerts")
-  // Staff scoping: cooperative admins (and optionally extension officers) belong to one cooperative
+  // Legacy staff scoping field; active app roles are FARMER and ADMIN (other RoleName values are legacy).
   cooperativeId     String?   @map("cooperative_id") @db.Uuid
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
@@ -361,7 +362,6 @@ model Farmer {
   district        String?
   region          String?
   yearsExperience Int?     @map("years_experience")
-  isDemo          Boolean  @default(false) @map("is_demo")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
@@ -380,7 +380,6 @@ model Cooperative {
   district    String
   region      String
   description String?
-  isDemo      Boolean  @default(false) @map("is_demo")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -441,8 +440,6 @@ model Farm {
   lineCount       Int             @default(0) @map("line_count")
   status          FarmStatus      @default(ACTIVE)
   notes           String?
-  demoScenario    String?         @map("demo_scenario") // NORMAL | HEAT | STORM | NEAR_HARVEST | POOR_GROWTH (demo only)
-  isDemo          Boolean         @default(false) @map("is_demo")
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
 
@@ -465,6 +462,7 @@ model Farm {
   forecasts         HarvestForecast[]
   alerts            Alert[]
   extensionNotes    ExtensionNote[]
+  seaOutlooks       SeaOutlook[]
 
   @@index([farmerId])
   @@index([cooperativeId])
@@ -497,7 +495,6 @@ model PlantingCycle {
   seedQuantityKg      Float?      @map("seed_quantity_kg")
   status              CycleStatus @default(ACTIVE)
   notes               String?
-  isDemo              Boolean     @default(false) @map("is_demo")
   createdAt           DateTime    @default(now()) @map("created_at")
   updatedAt           DateTime    @updatedAt @map("updated_at")
 
@@ -541,7 +538,6 @@ model FarmObservation {
   reviewedById    String?          @map("reviewed_by_id") @db.Uuid
   reviewNote      String?          @map("review_note")
   reviewedAt      DateTime?        @map("reviewed_at")
-  isDemo          Boolean          @default(false) @map("is_demo")
   createdAt       DateTime         @default(now()) @map("created_at")
 
   farm          Farm                 @relation(fields: [farmId], references: [id], onDelete: Cascade)
@@ -605,7 +601,6 @@ model WeatherObservation {
   windDirectionDeg Float?     @map("wind_direction_deg")
   humidityPct      Float?     @map("humidity_pct")
   condition        String?
-  isDemo           Boolean    @default(false) @map("is_demo")
   createdAt        DateTime   @default(now()) @map("created_at")
   environmental    EnvironmentalObservation[]
 
@@ -627,7 +622,6 @@ model OceanObservation {
   currentVelocityMs  Float?     @map("current_velocity_ms")
   salinityPsu        Float?     @map("salinity_psu")
   chlorophyllMgM3    Float?     @map("chlorophyll_mg_m3")
-  isDemo             Boolean    @default(false) @map("is_demo")
   createdAt          DateTime   @default(now()) @map("created_at")
   environmental      EnvironmentalObservation[]
 
@@ -636,14 +630,32 @@ model OceanObservation {
   @@map("ocean_observations")
 }
 
+// Daily tides + drying-weather forecast per farm (Open-Meteo, local Africa/Dar_es_Salaam times)
+model SeaOutlook {
+  id           String   @id @default(uuid()) @db.Uuid
+  farmId       String   @map("farm_id") @db.Uuid
+  fetchedAt    DateTime @default(now()) @map("fetched_at")
+  tideProvider String?  @map("tide_provider")
+  rainProvider String?  @map("rain_provider")
+  tideFetchedAt DateTime? @map("tide_fetched_at") // when the tide part was fetched (older than fetchedAt if carried over)
+  rainFetchedAt DateTime? @map("rain_fetched_at")
+  tides        Json? // [{ type, time, levelM, daylight?, window? }]
+  drying       Json? // [{ date, maxRainProbability, rainMm, verdict, level }]
+
+  farm Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([farmId, fetchedAt])
+  @@map("sea_outlooks")
+}
+
 // Combined per-farm snapshot used as risk-engine input
 model EnvironmentalObservation {
   id                   String     @id @default(uuid()) @db.Uuid
   farmId               String     @map("farm_id") @db.Uuid
   observedAt           DateTime   @map("observed_at")
   source               DataSource
-  weatherSource        DataSource @map("weather_source")
-  oceanSource          DataSource @map("ocean_source")
+  weatherSource        DataSource? @map("weather_source")
+  oceanSource          DataSource? @map("ocean_source")
   weatherObservationId String?    @map("weather_observation_id") @db.Uuid
   oceanObservationId   String?    @map("ocean_observation_id") @db.Uuid
   seaSurfaceTempC      Float?     @map("sea_surface_temp_c")
@@ -659,7 +671,6 @@ model EnvironmentalObservation {
   windDirectionDeg     Float?     @map("wind_direction_deg")
   humidityPct          Float?     @map("humidity_pct")
   weatherCondition     String?    @map("weather_condition")
-  isDemo               Boolean    @default(false) @map("is_demo")
   createdAt            DateTime   @default(now()) @map("created_at")
 
   farm        Farm                @relation(fields: [farmId], references: [id], onDelete: Cascade)
@@ -694,7 +705,6 @@ model RiskPrediction {
   dataSource            DataSource        @map("data_source")
   trigger               PredictionTrigger @default(MANUAL)
   isSimulation          Boolean           @default(false) @map("is_simulation")
-  isDemo                Boolean           @default(false) @map("is_demo")
   flagged               Boolean           @default(false)
   flagReason            String?           @map("flag_reason")
   flaggedById           String?           @map("flagged_by_id") @db.Uuid
@@ -776,7 +786,6 @@ model ActionRecommendation {
   reviewNote      String?              @map("review_note")
   reviewedAt      DateTime?            @map("reviewed_at")
   isSimulation    Boolean              @default(false) @map("is_simulation")
-  isDemo          Boolean              @default(false) @map("is_demo")
   createdAt       DateTime             @default(now()) @map("created_at")
   updatedAt       DateTime             @updatedAt @map("updated_at")
 
@@ -802,7 +811,6 @@ model FarmerAction {
   performedAt      DateTime              @default(now()) @map("performed_at")
   notes            String?
   channel          DataChannel           @default(APP)
-  isDemo           Boolean               @default(false) @map("is_demo")
   createdAt        DateTime              @default(now()) @map("created_at")
 
   farm           Farm                  @relation(fields: [farmId], references: [id], onDelete: Cascade)
@@ -826,7 +834,6 @@ model ActionOutcome {
   outcomeDate      DateTime              @default(now()) @map("outcome_date")
   riskMaterialized Boolean?              @map("risk_materialized") // did the predicted risk actually happen?
   notes            String?
-  isDemo           Boolean               @default(false) @map("is_demo")
   createdAt        DateTime              @default(now()) @map("created_at")
 
   farm           Farm                  @relation(fields: [farmId], references: [id], onDelete: Cascade)
@@ -859,7 +866,6 @@ model HarvestRecord {
   lossPercent         Float?        @map("loss_percent")
   notes               String?
   channel             DataChannel   @default(APP)
-  isDemo              Boolean       @default(false) @map("is_demo")
   createdAt           DateTime      @default(now()) @map("created_at")
 
   farm          Farm            @relation(fields: [farmId], references: [id], onDelete: Cascade)
@@ -883,7 +889,6 @@ model LossRecord {
   quantityKg      Float?         @map("quantity_kg")
   percentLost     Float          @map("percent_lost")
   notes           String?
-  isDemo          Boolean        @default(false) @map("is_demo")
   createdAt       DateTime       @default(now()) @map("created_at")
 
   farm          Farm           @relation(fields: [farmId], references: [id], onDelete: Cascade)
@@ -938,7 +943,6 @@ model Buyer {
   contactName String?       @map("contact_name")
   phone       String?
   district    String?
-  isDemo      Boolean       @default(false) @map("is_demo")
   createdAt   DateTime      @default(now()) @map("created_at")
   user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   demand      BuyerDemand[]
@@ -982,7 +986,6 @@ model HarvestForecast {
   method                 String
   inputs                 Json
   isCurrent              Boolean      @default(true) @map("is_current")
-  isDemo                 Boolean      @default(false) @map("is_demo")
   createdAt              DateTime     @default(now()) @map("created_at")
   farm                   Farm         @relation(fields: [farmId], references: [id], onDelete: Cascade)
   cooperative            Cooperative? @relation(fields: [cooperativeId], references: [id], onDelete: SetNull)
@@ -1011,7 +1014,6 @@ model Alert {
   acknowledgedById String?      @map("acknowledged_by_id") @db.Uuid
   acknowledgedAt   DateTime?    @map("acknowledged_at")
   isSimulation     Boolean      @default(false) @map("is_simulation")
-  isDemo           Boolean      @default(false) @map("is_demo")
   createdAt        DateTime     @default(now()) @map("created_at")
 
   farm           Farm            @relation(fields: [farmId], references: [id], onDelete: Cascade)

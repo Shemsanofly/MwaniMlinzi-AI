@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Search, Tractor } from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nProvider.jsx';
 import { cooperativeApi, farmApi } from '../../../api/endpoints.js';
-import { DemoBadge, EmptyState, ErrorState, PageHeader, PageLoader, RiskBadge, Table } from '../../../components/ui/index.jsx';
+import { EmptyState, ErrorState, PageHeader, PageLoader, RiskBadge, Table } from '../../../components/ui/index.jsx';
 import { RISK_LEVELS } from '../../../utils/risk.js';
 import { date } from '../../../utils/format.js';
 import { FarmForecastCell, RiskMiniBadges } from './common.jsx';
@@ -24,7 +24,6 @@ export function FarmsTable({ farms, base, showCooperative = false, empty }) {
         <div className="min-w-40">
           <p className="font-medium text-slate-900">{f.name}</p>
           <div className="mt-0.5 flex flex-wrap gap-1">
-            {f.isDemo && <DemoBadge />}
             {f.status !== 'ACTIVE' && <span className="text-xs text-slate-500">{t(`extension.shared.farmStatus.${f.status}`)}</span>}
           </div>
         </div>
@@ -41,7 +40,7 @@ export function FarmsTable({ farms, base, showCooperative = false, empty }) {
   return <Table columns={columns} rows={farms} empty={empty} onRowClick={(f) => navigate(`${base}/farms/${f.id}`)} />;
 }
 
-/** Shared farm list page (cooperative scope or all farms for extension officers). */
+/** Shared field-operations farm list page for admins. */
 export function FarmListPage({ base, showCooperative = false, title, subtitle }) {
   const { t } = useI18n();
   const [search, setSearch] = useState('');

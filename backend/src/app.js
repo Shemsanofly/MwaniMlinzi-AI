@@ -6,7 +6,8 @@ import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env.js';
 import api from './routes/index.js';
 import integrationRoutes from './routes/integrations.routes.js';
-import { apiLimiter } from './middleware/rateLimit.js';
+import * as integrations from './controllers/integrationController.js';
+import { apiLimiter, integrationLimiter } from './middleware/rateLimit.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { openApiSpec } from './config/openapi.js';
 
@@ -31,6 +32,7 @@ export function createApp() {
   app.get('/api/docs.json', (_req, res) => res.json(openApiSpec));
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec, { customSiteTitle: 'MwaniMlinzi AI API' }));
   app.use('/api/integrations', integrationRoutes); // Africa's Talking callbacks (own limiter + secret)
+  app.post('/api/ussd/MwaniMlinzi', integrationLimiter, integrations.ussd); // AT channel callback alias
   app.use('/api', apiLimiter, api);
 
   app.use(notFoundHandler);

@@ -13,16 +13,16 @@ const phone = z.string().trim().max(32)
 const password = z.string().min(8, 'Password must be at least 8 characters').max(128)
   .regex(/[A-Za-z]/, 'Password must contain a letter').regex(/[0-9]/, 'Password must contain a number');
 const optEmail = z.union([z.string().trim().toLowerCase().email().max(200), z.literal('').transform(() => null)]).optional().nullable();
+const activeRole = z.enum(['FARMER', 'ADMIN']);
 
 export const registerSchema = z.object({
   fullName: trimmed(120),
   phone,
   password,
   email: optEmail,
-  role: z.enum(['FARMER', 'BUYER']).default('FARMER'),
+  role: z.enum(['FARMER']).default('FARMER'), // public registration creates farmers only
   preferredLanguage: z.enum(['en', 'sw']).default('sw'),
   cooperativeCode: z.string().trim().max(40).optional().nullable(),
-  companyName: z.string().trim().max(160).optional().nullable(),
   village: optText(120),
   district: optText(120),
   smsEnabled: bool.optional(),
@@ -123,7 +123,6 @@ export const harvestSchema = z.object({
   actualQuantity: num(0, 1e7),
   unit: z.enum(['KG_DRY', 'KG_WET']).default('KG_DRY'),
   qualityGrade: z.enum(['A', 'B', 'C', 'REJECT']).optional().nullable(),
-  buyerId: z.string().uuid().optional().nullable(),
   dryingMethod: z.enum(['RACK', 'TARPAULIN', 'ROPE_HANGING', 'GROUND']).optional().nullable(),
   dryingDurationDays: num(0, 60).optional().nullable(),
   pricePerKg: num(0, 1e6).optional().nullable(),
@@ -181,7 +180,7 @@ const riskLevel = z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
 const condition = z.object({ feature: z.string().regex(/^[A-Za-z0-9_]+$/), op: z.enum(['lt', 'lte', 'gt', 'gte', 'eq', 'neq']), value: z.union([z.number(), z.string(), z.boolean()]) });
 export const actionLibrarySchema = z.object({
   code: z.string().trim().toUpperCase().regex(/^[A-Z0-9_]{3,60}$/),
-  riskType: z.enum(['HEAT_ICE_ICE', 'STORM_LINE_DAMAGE', 'POOR_GROWTH', 'HARVEST_WINDOW']),
+  riskType: z.enum(['HEAT_ICE_ICE', 'STORM_LINE_DAMAGE', 'POOR_GROWTH', 'HARVEST_WINDOW', 'DRYING_WEATHER']),
   minimumRiskLevel: riskLevel,
   maximumRiskLevel: riskLevel.optional().nullable(),
   cropStage: z.enum(['ANY', 'EARLY', 'GROWING', 'MATURING', 'HARVEST_READY']).default('ANY'),
@@ -227,7 +226,7 @@ export const adminUserCreateSchema = z.object({
   password: z.string().min(8).max(128),
   fullName: trimmed(120),
   phone: phone.optional().nullable(),
-  roles: z.array(z.enum(['FARMER', 'COOPERATIVE_ADMIN', 'EXTENSION_OFFICER', 'BUYER', 'ADMIN'])).min(1),
+  roles: z.array(activeRole).min(1),
   cooperativeId: z.string().uuid().optional().nullable(),
   preferredLanguage: z.enum(['en', 'sw']).default('sw'),
 }).refine((v) => v.email || v.phone, { message: 'Enter a phone number or an email', path: ['phone'] });
@@ -236,21 +235,12 @@ export const adminUserUpdateSchema = z.object({
   fullName: trimmed(120).optional(),
   phone: phone.optional().nullable(),
   isActive: bool.optional(),
-  roles: z.array(z.enum(['FARMER', 'COOPERATIVE_ADMIN', 'EXTENSION_OFFICER', 'BUYER', 'ADMIN'])).min(1).optional(),
+  roles: z.array(activeRole).min(1).optional(),
   cooperativeId: z.string().uuid().optional().nullable(),
 });
 
 export const settingUpdateSchema = z.object({ value: z.any() });
 export const modelStatusSchema = z.object({ status: z.enum(['ACTIVE', 'RETIRED', 'TRAINED']) });
-
-export const demandSchema = z.object({
-  speciesId: z.string().uuid().optional().nullable(),
-  quantityKg: num(1, 1e8),
-  pricePerKg: num(0, 1e6).optional().nullable(),
-  neededBy: dateStr,
-  minimumGrade: z.enum(['A', 'B', 'C']).optional().nullable(),
-  notes: optText(),
-});
 
 export const forecastQuerySchema = z.object({
   cooperativeId: z.string().uuid().optional(),

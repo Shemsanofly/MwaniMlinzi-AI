@@ -48,9 +48,6 @@ function SystemHealth() {
               <Badge className={data.database === 'ok' ? 'bg-seaweed-50 text-seaweed-700 ring-seaweed-500/30' : 'bg-red-50 text-red-800 ring-red-300'}>
                 <Database className="h-3 w-3" aria-hidden />{t('admin.system.database')}: {data.database}
               </Badge>
-              <Badge className={data.demoMode ? 'bg-violet-50 text-violet-800 ring-violet-300' : 'bg-seaweed-50 text-seaweed-700 ring-seaweed-500/30'}>
-                <FlaskConical className="h-3 w-3" aria-hidden />{data.demoMode ? t('admin.system.demoModeOn') : t('admin.system.demoModeOff')}
-              </Badge>
             </div>
             <ProviderList providers={data.providers} />
           </>
@@ -194,6 +191,7 @@ export default function AdminDashboard() {
         <Card>
           <CardHeader icon={Users} title={t('admin.dashboard.byRole')} />
           <div className="h-64 p-3">
+            {byRole.some((r) => r.users) ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={byRole} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 0 }}>
                 <CartesianGrid horizontal={false} stroke="#e2e8f0" />
@@ -203,6 +201,7 @@ export default function AdminDashboard() {
                 <Bar dataKey="users" fill="#16718c" radius={[0, 4, 4, 0]} maxBarSize={22} />
               </BarChart>
             </ResponsiveContainer>
+            ) : <EmptyState icon={Users} title={t('admin.dashboard.noUsers')} />}
           </div>
         </Card>
       </div>
@@ -225,7 +224,6 @@ export default function AdminDashboard() {
                       <span className="font-mono text-xs text-slate-500">{m.version}</span>
                     </span>
                     <span className="flex flex-wrap items-center gap-1.5">
-                      {m.syntheticData && <Badge className="bg-violet-50 text-violet-800 ring-violet-300">{t('source.syntheticBadge')}</Badge>}
                       <Badge className={m.status === 'ACTIVE' ? 'bg-seaweed-50 text-seaweed-700 ring-seaweed-500/30' : 'bg-slate-100 text-slate-600 ring-slate-200'}>{t(`admin.models.status.${m.status}`)}</Badge>
                       <span className="text-xs text-slate-500">F1 {m.metrics?.f1 != null ? m.metrics.f1.toFixed(2) : '—'}</span>
                     </span>

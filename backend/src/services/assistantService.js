@@ -158,10 +158,25 @@ export const AssistantService = {
         const env = await EnvironmentService.latestForFarm(farm.id);
         if (!env) { reply = lang === 'sw' ? 'Hakuna taarifa za mazingira bado.' : 'No environmental data yet.'; break; }
         facts.environment = { seaSurfaceTempC: env.seaSurfaceTempC, sstAnomalyC: env.sstAnomalyC, waveHeightM: env.waveHeightM, windSpeedKmh: env.windSpeedKmh, rainfallMm: env.rainfallMm, source: env.source };
-        const tag = env.source === 'DEMO' ? (lang === 'sw' ? ' (taarifa za majaribio/demo)' : ' (demo data)') : env.source === 'CACHED' ? (lang === 'sw' ? ' (taarifa za awali)' : ' (cached data)') : '';
-        reply = lang === 'sw'
-          ? `Joto la bahari: ${env.seaSurfaceTempC}°C (${env.sstAnomalyC >= 0 ? '+' : ''}${env.sstAnomalyC}°C ya kawaida). Mawimbi: m ${env.waveHeightM}. Upepo: km/saa ${Math.round(env.windSpeedKmh)}. Mvua: mm ${env.rainfallMm}${tag}.`
-          : `Sea temperature: ${env.seaSurfaceTempC}°C (${env.sstAnomalyC >= 0 ? '+' : ''}${env.sstAnomalyC}°C vs normal). Waves: ${env.waveHeightM} m. Wind: ${Math.round(env.windSpeedKmh)} km/h. Rain: ${env.rainfallMm} mm${tag}.`;
+        const tag = env.source === 'CACHED' ? (lang === 'sw' ? ' (taarifa za awali)' : ' (last saved reading)') : '';
+        const signed = (v) => `${v >= 0 ? '+' : ''}${v}`;
+        const parts = lang === 'sw'
+          ? [
+            env.seaSurfaceTempC != null && `Joto la bahari: ${env.seaSurfaceTempC}°C${env.sstAnomalyC != null ? ` (${signed(env.sstAnomalyC)}°C ya kawaida)` : ''}.`,
+            env.waveHeightM != null && `Mawimbi: m ${env.waveHeightM}.`,
+            env.windSpeedKmh != null && `Upepo: km/saa ${Math.round(env.windSpeedKmh)}.`,
+            env.rainfallMm != null && `Mvua: mm ${env.rainfallMm}.`,
+          ]
+          : [
+            env.seaSurfaceTempC != null && `Sea temperature: ${env.seaSurfaceTempC}°C${env.sstAnomalyC != null ? ` (${signed(env.sstAnomalyC)}°C vs normal)` : ''}.`,
+            env.waveHeightM != null && `Waves: ${env.waveHeightM} m.`,
+            env.windSpeedKmh != null && `Wind: ${Math.round(env.windSpeedKmh)} km/h.`,
+            env.rainfallMm != null && `Rain: ${env.rainfallMm} mm.`,
+          ];
+        const text = parts.filter(Boolean).join(' ');
+        reply = text
+          ? `${text}${tag}`
+          : (lang === 'sw' ? 'Hakuna vipimo vya mazingira vilivyopatikana bado.' : 'No environmental values are available yet.');
         break;
       }
       case 'HISTORY': {

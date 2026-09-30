@@ -55,7 +55,13 @@ describe('ActionEngine', () => {
       expect(a.action).toBeTruthy();
       expect(a.actionSw).toBeTruthy();
       expect(a.validated).toBe(false);
-      expect(a.source).toMatch(/local expert validation/);
+      expect(a.source).toMatch(/awaiting validation by local seaweed extension experts/);
     }
+  });
+
+  test('drying-weather advice exists for each verdict level (GOOD=LOW, CAUTION=MEDIUM, BAD=HIGH)', () => {
+    const drying = ACTION_LIBRARY.filter((a) => a.riskType === 'DRYING_WEATHER');
+    expect(drying.map((a) => a.minimumRiskLevel).sort()).toEqual(['HIGH', 'LOW', 'MEDIUM']);
+    expect(drying.find((a) => a.minimumRiskLevel === 'HIGH').actionSw).toMatch(/ardhini|chini/);
   });
 });

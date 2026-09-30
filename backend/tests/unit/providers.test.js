@@ -1,6 +1,5 @@
 import { EnvironmentalProvider } from '../../src/providers/environmentalProvider.js';
-import { DemoWeatherProvider } from '../../src/providers/weatherProvider.js';
-import { DemoOceanProvider, createLiveOceanProvider } from '../../src/providers/oceanProvider.js';
+import { createLiveOceanProvider } from '../../src/providers/oceanProvider.js';
 import { createLiveWeatherProvider } from '../../src/providers/weatherProvider.js';
 import { createLLMProvider, TemplateLLMProvider } from '../../src/providers/llmProvider.js';
 import { AfricasTalkingSMSClient } from '../../src/providers/africastalking/smsClient.js';
@@ -8,11 +7,11 @@ import { forecastForCycle, HarvestForecastService } from '../../src/services/har
 import { harvestMetrics, feedbackTypeFor } from '../../src/services/recordService.js';
 import { applyOverrides } from '../../src/services/farmContextService.js';
 
-const loc = { latitude: -6.27, longitude: 39.55, profile: 'NORMAL' };
+const loc = { latitude: -6.27, longitude: 39.55 };
 const failing = (name) => ({ name, isLive: true, fetch: async () => { throw new Error('network down'); } });
 const working = (name, data) => ({ name, isLive: true, fetch: async () => data });
 
-describe('EnvironmentalProvider fallback (LIVE → CACHED → DEMO)', () => {
+describe('EnvironmentalProvider fallback (LIVE → CACHED → unavailable)', () => {
   test('uses LIVE when the live provider works', async () => {
     const p = new EnvironmentalProvider({ weatherLive: working('w', { rainfallMm: 3 }), oceanLive: working('o', { waveHeightM: 1 }) });
     const r = await p.fetch(loc);
@@ -26,31 +25,24 @@ describe('EnvironmentalProvider fallback (LIVE → CACHED → DEMO)', () => {
     expect(r.ocean.source).toBe('CACHED');
     expect(r.weather.errors[0]).toMatch(/network down/);
   });
-  test('falls back to DEMO when live fails and nothing is cached', async () => {
-    const p = new EnvironmentalProvider({ weatherLive: failing('w'), oceanLive: failing('o') });
+  test('returns null (never invented values) when live fails and nothing is cached', async () => {
+    const p = new EnvironmentalProvider({ weatherLive: failing('w'), oceanLive: working('o', { waveHeightM: 1 }) });
     const r = await p.fetch(loc);
-    expect(r.weather.source).toBe('DEMO');
-    expect(r.ocean.source).toBe('DEMO');
-    expect(r.ocean.seaSurfaceTempC).toBeGreaterThan(20);
+    expect(r.weather).toBeNull();
+    expect(r.ocean.source).toBe('LIVE');
+    expect(r.errors.weather[0]).toMatch(/network down/);
   });
-  test('uses DEMO directly when no live provider is configured', async () => {
+  test('returns null when no live provider is configured', async () => {
     const p = new EnvironmentalProvider({ weatherLive: null, oceanLive: null });
     const r = await p.fetch(loc);
-    expect(r.weather.provider).toBe(new DemoWeatherProvider().name);
-    expect(r.ocean.provider).toBe(new DemoOceanProvider().name);
+    expect(r.weather).toBeNull();
+    expect(r.ocean).toBeNull();
   });
-  test('demo scenarios are distinct and deterministic', async () => {
-    const d = new DemoOceanProvider();
-    const heat = await d.fetch({ ...loc, profile: 'HEAT' });
-    const normal = await d.fetch(loc);
-    expect(heat.sstAnomalyC).toBeGreaterThan(normal.sstAnomalyC);
-    expect(await d.fetch({ ...loc, profile: 'HEAT', at: heat.observedAt })).toEqual(await d.fetch({ ...loc, profile: 'HEAT', at: heat.observedAt }));
-  });
-  test('DEMO_MODE or missing credentials disable live providers', () => {
-    expect(createLiveWeatherProvider({ demoMode: true, weather: { provider: 'open-meteo' } })).toBeNull();
-    expect(createLiveWeatherProvider({ demoMode: false, weather: { provider: 'open-meteo' } }).name).toBe('open-meteo');
-    expect(createLiveWeatherProvider({ demoMode: false, weather: { provider: 'openweathermap', apiKey: '' } })).toBeNull();
-    expect(createLiveOceanProvider({ demoMode: false, ocean: { provider: 'open-meteo-marine' } }).name).toBe('open-meteo-marine');
+  test('Open-Meteo is the default; keyed providers need their key', () => {
+    expect(createLiveWeatherProvider({ weather: { provider: '' } }).name).toBe('open-meteo');
+    expect(createLiveWeatherProvider({ weather: { provider: 'openweathermap', apiKey: '' } })).toBeNull();
+    expect(createLiveWeatherProvider({ weather: { provider: 'none' } })).toBeNull();
+    expect(createLiveOceanProvider({ ocean: { provider: '' } }).name).toBe('open-meteo-marine');
   });
   test('LLM falls back to templates without keys; SMS reports NOT_CONFIGURED (never simulated success)', async () => {
     expect(createLLMProvider({ llm: { provider: 'anthropic', apiKey: '' } })).toBeInstanceOf(TemplateLLMProvider);
@@ -94,7 +86,7 @@ describe('harvest forecast + records math', () => {
     expect(feedbackTypeFor('MEDIUM', false)).toBe('CORRECT');
   });
   test('simulation overrides are applied in-memory and labelled SIMULATION', () => {
-    const env = applyOverrides({ seaSurfaceTempC: 26.1, sstAnomalyC: 0.1, sstAnomalyDays: 0, waveHeightM: 0.5, source: 'DEMO' }, { sstAnomalyC: 1.6, waveHeightM: 2 });
+    const env = applyOverrides({ seaSurfaceTempC: 26.1, sstAnomalyC: 0.1, sstAnomalyDays: 0, waveHeightM: 0.5, source: 'LIVE' }, { sstAnomalyC: 1.6, waveHeightM: 2 });
     expect(env.source).toBe('SIMULATION');
     expect(env.seaSurfaceTempC).toBeCloseTo(27.6, 2);
     expect(env.sstAnomalyDays).toBe(1);

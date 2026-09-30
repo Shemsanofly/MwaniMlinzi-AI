@@ -19,13 +19,13 @@ const SPEC = {
   'alerts.missingReportDays': { type: 'int', min: 1, max: 90 },
   'alerts.dedupHours': { type: 'int', min: 1, max: 168 },
   'environment.maxCacheAgeHours': { type: 'int', min: 1, max: 720 },
-  'environment.preferLive': { type: 'bool' },
   'notifications.smsEnabled': { type: 'bool' },
+  'drying.thresholds': { type: 'drying' },
 };
 const GROUPS = [
   { id: 'risk', icon: BrainCircuit, keys: ['risk.thresholds', 'ai.mode', 'ai.mlBlendWeight', 'ai.minTrainingRecords'] },
   { id: 'actions', icon: BellRing, keys: ['actions.requireValidated', 'alerts.missingReportDays', 'alerts.dedupHours'] },
-  { id: 'environment', icon: CloudSun, keys: ['environment.maxCacheAgeHours', 'environment.preferLive', 'notifications.smsEnabled'] },
+  { id: 'environment', icon: CloudSun, keys: ['environment.maxCacheAgeHours', 'drying.thresholds', 'notifications.smsEnabled'] },
 ];
 
 const canon = (v) => (v && typeof v === 'object' ? JSON.stringify(Object.keys(v).sort().map((k) => [k, v[k]])) : JSON.stringify(v));
@@ -33,16 +33,19 @@ const sameValue = (a, b) => canon(a) === canon(b);
 const fmt = (v) => (typeof v === 'object' ? Object.entries(v).map(([k, x]) => `${k} ${x}`).join(' · ') : String(v));
 
 const num = (x) => (String(x).trim() === '' ? Number.NaN : Number(x));
+const DRYING_KEYS = ['cautionProbability', 'badProbability', 'cautionRainMm', 'badRainMm'];
 /** Editors keep raw strings for numeric inputs (so "0." can be typed); convert on validate/save. */
 function toDraft(key, v) {
   const tpe = SPEC[key].type;
   if (tpe === 'thresholds') return Object.fromEntries(['MEDIUM', 'HIGH', 'CRITICAL'].map((l) => [l, String(v?.[l] ?? '')]));
+  if (tpe === 'drying') return Object.fromEntries(DRYING_KEYS.map((k) => [k, String(v?.[k] ?? '')]));
   if (tpe === 'int' || tpe === 'float') return String(v ?? '');
   return v;
 }
 function toValue(key, d) {
   const tpe = SPEC[key].type;
   if (tpe === 'thresholds') return Object.fromEntries(['MEDIUM', 'HIGH', 'CRITICAL'].map((l) => [l, num(d[l])]));
+  if (tpe === 'drying') return Object.fromEntries(DRYING_KEYS.map((k) => [k, num(d[k])]));
   if (tpe === 'int' || tpe === 'float') return num(d);
   return d;
 }
@@ -51,6 +54,11 @@ function toValue(key, d) {
 function validate(key, v) {
   const s = SPEC[key];
   if (s.type === 'thresholds') return thresholdError(v);
+  if (s.type === 'drying') {
+    const ok = DRYING_KEYS.every((k) => typeof v[k] === 'number' && !Number.isNaN(v[k]) && v[k] >= 0)
+      && v.badProbability <= 100 && v.cautionProbability <= v.badProbability && v.cautionRainMm <= v.badRainMm;
+    return ok ? null : 'admin.settings.drying.invalid';
+  }
   if (s.type === 'int') return Number.isInteger(v) && v >= s.min && v <= s.max ? null : 'admin.settings.intRange';
   if (s.type === 'float') return typeof v === 'number' && !Number.isNaN(v) && v >= s.min && v <= s.max ? null : 'admin.settings.floatRange';
   return null;
@@ -107,6 +115,19 @@ function Editor({ k, value, onChange }) {
           ))}
         </div>
         <ThresholdPreview v={toValue(k, value)} />
+      </div>
+    );
+  }
+  if (s.type === 'drying') {
+    return (
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {DRYING_KEYS.map((key) => (
+          <div key={key}>
+            <label htmlFor={`${id}-${key}`} className="mb-1 block text-xs font-semibold text-slate-600">{t(`admin.settings.drying.${key}`)}</label>
+            <input id={`${id}-${key}`} type="number" min={0} max={key.endsWith('Probability') ? 100 : undefined} step={key.endsWith('Probability') ? 1 : 0.5}
+              className="input tabular-nums" value={value[key]} onChange={(e) => onChange({ ...value, [key]: e.target.value })} />
+          </div>
+        ))}
       </div>
     );
   }
@@ -219,7 +240,6 @@ export default function AdminSettings() {
         <Card className="h-fit">
           <CardHeader icon={Server} title={t('admin.system.title')} subtitle={t('admin.system.readOnly')} />
           <div className="space-y-3 p-4 sm:p-5">
-            <div className="flex items-center justify-between text-sm"><span className="text-slate-600">{t('admin.system.demoMode')}</span>{sys.demoMode ? <Badge className="bg-violet-50 text-violet-800 ring-violet-300">DEMO_MODE=true</Badge> : <YesNo value={false} />}</div>
             <div className="flex items-center justify-between text-sm"><span className="text-slate-600">{t('admin.system.jobsEnabled')}</span><YesNo value={sys.jobsEnabled} /></div>
             <div className="border-t border-slate-100 pt-2"><ProviderList providers={sys.providers} /></div>
             <Notice tone="info" icon={KeyRound}>{t('admin.system.envNote')}</Notice>

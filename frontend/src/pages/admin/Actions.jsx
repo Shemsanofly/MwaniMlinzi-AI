@@ -6,7 +6,10 @@ import { useI18n } from '../../i18n/I18nProvider.jsx';
 import {
   Badge, Button, Card, EmptyState, ErrorState, Field, FormError, Modal, Notice, PageHeader, PageLoader, RiskBadge, Toggle, cx,
 } from '../../components/ui/index.jsx';
-import { RISK_LEVELS, RISK_TYPES, levelRank } from '../../utils/risk.js';
+import { RISK_LEVELS, RISK_TYPES as FARM_RISK_TYPES, levelRank } from '../../utils/risk.js';
+
+// Action Library categories: the four farm risks + drying-weather advice (daily sea outlook).
+const RISK_TYPES = [...FARM_RISK_TYPES, 'DRYING_WEATHER'];
 import { dateTime } from '../../utils/format.js';
 
 const CROP_STAGES = ['ANY', 'EARLY', 'GROWING', 'MATURING', 'HARVEST_READY'];

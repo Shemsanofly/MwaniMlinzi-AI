@@ -9,7 +9,7 @@ const baseCtx = (over = {}) => ({
   cycle: { id: 'c1' },
   cropAgeDays: 39,
   expectedCycleDays: 45,
-  environment: { seaSurfaceTempC: 26.2, sstAnomalyC: 0.1, sstAnomalyDays: 0, sstTrend7d: 0, waveHeightM: 0.6, windSpeedKmh: 14, currentVelocityMs: 0.25, rainfallMm: 1, salinityPsu: 34.5, chlorophyllMgM3: 0.35, humidityPct: 75, source: 'DEMO' },
+  environment: { seaSurfaceTempC: 26.2, sstAnomalyC: 0.1, sstAnomalyDays: 0, sstTrend7d: 0, waveHeightM: 0.6, windSpeedKmh: 14, currentVelocityMs: 0.25, rainfallMm: 1, salinityPsu: 34.5, chlorophyllMgM3: 0.35, humidityPct: 75, source: 'LIVE' },
   recentObservation: { cropCondition: 'GOOD', whitening: false, ageDays: 2 },
   history: { pastCycles: 2, iceIceLossRate: 0, stormLossRate: 0, yieldRatio: 1 },
   ...over,

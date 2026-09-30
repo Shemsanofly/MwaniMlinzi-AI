@@ -8,7 +8,7 @@ const tokens = {};
 
 export async function login(role) {
   if (tokens[role]) return tokens[role];
-  const res = await api().post('/api/auth/login').send({ email: `${role}@demo.mwanimlinzi.local`, password: TEST_PASSWORD });
+  const res = await api().post('/api/auth/login').send({ email: `${role}@example.test`, password: TEST_PASSWORD });
   if (res.status !== 200) throw new Error(`login ${role} failed: ${JSON.stringify(res.body)}`);
   tokens[role] = res.body.data.token;
   return tokens[role];

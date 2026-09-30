@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { I18nProvider } from '../../i18n/I18nProvider.jsx';
-import { RiskBadge, SourceBadge, ErrorState, FormError } from './index.jsx';
+import { RiskBadge, SourceBadge, ErrorState, FormError, PasswordInput } from './index.jsx';
 import { NextActionCard } from '../risk/RiskComponents.jsx';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -14,10 +14,16 @@ describe('shared UI', () => {
     expect(screen.getByText('Hatari kubwa')).toBeInTheDocument();
   });
 
-  test('SourceBadge labels demo data honestly', () => {
+  test('SourceBadge says plainly when no live data was available', () => {
     localStorage.setItem('mwanimlinzi.lang', 'en');
-    wrap(<SourceBadge source="DEMO" />);
-    expect(screen.getByText('Demo environmental data')).toBeInTheDocument();
+    wrap(<SourceBadge source="UNAVAILABLE" />);
+    expect(screen.getByText('No live data')).toBeInTheDocument();
+  });
+
+  test('SourceBadge UNAVAILABLE in Kiswahili and unknown sources render nothing', () => {
+    const { container } = wrap(<><SourceBadge source="UNAVAILABLE" /><SourceBadge source="SOMETHING_ELSE" /></>);
+    expect(screen.getByText('Hakuna taarifa hai')).toBeInTheDocument();
+    expect(container.querySelectorAll('span.rounded-full')).toHaveLength(1);
   });
 
   test('ErrorState maps network errors to a friendly message', () => {
@@ -70,11 +76,34 @@ describe('shared UI', () => {
       riskType: 'HEAT_ICE_ICE',
       riskLevel: 'HIGH',
       reasons: [{ code: 'SST_ANOMALY', label: 'SST is elevated', labelSw: 'Joto la bahari limeongezeka' }],
-      recommendation: { id: 'r1', status: 'PENDING', actionItem: { action: 'Inspect lines within 24 hours', actionSw: 'Kagua mistari ndani ya saa 24', explanation: 'x', explanationSw: 'y', urgency: 'URGENT', validated: false, source: 'demo' } },
+      recommendation: { id: 'r1', status: 'PENDING', actionItem: { action: 'Inspect lines within 24 hours', actionSw: 'Kagua mistari ndani ya saa 24', explanation: 'x', explanationSw: 'y', urgency: 'URGENT', validated: false, source: 'Extension guideline' } },
     };
     wrap(<NextActionCard nextAction={nextAction} />);
     expect(screen.getByText('Kagua mistari ndani ya saa 24')).toBeInTheDocument();
     expect(screen.getByText('Joto la bahari limeongezeka')).toBeInTheDocument();
     expect(screen.getByText(/Inasubiri uthibitisho/)).toBeInTheDocument();
+  });
+});
+
+describe('PasswordInput (eye icon)', () => {
+  test('starts hidden; the eye button shows and hides the password without submitting the form', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    localStorage.setItem('mwanimlinzi.lang', 'en');
+    const onSubmit = vi.fn((e) => e.preventDefault());
+    wrap(<form onSubmit={onSubmit}><label htmlFor="pw">Password</label><PasswordInput id="pw" value="Siri-123" onChange={() => {}} /></form>);
+    const input = screen.getByLabelText('Password');
+    expect(input).toHaveAttribute('type', 'password');
+    await userEvent.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(input).toHaveAttribute('type', 'text');
+    expect(screen.getByRole('button', { name: 'Hide password' })).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+    expect(input).toHaveAttribute('type', 'password');
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  test('Kiswahili label', () => {
+    localStorage.setItem('mwanimlinzi.lang', 'sw');
+    wrap(<PasswordInput id="pw2" value="" onChange={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Onyesha nenosiri' })).toBeInTheDocument();
   });
 });

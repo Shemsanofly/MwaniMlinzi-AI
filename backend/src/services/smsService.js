@@ -1,6 +1,5 @@
 import prisma from '../config/prisma.js';
 import { AfricasTalkingSMSClient, mapDeliveryStatus } from '../providers/africastalking/smsClient.js';
-import { atConfig } from '../providers/africastalking/config.js';
 import { normalizeTzPhone, maskPhone } from '../utils/phone.js';
 import { getSetting } from './settingsService.js';
 
@@ -12,6 +11,7 @@ export const getSMSClient = () => client;
 const PREF_FOR_TYPE = {
   RISK_ALERT: 'notifyRiskAlerts',
   HARVEST_REMINDER: 'notifyHarvest',
+  DRYING_WARNING: 'notifyHarvest',
   SYSTEM: 'notifySystem',
   RECOMMENDATION: 'notifyRiskAlerts',
   OBSERVATION_CONFIRMATION: null,
@@ -26,8 +26,8 @@ export const smsText = (text) => (text.length > MAX_SMS_CHARS ? `${text.slice(0,
 
 /**
  * Decide whether an SMS may be sent (without sending). Returns { allowed, reason }.
- * Rules: user opted in, the type-specific preference is on, a valid phone exists, risk alerts only
- * for HIGH/CRITICAL, and demo accounts never receive SMS from a production Africa's Talking account.
+ * Rules: user opted in, the type-specific preference is on, a valid phone exists, and risk alerts only
+ * for HIGH/CRITICAL.
  */
 export function smsPolicy(user, { type, priority = 'INFO' }) {
   if (!user) return { allowed: false, reason: 'NO_USER' };
@@ -38,14 +38,13 @@ export function smsPolicy(user, { type, priority = 'INFO' }) {
     if (type === 'RISK_ALERT' && PRIORITY_RANK[priority] < PRIORITY_RANK.HIGH) return { allowed: false, reason: 'PRIORITY_TOO_LOW' };
   }
   if (!normalizeTzPhone(user.phone)) return { allowed: false, reason: 'NO_VALID_PHONE' };
-  if (user.isDemo && atConfig().environment === 'production') return { allowed: false, reason: 'DEMO_ACCOUNT_IN_PRODUCTION' };
   return { allowed: true };
 }
 
 export const SMSService = {
   /**
    * Send one SMS to a user in their preferred language and log it in notification_logs.
-   * @param user   { id, phone, preferredLanguage, smsEnabled, notify*, isDemo }
+   * @param user   { id, phone, preferredLanguage, smsEnabled, notify* }
    * @param opts   { type, priority, text: { en, sw } | string, notificationId?, force? }
    * @returns { status, logId?, reason? } — status is one of QUEUED/SENT/FAILED/NOT_CONFIGURED/SKIPPED
    */

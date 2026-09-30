@@ -77,7 +77,7 @@ export const HarvestForecastService = {
         prisma.harvestForecast.create({
           data: {
             farmId: farm.id, cooperativeId: farm.cooperativeId, plantingCycleId: cycle.id, district: farm.location?.district || 'Unknown',
-            ...f, method: 'risk-adjusted-yield-v1', isDemo: farm.isDemo,
+            ...f, method: 'risk-adjusted-yield-v1',
           },
         }),
       ]);
@@ -86,7 +86,7 @@ export const HarvestForecastService = {
     return results;
   },
 
-  /** Current forecasts filtered by scope; used by cooperative, buyer and admin views. */
+  /** Current forecasts filtered by scope; used by the farmer and admin views. */
   async list({ where = {}, from, to, district, cooperativeId, minQuantityKg, grade } = {}) {
     return prisma.harvestForecast.findMany({
       where: {
@@ -98,7 +98,7 @@ export const HarvestForecastService = {
         ...(minQuantityKg ? { riskAdjustedQuantityKg: { gte: Number(minQuantityKg) } } : {}),
         ...(from || to ? { expectedHarvestDate: { ...(from ? { gte: new Date(from) } : {}), ...(to ? { lte: new Date(to) } : {}) } } : {}),
       },
-      include: { farm: { select: { id: true, farmCode: true, name: true, isDemo: true, species: { select: { commonName: true, code: true } } } }, cooperative: { select: { id: true, name: true, code: true } } },
+      include: { farm: { select: { id: true, farmCode: true, name: true, species: { select: { commonName: true, code: true } } } }, cooperative: { select: { id: true, name: true, code: true } } },
       orderBy: { expectedHarvestDate: 'asc' },
     });
   },

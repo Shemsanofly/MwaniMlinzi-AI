@@ -4,16 +4,17 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BarChart3, Info, Package, TrendingUp } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { forecastApi } from '../../api/endpoints.js';
-import { Badge, Button, DemoBadge, EmptyState, ErrorState, FormError, Notice, PageHeader, PageLoader, Table } from '../../components/ui/index.jsx';
+import { Badge, Button, EmptyState, ErrorState, FormError, Notice, PageHeader, PageLoader, Table } from '../../components/ui/index.jsx';
 import { date, num, pct } from '../../utils/format.js';
 import { HarvestWeeklyChart } from '../extension/components/charts.jsx';
-import { Section, SuccessNote } from '../extension/components/common.jsx';
+import { Section, SuccessNote, useStaffBase } from '../extension/components/common.jsx';
 import { GroupTable, HorizonCards } from '../extension/components/Portfolio.jsx';
 
 const DAY_OPTIONS = [7, 14, 30, 60, 90];
 
 export default function CooperativeForecast() {
   const { t, lang } = useI18n();
+  const base = useStaffBase();
   const qc = useQueryClient();
   const [days, setDays] = useState('');
   const [district, setDistrict] = useState('');
@@ -38,8 +39,8 @@ export default function CooperativeForecast() {
       header: t('common.farm'),
       render: (f) => (
         <div className="min-w-36">
-          <Link to={`/cooperative/farms/${f.farmId}`} className="font-semibold text-ocean-700 hover:underline">{f.farm?.farmCode} · {f.farm?.name}</Link>
-          <div className="mt-0.5 flex flex-wrap gap-1">{f.isDemo && <DemoBadge />}{f.inputs?.overdue && <Badge className="bg-amber-50 text-amber-800 ring-amber-300">{t('coop.forecast.overdue')}</Badge>}</div>
+          <Link to={`${base}/farms/${f.farmId}`} className="font-semibold text-ocean-700 hover:underline">{f.farm?.farmCode} · {f.farm?.name}</Link>
+          <div className="mt-0.5 flex flex-wrap gap-1">{f.inputs?.overdue && <Badge className="bg-amber-50 text-amber-800 ring-amber-300">{t('coop.forecast.overdue')}</Badge>}</div>
         </div>
       ),
     },

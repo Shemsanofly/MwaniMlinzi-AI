@@ -5,7 +5,7 @@ import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { useFarmerFarm } from '../../hooks/useFarmerFarm.js';
 import { farmApi } from '../../api/endpoints.js';
 import { Button, Card, EmptyState, ErrorState, FormError, Notice, PageHeader, PageLoader, SourceBadge, Spinner, cx } from '../../components/ui/index.jsx';
-import { ModelStatusBadge, RISK_ICON, RiskCard } from '../../components/risk/RiskComponents.jsx';
+import { ModelStatusBadge, NoLiveDataNote, RISK_ICON, RiskCard } from '../../components/risk/RiskComponents.jsx';
 import { levelRank, riskStyle } from '../../utils/risk.js';
 import { dateTime } from '../../utils/format.js';
 import { ActionRecordedNotice, FarmGate, FarmSwitcher, SectionTitle, sortPredictions, useInvalidateFarm, useRecordAction } from './components/shared.jsx';
@@ -144,6 +144,7 @@ function RiskBody({ ff }) {
         : (
           <>
             {risk.insufficientData && risk.insufficientDataMessage && <Notice tone="warning" className="mb-3">{risk.insufficientDataMessage[lang]}</Notice>}
+            <NoLiveDataNote predictions={preds} className="mb-3" />
             {!preds.length ? (
               <EmptyState title={t('farmer.risk.noPredictions')} message={t('farmer.risk.noPredictionsText')} />
             ) : (

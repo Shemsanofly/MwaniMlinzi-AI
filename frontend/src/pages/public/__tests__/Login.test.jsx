@@ -19,7 +19,7 @@ function renderAt(entry) {
       <I18nProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/buyer/dashboard" element={<p>BUYER HOME</p>} />
+          <Route path="/farmer/dashboard" element={<p>FARMER HOME</p>} />
           <Route path="/admin/users" element={<p>ADMIN USERS</p>} />
         </Routes>
       </I18nProvider>
@@ -34,30 +34,42 @@ describe('Login page', () => {
     auth.login.mockReset();
   });
 
+  test('the eye icon shows and hides the typed password', async () => {
+    renderAt('/login');
+    const pw = screen.getByLabelText(/Password/);
+    await userEvent.type(pw, 'Secret123');
+    expect(pw).toHaveAttribute('type', 'password');
+    await userEvent.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(pw).toHaveAttribute('type', 'text');
+    await userEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+    expect(pw).toHaveAttribute('type', 'password');
+    expect(auth.login).not.toHaveBeenCalled();
+  });
+
   test('logs in with a phone number', async () => {
-    auth.login.mockResolvedValue({ id: 'u0', primaryRole: 'BUYER' });
+    auth.login.mockResolvedValue({ id: 'u0', primaryRole: 'FARMER' });
     renderAt('/login');
     await userEvent.type(screen.getByLabelText(/Phone number or email/), '0777 000 001');
     await userEvent.type(screen.getByLabelText(/Password/), 'Secret123');
     await userEvent.click(screen.getByRole('button', { name: /Log in/ }));
     expect(auth.login).toHaveBeenCalledWith('0777 000 001', 'Secret123');
-    expect(await screen.findByText('BUYER HOME')).toBeInTheDocument();
+    expect(await screen.findByText('FARMER HOME')).toBeInTheDocument();
   });
 
   test('prefills the email from ?email=, submits and navigates to the home of the user role', async () => {
-    auth.login.mockResolvedValue({ id: 'u1', primaryRole: 'BUYER' });
-    renderAt('/login?email=buyer%40demo.mwanimlinzi.local');
+    auth.login.mockResolvedValue({ id: 'u1', primaryRole: 'FARMER' });
+    renderAt('/login?email=farmer%40example.com');
     const email = screen.getByLabelText(/Phone number or email/);
-    expect(email).toHaveValue('buyer@demo.mwanimlinzi.local');
+    expect(email).toHaveValue('farmer@example.com');
     await userEvent.type(screen.getByLabelText(/Password/), 'Secret123');
     await userEvent.click(screen.getByRole('button', { name: /Log in/ }));
-    expect(auth.login).toHaveBeenCalledWith('buyer@demo.mwanimlinzi.local', 'Secret123');
-    expect(await screen.findByText('BUYER HOME')).toBeInTheDocument();
+    expect(auth.login).toHaveBeenCalledWith('farmer@example.com', 'Secret123');
+    expect(await screen.findByText('FARMER HOME')).toBeInTheDocument();
   });
 
   test('returns to the protected page the user came from', async () => {
     auth.login.mockResolvedValue({ id: 'u2', primaryRole: 'ADMIN' });
-    renderAt({ pathname: '/login', state: { from: '/admin/users', email: 'admin@demo.mwanimlinzi.local' } });
+    renderAt({ pathname: '/login', state: { from: '/admin/users', email: 'admin@example.com' } });
     await userEvent.type(screen.getByLabelText(/Password/), 'Secret123');
     await userEvent.click(screen.getByRole('button', { name: /Log in/ }));
     expect(await screen.findByText('ADMIN USERS')).toBeInTheDocument();

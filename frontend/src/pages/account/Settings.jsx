@@ -3,7 +3,7 @@ import { BellRing, KeyRound, Languages, Phone, Save } from 'lucide-react';
 import { authApi } from '../../api/endpoints.js';
 import { useAuth } from '../../stores/AuthContext.jsx';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
-import { Button, Card, CardHeader, Field, FormError, Notice, PageHeader, cx } from '../../components/ui/index.jsx';
+import { Button, Card, CardHeader, Field, FormError, Notice, PageHeader, cx, PasswordInput } from '../../components/ui/index.jsx';
 import { formatTzPhone, normalizeTzPhone } from '../../utils/phone.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -159,13 +159,13 @@ export default function AccountSettings() {
         <CardHeader icon={KeyRound} title={t('account.passwordTitle')} />
         <form onSubmit={savePassword} className="space-y-4 p-4 sm:p-5" noValidate>
           <Field label={t('account.currentPassword')} htmlFor="acc-pw-current" required>
-            <input id="acc-pw-current" type="password" autoComplete="current-password" className="input" value={pw.current} onChange={(e) => setPw((p) => ({ ...p, current: e.target.value }))} />
+            <PasswordInput id="acc-pw-current" autoComplete="current-password" value={pw.current} onChange={(e) => setPw((p) => ({ ...p, current: e.target.value }))} />
           </Field>
           <Field label={t('account.newPassword')} htmlFor="acc-pw-new" required hint={t('public.register.passwordHint')}>
-            <input id="acc-pw-new" type="password" autoComplete="new-password" className="input" value={pw.next} onChange={(e) => setPw((p) => ({ ...p, next: e.target.value }))} />
+            <PasswordInput id="acc-pw-new" autoComplete="new-password" value={pw.next} onChange={(e) => setPw((p) => ({ ...p, next: e.target.value }))} />
           </Field>
           <Field label={t('public.form.confirmPassword')} htmlFor="acc-pw-confirm" required error={pwErr}>
-            <input id="acc-pw-confirm" type="password" autoComplete="new-password" className="input" value={pw.confirm} onChange={(e) => setPw((p) => ({ ...p, confirm: e.target.value }))} />
+            <PasswordInput id="acc-pw-confirm" autoComplete="new-password" value={pw.confirm} onChange={(e) => setPw((p) => ({ ...p, confirm: e.target.value }))} />
           </Field>
           <FormError error={errorFor('password')} />
           <div className="flex items-center gap-3">

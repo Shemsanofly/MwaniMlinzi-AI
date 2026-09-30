@@ -30,13 +30,16 @@ http.interceptors.request.use((config) => {
 let onUnauthorized = null;
 export const setUnauthorizedHandler = (fn) => { onUnauthorized = fn; };
 
+const unreachable = () => new ApiError({ status: 0, code: 'NETWORK_ERROR', message: 'Cannot reach the MwaniMlinzi server. Check your connection or that the backend is running.' });
+
 http.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (!err.response) {
-      return Promise.reject(new ApiError({ status: 0, code: 'NETWORK_ERROR', message: 'Cannot reach the MwaniMlinzi server. Check your connection or that the backend is running.' }));
-    }
+    if (!err.response) return Promise.reject(unreachable());
     const body = err.response.data || {};
+    // 502/503/504 without the API's own error body come from a proxy or gateway (e.g. the dev-server proxy
+    // while the backend is stopped): the API was never reached, so report it as a connection problem.
+    if ([502, 503, 504].includes(err.response.status) && !body.error) return Promise.reject(unreachable());
     const e = new ApiError({
       status: err.response.status,
       code: body.error?.code || 'ERROR',

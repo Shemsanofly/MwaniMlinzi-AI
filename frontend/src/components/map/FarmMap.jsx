@@ -33,7 +33,6 @@ export default function FarmMap({ farms = [], height = 480, renderPopup, linkTo,
                 {renderPopup ? renderPopup(f) : (
                   <div className="min-w-[200px] space-y-1 text-sm">
                     <p className="font-semibold">{f.farmCode} — {f.name}</p>
-                    {f.isDemo && <p className="text-xs font-semibold text-violet-700">{t('common.demoFarm')}</p>}
                     {f.farmer?.fullName && <p>{t('common.farmer')}: {f.farmer.fullName}</p>}
                     <p>{t('common.cropAge')}: {f.cropAgeDays != null ? t('common.days', { n: f.cropAgeDays }) : '—'}</p>
                     <p>{t('nav.risk')}: <span style={{ color: style.hex, fontWeight: 600 }}>{level ? t(`risk.level.${level}`) : '—'}</span></p>
@@ -53,9 +52,6 @@ export default function FarmMap({ farms = [], height = 480, renderPopup, linkTo,
         })}
       </MapContainer>
       <MapLegend />
-      {located.some((f) => f.isDemo) && (
-        <p className="mt-1 text-xs text-violet-700">{t('map.demoLocations')}</p>
-      )}
     </div>
   );
 }

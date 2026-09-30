@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { CheckCircle2, KeyRound, MessageSquareText } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { authApi } from '../../api/endpoints.js';
-import { Button, Field, FormError, Notice } from '../../components/ui/index.jsx';
+import { Button, Field, FormError, Notice, PasswordInput } from '../../components/ui/index.jsx';
 import { normalizeTzPhone } from '../../utils/phone.js';
 import AuthShell from './components/AuthShell.jsx';
+import LoginAside from './components/LoginAside.jsx';
 
 const PASSWORD_OK = (p) => p.length >= 8 && /[A-Za-z]/.test(p) && /\d/.test(p);
 
@@ -49,7 +50,7 @@ export default function ForgotPassword() {
 
   if (step === 'done') {
     return (
-      <AuthShell title={t('public.reset.doneTitle')}>
+      <AuthShell aside={<LoginAside />} title={t('public.reset.doneTitle')}>
         <div className="flex flex-col items-center gap-3 text-center" role="status">
           <CheckCircle2 className="h-12 w-12 text-seaweed-600" aria-hidden />
           <p className="text-slate-700">{t('public.reset.doneText')}</p>
@@ -60,7 +61,7 @@ export default function ForgotPassword() {
   }
 
   return (
-    <AuthShell title={t('public.reset.title')} subtitle={step === 'phone' ? t('public.reset.subtitle') : null}>
+    <AuthShell aside={<LoginAside />} title={t('public.reset.title')} subtitle={step === 'phone' ? t('public.reset.subtitle') : null}>
       {step === 'phone' ? (
         <form onSubmit={sendCode} className="space-y-4" noValidate>
           <Field label={t('public.form.phone')} htmlFor="reset-phone" required error={errors.phone} hint={t('public.reset.phoneHint')}>
@@ -76,7 +77,7 @@ export default function ForgotPassword() {
             <input id="reset-code" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} className="input tracking-[0.3em]" placeholder="123456" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} aria-invalid={!!errors.code} />
           </Field>
           <Field label={t('public.reset.newPassword')} htmlFor="reset-password" required error={errors.password} hint={t('public.register.passwordHint')}>
-            <input id="reset-password" type="password" autoComplete="new-password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={!!errors.password} />
+            <PasswordInput id="reset-password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={!!errors.password} />
           </Field>
           <FormError error={error} />
           <Button type="submit" size="lg" className="w-full" loading={pending} icon={KeyRound}>{pending ? t('public.reset.saving') : t('public.reset.save')}</Button>

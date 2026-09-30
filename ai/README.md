@@ -1,48 +1,47 @@
-# ai/ — datasets, models and training scripts
+# ai/ — model training from field outcomes
 
 The ML code used at runtime lives in `backend/src/ai/ml/` (feature vector, logistic regression, metrics). This folder holds
-the offline pipeline and its artefacts. No Python is required — everything runs on Node.js.
+the offline training script and the model files it produces. No Python is required — everything runs on Node.js.
+
+The rule-based risk engine is the default and is always available. ML models are optional and are trained **only on
+recorded field outcomes**; nothing is generated or invented.
 
 ```
 ai/
 ├── scripts/
-│   ├── generateDataset.js   synthetic dataset (500–20,000 records)
-│   └── trainModel.js        load → validate → preprocess → train → evaluate → save → register
-├── datasets/                synthetic_seaweed_dataset.json / .csv   (generated, git-ignored)
+│   └── trainModel.js        load field outcomes → validate → preprocess → train → evaluate → save → register
+├── datasets/                (unused; kept for exported datasets, git-ignored)
 └── models/                  <RISK_TYPE>_vN.json, <RISK_TYPE>_vN.metrics.json, last_training_summary.json (generated, git-ignored)
 ```
 
 ## Commands (from `backend/`)
 
 ```bash
-npm run ai:dataset                            # 1500 records, seed 42
-npm run ai:dataset -- --n 5000 --seed 7
-npm run ai:train                              # register models as TRAINED (rule engine still used)
+npm run ai:train                              # train from field outcomes; register models as TRAINED (rule engine still used)
 npm run ai:train -- --activate                # register and activate (HYBRID mode)
-npm run ai:train -- --include-field           # also use recorded outcomes from PostgreSQL
-npm run ai:train -- --no-db                   # train and save files without touching the database
 ```
 
-Scripts can also be run directly: `node ai/scripts/generateDataset.js`, `node ai/scripts/trainModel.js` (they read
-`backend/.env` for `DATABASE_URL`).
+The script can also be run directly: `node ai/scripts/trainModel.js [--activate]` (it reads `backend/.env` for `DATABASE_URL`).
 
-## Dataset
+## Training data
 
-Each record: `{ id, synthetic_demo_data: true, species, month, features{…29 features…}, labels{ HEAT_ICE_ICE, STORM_LINE_DAMAGE,
-POOR_GROWTH, HARVEST_WINDOW }, harvestOutcome{ yieldKgDryPerLine, lossEvent } }`. Features: SST, SST anomaly, anomaly days,
-SST trend, waves, wind, current, rainfall, salinity, chlorophyll, humidity, crop age, maturity ratio, species heat sensitivity,
-exposure, anchoring, observation flags (whitening, breakage, epiphytes, disease, condition, slow growth, loose gear, turbid
-water, % affected), history (ice-ice/storm loss rates, yield ratio).
+Each training record is a stored, non-simulation risk prediction (its input feature vector from
+`risk_predictions.features`) labelled by the outcome a farmer later recorded for it (`action_outcomes.risk_materialized`:
+did the risk happen?). These records come from the feedback loop: prediction → recommendation → farmer action → outcome.
 
-**This is synthetic demo data from an invented latent process. It must never be presented as field data**, and metrics
-from models trained on it do not measure real-world accuracy.
+A risk type is trained only when it has at least `ai.minTrainingRecords` valid records (default 300, **Admin →
+Settings**) and at least 20 examples of each class. Otherwise it is skipped with a message and the rule-based engine
+stays in use for it. On a new installation all risk types are skipped until enough outcomes have been recorded.
+
+Metrics (precision, recall, F1, accuracy, ROC-AUC, confusion matrix) are computed on a stratified 20 % hold-out of those
+field outcomes.
 
 ## Model artefact
 
 ```json
 { "riskType": "HEAT_ICE_ICE", "version": "v1", "algorithm": "logistic_regression_gd_l2_balanced",
   "featureNames": [...], "weights": [...], "bias": -0.4, "means": [...], "stds": [...],
-  "trainedAt": "...", "trainingRecords": 1228, "testRecords": 307, "syntheticData": true,
+  "trainedAt": "...", "trainingRecords": ..., "testRecords": ..., "syntheticData": false, "dataset": "field-outcomes",
   "metrics": { "precision": ..., "recall": ..., "f1": ..., "accuracy": ..., "rocAuc": ..., "confusionMatrix": { "tp": ..., "fp": ..., "tn": ..., "fn": ... } } }
 ```
 

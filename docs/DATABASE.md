@@ -72,21 +72,39 @@ npx prisma migrate dev     # applies migrations (creates ~45 tables)
 
 For production / CI: `npx prisma migrate deploy` (`npm run prisma:deploy`).
 
-## 7. Seed demo data
+## 7. Seed reference data and the first admin
 
 ```bash
 npm run seed
 ```
 
-⚠️ The seed **wipes all data** in the configured database first (it refuses in `NODE_ENV=production` unless run with `--force`).
-It creates: roles & permissions, 2 seaweed species, 17 Action Library entries, default system settings, 3 demo
-cooperatives, 30 demo farmers, 50 demo farms (Unguja south-east coast and Pemba), active and past planting cycles,
-harvest/loss/quality/drying records, 14 days of **demo** environmental history per farm, observations, historical
-predictions with actions and outcomes (feedback-loop data), and then runs the **real** risk engine, action engine, alert
-service and harvest forecast service for every farm. All demo rows have `is_demo = true`.
+The seed is **non-destructive** and safe to re-run (also in production). It upserts roles and permissions (FARMER,
+ADMIN), the 2 seaweed species (`KAPPA`, `EUCH`), default system settings and the 17 starter Action Library entries
+(source *"MwaniMlinzi starter rule set v1 — awaiting validation by local seaweed extension experts"*; existing entries
+are left untouched so expert edits and validations are kept). If no admin exists it creates one:
 
-The demo password is `DEMO_PASSWORD` from `.env`, or a generated one printed at the end and saved to
-`backend/DEMO_CREDENTIALS.local.txt`.
+- email `ADMIN_EMAIL` (default `admin@mwanimlinzi.local`)
+- password `ADMIN_PASSWORD` (at least 12 characters), or — if empty — a generated password that is printed once and
+  saved to `backend/ADMIN_CREDENTIALS.local.txt` (git-ignored). Change it after the first login.
+
+No farmers, farms, observations or environmental data are created. Farmers register themselves (web or USSD), and all
+environmental readings come from live providers.
+
+### Upgrading a database that still holds old demo data
+
+The migration `20260930090000_real_data_only` deletes readings produced by the old demo generator, marks predictions
+that used them as `UNAVAILABLE`, removes the `is_demo` and `demo_scenario` columns and the `DEMO` data source:
+
+```bash
+npx prisma migrate deploy
+```
+
+Farms, users and records created by the old demo seed are not deleted by the migration. For a completely clean start:
+
+```bash
+npx prisma migrate reset     # drops and recreates the database — all data is lost
+npm run seed
+```
 
 ## 8. Verify tables in pgAdmin
 
@@ -97,11 +115,19 @@ Right-click the `mwanimlinzi` database → **Refresh**, then expand **Schemas �
 Useful queries (Tools → Query Tool):
 
 ```sql
--- Latest risk per demo scenario farm
-SELECT DISTINCT ON (f.farm_code, p.risk_type) f.farm_code, p.risk_type, p.risk_level, round(p.probability::numeric, 2) AS probability, p.created_at
+-- Latest real (non-simulation) risk per farm and risk type, with its data source
+SELECT DISTINCT ON (f.farm_code, p.risk_type) f.farm_code, p.risk_type, p.risk_level, round(p.probability::numeric, 2) AS probability, p.data_source, p.created_at
 FROM risk_predictions p JOIN farms f ON f.id = p.farm_id
-WHERE p.is_simulation = false AND f.farm_code IN ('FARM001','FARM002','FARM003','FARM004','FARM005')
+WHERE p.is_simulation = false
 ORDER BY f.farm_code, p.risk_type, p.created_at DESC;
+
+-- Latest environmental reading per farm: source (LIVE/CACHED) and providers
+SELECT DISTINCT ON (f.farm_code) f.farm_code, e.source, w.provider AS weather_provider, o.provider AS ocean_provider,
+       e.sea_surface_temp_c, e.wave_height_m, e.wind_speed_kmh, e.rainfall_mm, e.observed_at
+FROM environmental_observations e JOIN farms f ON f.id = e.farm_id
+LEFT JOIN weather_observations w ON w.id = e.weather_observation_id
+LEFT JOIN ocean_observations o ON o.id = e.ocean_observation_id
+ORDER BY f.farm_code, e.observed_at DESC;
 
 -- Explanation factors of a prediction
 SELECT code, label, value, contribution, direction FROM risk_factors WHERE prediction_id = '<uuid>' ORDER BY contribution DESC;
@@ -130,11 +156,11 @@ You can also browse data with `npx prisma studio` (http://localhost:5555).
 | Farmers & cooperatives | `farmers`, `cooperatives`, `cooperative_members` |
 | Farms | `farms`, `farm_locations`, `seaweed_species`, `planting_cycles` |
 | Observations | `farm_observations`, `disease_observations`, `uploaded_files` |
-| Environment | `weather_observations`, `ocean_observations`, `environmental_observations` (per-farm snapshot used by the AI; `source` = LIVE/CACHED/DEMO) |
+| Environment | `weather_observations`, `ocean_observations`, `environmental_observations` (per-farm snapshot used by the AI; `source` = LIVE/CACHED; missing values are `null`). Predictions store `data_source` = LIVE/CACHED/UNAVAILABLE/SIMULATION |
 | AI | `risk_predictions`, `risk_factors`, `action_library`, `action_recommendations` |
 | Feedback loop | `farmer_actions`, `action_outcomes`, `model_feedback` |
 | Harvest | `harvest_records`, `loss_records`, `quality_records`, `drying_records`, `harvest_forecasts` |
-| Buyers | `buyers`, `buyer_demand` |
+| Buyers (legacy, unused by the app; `harvest_records.buyer_id` kept for older records) | `buyers`, `buyer_demand` |
 | Alerts | `alerts`, `notifications`, `notification_logs` |
 | ML lifecycle | `ml_models`, `model_predictions`, `model_metrics` |
 | Operations | `extension_notes`, `ussd_sessions`, `sms_messages`, `job_runs`, `audit_logs`, `system_settings` |
@@ -170,4 +196,6 @@ In pgAdmin: right-click the database → **Backup…** / **Restore…**.
 
 `npm test` uses a separate database named `<your database>_test` (e.g. `mwanimlinzi_test`), or `TEST_DATABASE_URL` if set.
 Prisma creates it automatically if your database user may create databases (otherwise create it once with
-`CREATE DATABASE mwanimlinzi_test;`); the tests migrate and seed it on every run, so never point it at real data.
+`CREATE DATABASE mwanimlinzi_test;`). Every run migrates it and loads test-only fixtures from `backend/tests/fixtures/`
+(including deterministic environmental values injected as a fake provider), so never point it at real data. Tests set
+`WEATHER_PROVIDER=none` and `OCEAN_PROVIDER=none` and never call live APIs. The fixture data is never used by the app.

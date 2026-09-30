@@ -14,12 +14,15 @@ export const DEFAULT_SETTINGS = {
   'ai.minTrainingRecords': { value: 300, description: 'Minimum labelled records required before a model may be trained.' },
   'actions.requireValidated': {
     value: false,
-    description: 'If true, only action-library entries validated by an extension officer can be recommended.',
+    description: 'If true, only action-library entries validated by an admin (checked with local seaweed extension experts) can be recommended.',
   },
   'alerts.missingReportDays': { value: 14, description: 'Raise a MISSING_REPORT alert when an active farm has no observation for this many days.' },
   'alerts.dedupHours': { value: 24, description: 'Do not repeat the same alert type for a farm within this many hours.' },
   'environment.maxCacheAgeHours': { value: 48, description: 'Cached LIVE environmental data older than this is not reused.' },
-  'environment.preferLive': { value: true, description: 'Use live providers when DEMO_MODE=false and providers are configured.' },
+  'drying.thresholds': {
+    value: { cautionProbability: 30, badProbability: 60, cautionRainMm: 1, badRainMm: 5 },
+    description: 'Drying-weather verdict during 07:00–18:00: BAD above badProbability % or badRainMm; CAUTION from cautionProbability % or cautionRainMm. Starter values awaiting local validation.',
+  },
   'notifications.smsEnabled': { value: true, description: "Master switch for SMS notifications (sent through Africa's Talking when AT_USERNAME and AT_API_KEY are set; otherwise logged as NOT_CONFIGURED)." },
 };
 

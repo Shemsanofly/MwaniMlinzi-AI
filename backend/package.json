@@ -12,15 +12,13 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
-    "lint": "eslint src tests prisma/seed.js prisma/seedReference.js prisma/data",
+    "lint": "eslint src tests prisma/seed.js prisma/data",
     "seed": "node prisma/seed.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "ai:dataset": "node ../ai/scripts/generateDataset.js",
-    "ai:train": "node ../ai/scripts/trainModel.js",
-    "seed:reference": "node prisma/seedReference.js"
+    "ai:train": "node ../ai/scripts/trainModel.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
@@ -52,6 +50,7 @@
     "testEnvironment": "node",
     "transform": {},
     "globalSetup": "<rootDir>/tests/globalSetup.js",
+    "globalTeardown": "<rootDir>/tests/globalTeardown.js",
     "setupFiles": [
       "<rootDir>/tests/setupEnv.js"
     ],

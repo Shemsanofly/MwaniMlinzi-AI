@@ -12,7 +12,7 @@ async function cacheLookup(kind, { latitude, longitude }) {
     ? await prisma.weatherObservation.findFirst({ where, orderBy: { createdAt: 'desc' } })
     : await prisma.oceanObservation.findFirst({ where, orderBy: { createdAt: 'desc' } });
   if (!row) return null;
-  const { id, createdAt, source, isDemo, ...rest } = row;
+  const { id, createdAt, source, ...rest } = row;
   return rest;
 }
 
@@ -23,7 +23,8 @@ export function getEnvironmentalProvider() {
 }
 export function setEnvironmentalProvider(p) { providerInstance = p; }
 
-const combinedSource = (a, b) => (a === 'DEMO' || b === 'DEMO' ? 'DEMO' : a === 'CACHED' || b === 'CACHED' ? 'CACHED' : 'LIVE');
+/** CACHED if any available block came from the cache; a missing block stays null (never invented). */
+const combinedSource = (w, o) => (w?.source === 'CACHED' || o?.source === 'CACHED' ? 'CACHED' : 'LIVE');
 
 /** Consecutive days (ending today) whose max SST anomaly exceeded 0.5 °C, plus the 7-day SST trend. */
 export async function computeSstPersistence(farmId, current) {
@@ -53,38 +54,41 @@ export async function computeSstPersistence(farmId, current) {
 }
 
 export const EnvironmentService = {
-  /** Fetch fresh data for a farm through the provider chain and persist it. */
+  /**
+   * Fetch fresh data for a farm through the provider chain and persist it.
+   * Returns null (and stores nothing) when neither weather nor ocean data is available.
+   */
   async refreshForFarm(farm) {
     const loc = farm.location;
     if (!loc) return null;
-    const useLive = (await getSetting('environment.preferLive')) !== false;
-    const { weather, ocean } = await getEnvironmentalProvider().fetch({ latitude: loc.latitude, longitude: loc.longitude, profile: farm.demoScenario || 'NORMAL' }, { useLive });
-    const isDemoW = weather.source === 'DEMO';
-    const isDemoO = ocean.source === 'DEMO';
-    const w = await prisma.weatherObservation.create({
+    const { weather, ocean, errors } = await getEnvironmentalProvider().fetch({ latitude: loc.latitude, longitude: loc.longitude });
+    if (!weather && !ocean) {
+      console.warn(`[environment] no live or cached data for ${farm.farmCode || farm.id}:`, JSON.stringify(errors));
+      return null;
+    }
+    const w = weather && await prisma.weatherObservation.create({
       data: {
         latitude: loc.latitude, longitude: loc.longitude, observedAt: weather.observedAt || new Date(), source: weather.source, provider: weather.provider,
         airTemperatureC: weather.airTemperatureC, rainfallMm: weather.rainfallMm, windSpeedKmh: weather.windSpeedKmh,
-        windDirectionDeg: weather.windDirectionDeg, humidityPct: weather.humidityPct, condition: weather.condition, isDemo: isDemoW,
+        windDirectionDeg: weather.windDirectionDeg, humidityPct: weather.humidityPct, condition: weather.condition,
       },
     });
-    const o = await prisma.oceanObservation.create({
+    const o = ocean && await prisma.oceanObservation.create({
       data: {
         latitude: loc.latitude, longitude: loc.longitude, observedAt: ocean.observedAt || new Date(), source: ocean.source, provider: ocean.provider,
         seaSurfaceTempC: ocean.seaSurfaceTempC, sstAnomalyC: ocean.sstAnomalyC, waveHeightM: ocean.waveHeightM,
-        currentVelocityMs: ocean.currentVelocityMs, salinityPsu: ocean.salinityPsu, chlorophyllMgM3: ocean.chlorophyllMgM3, isDemo: isDemoO,
+        currentVelocityMs: ocean.currentVelocityMs, salinityPsu: ocean.salinityPsu, chlorophyllMgM3: ocean.chlorophyllMgM3,
       },
     });
-    const persistence = await computeSstPersistence(farm.id, ocean);
+    const persistence = ocean ? await computeSstPersistence(farm.id, ocean) : { sstAnomalyDays: null };
     return prisma.environmentalObservation.create({
       data: {
-        farmId: farm.id, observedAt: new Date(), source: combinedSource(weather.source, ocean.source), weatherSource: weather.source, oceanSource: ocean.source,
-        weatherObservationId: w.id, oceanObservationId: o.id,
-        seaSurfaceTempC: ocean.seaSurfaceTempC, sstAnomalyC: ocean.sstAnomalyC, sstAnomalyDays: persistence.sstAnomalyDays,
-        waveHeightM: ocean.waveHeightM, currentVelocityMs: ocean.currentVelocityMs, salinityPsu: ocean.salinityPsu, chlorophyllMgM3: ocean.chlorophyllMgM3,
-        airTemperatureC: weather.airTemperatureC, rainfallMm: weather.rainfallMm, windSpeedKmh: weather.windSpeedKmh,
-        windDirectionDeg: weather.windDirectionDeg, humidityPct: weather.humidityPct, weatherCondition: weather.condition,
-        isDemo: isDemoW || isDemoO,
+        farmId: farm.id, observedAt: new Date(), source: combinedSource(weather, ocean), weatherSource: weather?.source ?? null, oceanSource: ocean?.source ?? null,
+        weatherObservationId: w?.id ?? null, oceanObservationId: o?.id ?? null,
+        seaSurfaceTempC: ocean?.seaSurfaceTempC ?? null, sstAnomalyC: ocean?.sstAnomalyC ?? null, sstAnomalyDays: persistence.sstAnomalyDays,
+        waveHeightM: ocean?.waveHeightM ?? null, currentVelocityMs: ocean?.currentVelocityMs ?? null, salinityPsu: ocean?.salinityPsu ?? null, chlorophyllMgM3: ocean?.chlorophyllMgM3 ?? null,
+        airTemperatureC: weather?.airTemperatureC ?? null, rainfallMm: weather?.rainfallMm ?? null, windSpeedKmh: weather?.windSpeedKmh ?? null,
+        windDirectionDeg: weather?.windDirectionDeg ?? null, humidityPct: weather?.humidityPct ?? null, weatherCondition: weather?.condition ?? null,
       },
       include: { weather: { select: { provider: true } }, ocean: { select: { provider: true } } },
     });

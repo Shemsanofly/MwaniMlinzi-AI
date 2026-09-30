@@ -100,8 +100,8 @@ export async function cooperativeDashboard(req, res) {
   if (!isUuid(id)) throw notFound('Cooperative');
   const coop = await prisma.cooperative.findUnique({ where: { id } });
   if (!coop) throw notFound('Cooperative');
-  const allowed = hasRole(req.user, ROLES.ADMIN, ROLES.EXTENSION_OFFICER) || (hasRole(req.user, ROLES.COOPERATIVE_ADMIN) && req.user.cooperativeId === id);
-  if (!allowed) throw forbidden('You can only view your own cooperative');
+  const allowed = hasRole(req.user, ROLES.ADMIN);
+  if (!allowed) throw forbidden('Only admins can view cooperative operations');
   const members = await prisma.cooperativeMember.count({ where: { cooperativeId: id, isActive: true } });
   const data = await portfolio({ cooperativeId: id });
   // Farm performance: yield vs estimate per farm from harvest records.
@@ -121,8 +121,8 @@ export async function cooperativeDashboard(req, res) {
 
 export async function myCooperativeDashboard(req, res) {
   let coopId = req.user.cooperativeId;
-  // Admins / extension officers without a cooperative get the first one (or ?cooperativeId=) so the view is usable.
-  if (!coopId && hasRole(req.user, ROLES.ADMIN, ROLES.EXTENSION_OFFICER)) {
+  // Admins without a cooperative get the first one (or ?cooperativeId=) so the view is usable.
+  if (!coopId && hasRole(req.user, ROLES.ADMIN)) {
     coopId = isUuid(req.query.cooperativeId) ? req.query.cooperativeId : (await prisma.cooperative.findFirst({ orderBy: { name: 'asc' }, select: { id: true } }))?.id;
   }
   if (!coopId) throw forbidden('Your account is not linked to a cooperative');
@@ -132,7 +132,7 @@ export async function myCooperativeDashboard(req, res) {
 
 export async function listCooperatives(req, res) {
   let where;
-  if (hasRole(req.user, ROLES.ADMIN, ROLES.EXTENSION_OFFICER, ROLES.BUYER)) where = {};
+  if (hasRole(req.user, ROLES.ADMIN)) where = {};
   else if (req.user.cooperativeId) where = { id: req.user.cooperativeId };
   else if (req.user.farmerId) where = { members: { some: { farmerId: req.user.farmerId } } };
   else where = { id: '00000000-0000-0000-0000-000000000000' };
@@ -143,14 +143,14 @@ export async function listCooperatives(req, res) {
 export async function cooperativeFarmers(req, res) {
   const { id } = req.params;
   if (!isUuid(id)) throw notFound('Cooperative');
-  const allowed = hasRole(req.user, ROLES.ADMIN, ROLES.EXTENSION_OFFICER) || (hasRole(req.user, ROLES.COOPERATIVE_ADMIN) && req.user.cooperativeId === id);
+  const allowed = hasRole(req.user, ROLES.ADMIN);
   if (!allowed) throw forbidden();
   const members = await prisma.cooperativeMember.findMany({
     where: { cooperativeId: id },
-    include: { farmer: { include: { user: { select: { fullName: true, phone: true, email: true, isDemo: true } }, farms: { select: { id: true, farmCode: true, name: true, status: true } } } } },
+    include: { farmer: { include: { user: { select: { fullName: true, phone: true, email: true } }, farms: { select: { id: true, farmCode: true, name: true, status: true } } } } },
     orderBy: { joinedAt: 'asc' },
   });
-  return ok(res, { farmers: members.map((m) => ({ id: m.farmer.id, farmerCode: m.farmer.farmerCode, fullName: m.farmer.user.fullName, phone: m.farmer.user.phone, village: m.farmer.village, district: m.farmer.district, isDemo: m.farmer.user.isDemo, joinedAt: m.joinedAt, farms: m.farmer.farms })) });
+  return ok(res, { farmers: members.map((m) => ({ id: m.farmer.id, farmerCode: m.farmer.farmerCode, fullName: m.farmer.user.fullName, phone: m.farmer.user.phone, village: m.farmer.village, district: m.farmer.district, joinedAt: m.joinedAt, farms: m.farmer.farms })) });
 }
 
 export async function extensionDashboard(_req, res) {

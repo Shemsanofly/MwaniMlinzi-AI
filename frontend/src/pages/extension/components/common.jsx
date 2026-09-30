@@ -8,9 +8,10 @@ import { Badge, Button, Card, CardHeader, Field, FormError, Modal, Notice, RiskB
 import { RISK_TYPES, riskStyle } from '../../../utils/risk.js';
 import { dateTime, num, pct, timeAgo } from '../../../utils/format.js';
 
-/** '/cooperative' or '/extension' depending on which staff area the page is rendered in. */
+/** '/admin', '/cooperative' or '/extension' depending on which staff area the page is rendered in. */
 export function useStaffBase() {
   const { pathname } = useLocation();
+  if (pathname.startsWith('/admin')) return '/admin';
   return pathname.startsWith('/cooperative') ? '/cooperative' : '/extension';
 }
 
@@ -83,8 +84,7 @@ export function AlertItem({ alert, farmLink, onChanged, compact = false }) {
           <RiskBadge level={alert.severity} />
           <Badge>{t(`extension.shared.alertType.${alert.type}`)}</Badge>
           {status !== 'ACTIVE' && <Badge className="bg-slate-50 text-slate-600 ring-slate-200"><CheckCircle2 className="h-3 w-3" />{t(`extension.shared.alertStatus.${status}`)}</Badge>}
-          {alert.isSimulation && <Badge className="bg-fuchsia-50 text-fuchsia-800 ring-fuchsia-300"><FlaskConical className="h-3 w-3" />{t('source.SIMULATION')}</Badge>}
-          {(farm?.isDemo || alert.isDemo) && <Badge className="bg-violet-50 text-violet-800 ring-violet-300">{t('source.demoBadge')}</Badge>}
+          {alert.isSimulation && <Badge className="bg-slate-100 text-slate-700 ring-slate-300"><FlaskConical className="h-3 w-3" />{t('source.SIMULATION')}</Badge>}
         </div>
         <p className="mt-1 font-semibold text-slate-900">{tx(alert, 'title')}</p>
         {!compact && <p className="text-sm text-slate-600">{tx(alert, 'message')}</p>}

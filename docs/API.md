@@ -32,9 +32,9 @@ deactivation apply immediately. Logout = the client discards the token (`POST /a
 | 503 | `DATABASE_UNAVAILABLE` |
 | 500 | `INTERNAL_ERROR` (no stack traces or SQL are ever returned) |
 
-**Scoping** — Farmers only see their own farms; cooperative admins only their cooperative's farms; extension officers and
-admins see all farms; buyers never see farm-level data (only anonymised aggregated supply). Writing farm records
-(observations, harvests, losses, actions, outcomes) is limited to the farm owner, extension officers and admins.
+**Scoping** — Farmers only see their own farms; admins see all farms and field operations
+(only anonymised aggregated supply). Writing farm records (observations, harvests, losses, actions, outcomes) is limited to
+the farm owner and admins.
 
 **Rate limits** — 1500 requests / 15 min per IP overall, 30 / 15 min for `/auth/login|register`, 30 / min for `/ai/chat`.
 
@@ -42,7 +42,7 @@ admins see all farms; buyers never see farm-level data (only anonymised aggregat
 
 | Method | Path | Description |
 |---|---|---|
-| GET | `/health` | `{ status, database, demoMode, providers{weather,ocean,llm,sms,ussd}, time }` (503 if DB down) |
+| GET | `/health` | `{ status, database, providers{ weather:{live}, ocean:{live}, llm, sms, ussd }, time }` — `live` is the active provider name or `null` when disabled (503 if DB down) |
 | GET | `/species` | Seaweed species |
 | GET | `/cooperatives/public` | `[{ code, name, district }]` for registration |
 
@@ -50,8 +50,8 @@ admins see all farms; buyers never see farm-level data (only anonymised aggregat
 
 | Method | Path | Body / notes |
 |---|---|---|
-| POST | `/auth/register` | `{ fullName, phone (Tanzanian mobile in any format: +255…, 255…, 07…, 06…; stored as +255XXXXXXXXX, unique), password (≥8, letter+digit), preferredLanguage: sw\|en, consent: true, email?, role?: FARMER\|BUYER, cooperativeCode?, companyName?, village?, district?, smsEnabled? }` → `{ token, user }` |
-| POST | `/auth/login` | `{ identifier (phone in any format, or email), password }` (`{ email, password }` still accepted) → `{ token, user{ id, email, fullName, phone, roles[], primaryRole, farmerId, buyerId, cooperativeId, preferredLanguage, smsEnabled, notifyRiskAlerts, notifyHarvest, notifySystem } }` |
+| POST | `/auth/register` | `{ fullName, phone (Tanzanian mobile in any format: +255…, 255…, 07…, 06…; stored as +255XXXXXXXXX, unique), password (≥8, letter+digit), preferredLanguage: sw\|en, consent: true, email?, role?: FARMER, cooperativeCode?, village?, district?, smsEnabled? }` → `{ token, user }` |
+| POST | `/auth/login` | `{ identifier (phone in any format, or email), password }` (`{ email, password }` still accepted) → `{ token, user{ id, email, fullName, phone, roles[], primaryRole, farmerId, cooperativeId, preferredLanguage, smsEnabled, notifyRiskAlerts, notifyHarvest, notifySystem } }` |
 | GET | `/auth/me` | `{ user, cooperative, memberships[] }` |
 | PATCH | `/auth/me` | `{ fullName?, phone?, email?, preferredLanguage?, smsEnabled?, notifyRiskAlerts?, notifyHarvest?, notifySystem? }` |
 | POST | `/auth/change-password` | `{ currentPassword, newPassword }` (400 `WRONG_PASSWORD` if the current one is wrong) |
@@ -59,18 +59,18 @@ admins see all farms; buyers never see farm-level data (only anonymised aggregat
 | POST | `/auth/reset-password` | `{ phone, code, newPassword }` → 400 `INVALID_CODE` if wrong/expired/used; a code expires after 15 min or 5 wrong tries. Only a hash of the code is stored; the SMS log shows `******` |
 | POST | `/auth/logout` | audit only |
 
-## Farms (FARMER, COOPERATIVE_ADMIN, EXTENSION_OFFICER, ADMIN)
+## Farms (FARMER, ADMIN)
 
 | Method | Path | Description |
 |---|---|---|
-| GET | `/farms?search&status&cooperativeId&district&riskLevel` | Farms in scope with `cropAgeDays`, `currentCycle`, `latestRisks{TYPE:{level,probability,confidence}}`, `overallRiskLevel`, `lastObservation`, `forecast`, `location`, `isDemo` |
+| GET | `/farms?search&status&cooperativeId&district&riskLevel` | Farms in scope with `cropAgeDays`, `currentCycle`, `latestRisks{TYPE:{level,probability,confidence}}`, `overallRiskLevel`, `lastObservation`, `forecast`, `location` |
 | POST | `/farms` | Create farm `{ name, speciesId, farmingMethod, exposure, anchoringMethod, areaHectares?, lineCount, latitude, longitude, locationName, district, region, cooperativeId?, notes?, plantingDate?, expectedHarvestDate?, linesPlanted? }` (admins/extension may pass `farmerId`). Runs the risk engine + forecast immediately if a planting date is given |
 | GET | `/farms/:id` | Farm detail incl. `plantingCycles[]` |
 | PATCH | `/farms/:id` | Update farm (incl. `status`) |
 | GET/POST | `/farms/:id/cycles` | Planting cycles / record planting `{ plantingDate, expectedHarvestDate?, linesPlanted, seedQuantityKg?, notes? }` (409 if a cycle is active) |
 | PATCH | `/farms/:id/cycles/:cycleId` | `{ status: ACTIVE\|HARVESTED\|FAILED }` |
 | GET/POST | `/farms/:id/observations` | Observation `{ cropCondition: GOOD\|FAIR\|POOR, whitening, breakage, epiphytes, diseaseSymptoms, unusualGrowth, growthCondition?, waterAppearance?, lineCondition?, anchorCondition?, percentAffected?, notes?, confidence, imageFileId?, observedAt? }` → `{ observation, risk }` — **the risk engine re-runs immediately** and `risk` is the full new result incl. alerts |
-| GET/POST | `/farms/:id/harvests` | `{ harvestDate, actualQuantity, estimatedQuantity?, unit: KG_DRY\|KG_WET, qualityGrade?, buyerId?, dryingMethod?, dryingDurationDays?, pricePerKg?, moisturePercent?, impurityPercent?, groundContact?, rainDuringDrying?, notes?, closeCycle=true }` → harvest with `differenceQuantity`, `lossPercent`, `totalValue` (estimate defaults to the current forecast) |
+| GET/POST | `/farms/:id/harvests` | `{ harvestDate, actualQuantity, estimatedQuantity?, unit: KG_DRY\|KG_WET, qualityGrade?, dryingMethod?, dryingDurationDays?, pricePerKg?, moisturePercent?, impurityPercent?, groundContact?, rainDuringDrying?, notes?, closeCycle=true }` → harvest with `differenceQuantity`, `lossPercent`, `totalValue` (estimate defaults to the current forecast) |
 | GET/POST | `/farms/:id/losses` | `{ lossDate, cause: ICE_ICE\|STORM\|EPIPHYTES\|GRAZING\|THEFT\|POOR_GROWTH\|OTHER, percentLost, quantityKg?, notes? }` |
 | GET | `/farms/:id/risks` | `{ predictions[], nextAction, insufficientData, insufficientDataMessage{en,sw}, modelStatus{mode,label}, calculatedAt }` (see prediction shape below) |
 | POST | `/farms/:id/risks/run` | Recalculate now (refreshes environment through the provider chain) |
@@ -81,8 +81,9 @@ admins see all farms; buyers never see farm-level data (only anonymised aggregat
 | GET/POST | `/farms/:id/outcomes` | Outcome `{ farmerActionId?, recommendationId?, predictionId?, outcomeType: NO_LOSS\|MINOR_LOSS\|MAJOR_LOSS\|TOTAL_LOSS\|HARVESTED, lossPercent?, riskMaterialized?, outcomeDate?, notes? }` → `{ outcome, feedback }` — links prediction → recommendation → action and auto-creates a `model_feedback` label (CORRECT / FALSE_POSITIVE / FALSE_NEGATIVE) |
 | GET | `/farms/:id/history` | Unified timeline `{ events[{ type, date, id, data }] }` |
 | GET | `/farms/:id/environment?days` | `{ current, history[], providers }` |
+| GET | `/farms/:id/outlook` | `{ outlook }` — `null`, or `{ fetchedAt, source: LIVE\|CACHED, providers, note{en,sw}, tides[], today{ date, lowTides[], nextWorkWindow, drying{ verdict GOOD\|CAUTION\|BAD, maxRainProbability, rainMm }, advice }, days[] }` (local Africa/Dar_es_Salaam times) |
 | GET | `/farms/:id/alerts?includeSimulation` | Farm alerts |
-| GET/POST | `/farms/:id/notes` | Extension notes `{ note, visitPriority?, visitBy? }` (POST: EXTENSION_OFFICER, COOPERATIVE_ADMIN, ADMIN) |
+| GET/POST | `/farms/:id/notes` | Field notes `{ note, visitPriority?, visitBy? }` (POST: ADMIN) |
 | GET | `/farms/predictions/:predictionId` | One prediction with factors |
 
 **Prediction shape**
@@ -92,28 +93,31 @@ admins see all farms; buyers never see farm-level data (only anonymised aggregat
   "id": "…", "riskType": "HEAT_ICE_ICE", "probability": 0.7782, "riskLevel": "HIGH", "confidence": 0.89,
   "forecastHorizonHours": 72, "modelType": "RULE", "modelVersion": "rules-v1", "ruleProbability": 0.7782, "mlProbability": null,
   "explanation": "Heat / Ice-Ice risk: HIGH (78%). Main reasons: …", "explanationSw": "Joto / Ice-Ice: Hatari kubwa (78%). Sababu kuu: …",
-  "dataSource": "DEMO", "trigger": "OBSERVATION", "isSimulation": false, "isDemo": true, "insufficientData": false, "createdAt": "…",
+  "dataSource": "LIVE", "trigger": "OBSERVATION", "isSimulation": false, "insufficientData": false, "createdAt": "…",
   "factors": [{ "code": "SST_ANOMALY", "label": "…", "labelSw": "…", "value": "+1.5°C", "contribution": 1.48, "direction": "INCREASES" }],
   "recommendation": { "id": "…", "status": "PENDING", "dueBy": "…", "riskType": "HEAT_ICE_ICE",
     "actionItem": { "code": "HEAT_HIGH_INSPECT_24H", "action": "Inspect lines within 24 hours and record whitening or breakage.", "actionSw": "Kagua mistari…", "urgency": "URGENT", "validated": false, "source": "…" } }
 }
 ```
 
+`dataSource`: `LIVE` or `CACHED` (environmental reading used), `UNAVAILABLE` (no reading — computed from farm data and
+farmer reports only, with lower confidence) or `SIMULATION` (what-if run).
+
 ## Environment
 
 | Method | Path | Description |
 |---|---|---|
-| GET | `/environment/current?farmId` | Current snapshot (refreshes if older than 6 h). Every record has `source`: `LIVE`, `CACHED`, `DEMO` |
+| GET | `/environment/current?farmId` | `{ farmId, farmCode, current, providers }` — current snapshot (refreshed if older than 6 h). `current.source` is `LIVE` or `CACHED`, with the weather/ocean provider names; values a provider does not supply are `null`. `current: null` = no reading available |
 | GET | `/environment/history?farmId&days` | History |
-| GET | `/environment/providers` | Configured live/demo providers |
+| GET | `/environment/providers` | `{ weather:{live}, ocean:{live} }` — active provider names (`null` = disabled) |
 
 ## Risk, simulation, feedback
 
 | Method | Path | Roles | Description |
 |---|---|---|---|
-| POST | `/risk/predict` | farmer (own farms) + staff | `{ farmId }` = real run. `{ farmId, overrides: { sstAnomalyC?, sstAnomalyDays?, waveHeightM?, windSpeedKmh?, rainfallMm?, currentVelocityMs?, salinityPsu? } }` = **simulation**: full pipeline, stored with `isSimulation=true`, response includes `baseline` (the real latest risk) |
+| POST | `/risk/predict` | farmer (own farms) + staff | `{ farmId }` = real run. `{ farmId, overrides: { sstAnomalyC?, sstAnomalyDays?, waveHeightM?, windSpeedKmh?, rainfallMm?, currentVelocityMs?, salinityPsu? } }` = **simulation** (used by the admin What-if planner): full pipeline, stored with `isSimulation=true` and `dataSource=SIMULATION`, never shown as real risk or sent to farmers; response includes `baseline` (the real latest risk) |
 | GET | `/risk/:farmId` | viewers | Latest risk |
-| POST | `/risk/predictions/:id/flag` | EXTENSION_OFFICER, ADMIN | `{ reason, feedbackType: FALSE_POSITIVE\|FALSE_NEGATIVE\|FLAGGED\|CORRECT }` |
+| POST | `/risk/predictions/:id/flag` | ADMIN | `{ reason, feedbackType: FALSE_POSITIVE\|FALSE_NEGATIVE\|FLAGGED\|CORRECT }` |
 
 ## Action library
 
@@ -122,7 +126,7 @@ admins see all farms; buyers never see farm-level data (only anonymised aggregat
 | GET | `/actions?riskType&enabled`, `/actions/:id` | staff, farmers |
 | POST | `/actions` | ADMIN — created unvalidated |
 | PATCH | `/actions/:id` | ADMIN — changing text/levels/conditions resets validation |
-| POST | `/actions/:id/validate` | EXTENSION_OFFICER, ADMIN — `{ validated, note? }` |
+| POST | `/actions/:id/validate` | ADMIN — `{ validated, note? }` |
 
 ## Alerts & notifications
 
@@ -133,23 +137,20 @@ admins see all farms; buyers never see farm-level data (only anonymised aggregat
 | GET | `/notifications?unread=true` | `{ notifications[], unread }` (in-app) |
 | PATCH | `/notifications/:id/read`, POST `/notifications/read-all` | |
 
-## Cooperatives, extension, buyers, forecasts
+## Cooperatives, field operations, forecasts
 
 | Method | Path | Roles | Description |
 |---|---|---|---|
 | GET | `/cooperatives` | any | In scope |
 | POST / PATCH | `/cooperatives`, `/cooperatives/:id` | ADMIN | `{ code, name, district, region, description? }` |
-| GET | `/cooperatives/mine/dashboard` | COOPERATIVE_ADMIN | Own cooperative dashboard |
-| GET | `/cooperatives/:id/dashboard` | coop admin (own), EXTENSION_OFFICER, ADMIN | `{ cooperative, members, cards{…}, charts{riskDistribution, harvestForecast, farmActivity, losses, alertsByType, observations}, farms[] (map), highRiskFarms[], recentAlerts[], missingReportFarms[], performance[], outcomes[], forecastSummary }` |
+| GET | `/cooperatives/mine/dashboard` | ADMIN | First/selected cooperative dashboard |
+| GET | `/cooperatives/:id/dashboard` | ADMIN | `{ cooperative, members, cards{…}, charts{riskDistribution, harvestForecast, farmActivity, losses, alertsByType, observations}, farms[] (map), highRiskFarms[], recentAlerts[], missingReportFarms[], performance[], outcomes[], forecastSummary }` |
 | GET | `/cooperatives/:id/farmers` | staff | Members |
-| GET | `/extension/dashboard` | EXTENSION_OFFICER, ADMIN | Portfolio of all farms + `pendingObservations`, `diseaseObservations`, `pendingRecommendations`, `visitPriority[]` |
-| GET / PATCH | `/extension/observations?reviewStatus`, `/extension/observations/:id/review` | EXTENSION_OFFICER, ADMIN | `{ status: REVIEWED\|FLAGGED, note? }` |
-| GET / PATCH | `/extension/recommendations?reviewStatus`, `/extension/recommendations/:id/review` | EXTENSION_OFFICER, ADMIN | Review recommendations |
-| GET | `/buyers` | any | Buyer list (for harvest records) |
-| GET | `/buyers/forecast?cooperativeId&district&from&to&days&minQuantityKg&grade` | BUYER, COOPERATIVE_ADMIN, ADMIN | `{ summary{horizons{next7Days,next14Days,next30Days,all}, byCooperative, byDistrict, byWeek, uncertaintyNote}, supply[] (anonymised), filters, demand[], qualityHistory[] }` |
-| POST | `/buyers/demand` | BUYER | `{ speciesId?, quantityKg, pricePerKg?, neededBy, minimumGrade?, notes? }` |
-| GET | `/forecasts/harvest?…same filters` | any (scoped; buyers anonymised) | `{ forecasts[], summary }` |
-| POST | `/forecasts/harvest/generate` | COOPERATIVE_ADMIN, ADMIN | Regenerate |
+| GET | `/extension/dashboard` | ADMIN | Field operations portfolio of all farms + `pendingObservations`, `diseaseObservations`, `pendingRecommendations`, `visitPriority[]` |
+| GET / PATCH | `/extension/observations?reviewStatus`, `/extension/observations/:id/review` | ADMIN | `{ status: REVIEWED\|FLAGGED, note? }` |
+| GET / PATCH | `/extension/recommendations?reviewStatus`, `/extension/recommendations/:id/review` | ADMIN | Review recommendations |
+| GET | `/forecasts/harvest?cooperativeId&district&from&to&days&minQuantityKg&grade` | any (scoped: farmers → own farms, admin → all) | `{ forecasts[], summary{horizons{next7Days,next14Days,next30Days,all}, byCooperative, byDistrict, byWeek, uncertaintyNote} }` |
+| POST | `/forecasts/harvest/generate` | ADMIN | Regenerate |
 
 ## AI assistant
 
@@ -195,7 +196,7 @@ farm the observation belongs to.
 | GET | `/admin/dashboard` | Counts, users by role, predictions by level, feedback, models, recent jobs |
 | GET / POST / PATCH | `/admin/users`, `/admin/users/:id` | List (`search`, `role`, `page`, `limit`), create `{ email, password, fullName, phone?, roles[], cooperativeId?, preferredLanguage }`, update `{ fullName?, phone?, isActive?, roles?, cooperativeId? }` |
 | GET | `/admin/roles` | Roles + permission keys |
-| GET / PUT | `/admin/settings`, `/admin/settings/:key` | `{ value }` — keys: `risk.thresholds`, `ai.mode`, `ai.mlBlendWeight`, `ai.minTrainingRecords`, `actions.requireValidated`, `alerts.missingReportDays`, `alerts.dedupHours`, `environment.maxCacheAgeHours`, `environment.preferLive`, `notifications.smsEnabled` (validated) |
+| GET / PUT | `/admin/settings`, `/admin/settings/:key` | `{ value }` — keys: `risk.thresholds`, `ai.mode`, `ai.mlBlendWeight`, `ai.minTrainingRecords`, `actions.requireValidated`, `alerts.missingReportDays`, `alerts.dedupHours`, `environment.maxCacheAgeHours`, `notifications.smsEnabled` (validated) |
 | GET / PATCH | `/admin/models`, `/admin/models/:id` | Models + held-out metrics + field evaluation; `{ status: ACTIVE\|TRAINED\|RETIRED }` (one ACTIVE per risk type) |
 | GET | `/admin/audit?action&entityType&userId&page` | Audit log |
 | GET / POST | `/admin/jobs`, `/admin/jobs/:name/run` | Scheduled jobs; **Run now** |

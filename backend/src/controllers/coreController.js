@@ -1,9 +1,7 @@
 import prisma from '../config/prisma.js';
-import { env } from '../config/env.js';
-import { ok, created } from '../utils/response.js';
-import { badRequest, forbidden, notFound } from '../utils/errors.js';
+import { ok } from '../utils/response.js';
+import { badRequest, notFound } from '../utils/errors.js';
 import { audit } from '../utils/audit.js';
-import { hasRole, ROLES } from '../middleware/auth.js';
 import { assertFarmAccess, farmScope, isUuid } from '../services/accessService.js';
 import { EnvironmentService } from '../services/environmentService.js';
 import { RiskService } from '../services/riskService.js';
@@ -32,7 +30,7 @@ async function resolveFarmForEnv(req) {
 export async function environmentCurrent(req, res) {
   const farm = await resolveFarmForEnv(req);
   const current = await EnvironmentService.currentForFarm(farm);
-  return ok(res, { farmId: farm.id, farmCode: farm.farmCode, current, demoMode: env.demoMode, providers: EnvironmentService.providerStatus() });
+  return ok(res, { farmId: farm.id, farmCode: farm.farmCode, current, providers: EnvironmentService.providerStatus() });
 }
 
 export async function environmentHistory(req, res) {
@@ -42,7 +40,7 @@ export async function environmentHistory(req, res) {
 }
 
 export async function environmentProviders(_req, res) {
-  return ok(res, { demoMode: env.demoMode, ...EnvironmentService.providerStatus() });
+  return ok(res, EnvironmentService.providerStatus());
 }
 
 /* ───────────── Risk & simulation ───────────── */
@@ -85,7 +83,6 @@ export async function flagPrediction(req, res) {
 
 export async function listAlerts(req, res) {
   const { status, severity, type, farmId, includeSimulation } = req.query;
-  if (hasRole(req.user, ROLES.BUYER) && req.user.roles.length === 1) throw forbidden();
   const alerts = await prisma.alert.findMany({
     where: {
       farm: farmScope(req.user),
@@ -95,7 +92,7 @@ export async function listAlerts(req, res) {
       ...(farmId && isUuid(farmId) ? { farmId } : {}),
       ...(includeSimulation === 'true' ? {} : { isSimulation: false }),
     },
-    include: { farm: { select: { id: true, farmCode: true, name: true, isDemo: true } } },
+    include: { farm: { select: { id: true, farmCode: true, name: true } } },
     orderBy: { createdAt: 'desc' },
     take: Math.min(Number(req.query.limit) || 100, 300),
   });
@@ -131,7 +128,7 @@ export async function readAllNotifications(req, res) {
   return ok(res, { updated: r.count });
 }
 
-/* ───────────── Forecasts & buyers ───────────── */
+/* ───────────── Harvest forecasts ───────────── */
 
 function forecastFilters(q) {
   const from = q.from ? new Date(q.from) : undefined;
@@ -139,53 +136,17 @@ function forecastFilters(q) {
   return { from, to, district: q.district, cooperativeId: q.cooperativeId, minQuantityKg: q.minQuantityKg, grade: q.grade };
 }
 
-/** Buyers see anonymised supply: cooperative, district, dates, quantity ranges, expected grade — no farmer identity. */
-const anonymise = (f) => ({
-  id: f.id, cooperative: f.cooperative ? { id: f.cooperative.id, name: f.cooperative.name } : null, district: f.district,
-  expectedHarvestDate: f.expectedHarvestDate, expectedQuantityKg: f.expectedQuantityKg, riskAdjustedQuantityKg: f.riskAdjustedQuantityKg,
-  lowQuantityKg: f.lowQuantityKg, highQuantityKg: f.highQuantityKg, confidence: f.confidence, expectedGrade: f.expectedGrade,
-  species: f.farm?.species?.commonName, isDemo: f.isDemo,
-});
-
 export async function harvestForecasts(req, res) {
   const q = req.valid.query;
-  const isBuyerOnly = hasRole(req.user, ROLES.BUYER) && !hasRole(req.user, ROLES.ADMIN, ROLES.COOPERATIVE_ADMIN, ROLES.EXTENSION_OFFICER, ROLES.FARMER);
-  const where = isBuyerOnly ? { farm: { status: 'ACTIVE' } } : { farm: farmScope(req.user) };
-  const forecasts = await HarvestForecastService.list({ where, ...forecastFilters(q) });
+  const forecasts = await HarvestForecastService.list({ where: { farm: farmScope(req.user) }, ...forecastFilters(q) });
   const summary = HarvestForecastService.aggregate(forecasts);
-  return ok(res, { forecasts: isBuyerOnly ? forecasts.map(anonymise) : forecasts, summary });
+  return ok(res, { forecasts, summary });
 }
 
 export async function generateForecasts(req, res) {
   const rows = await HarvestForecastService.generate();
   await audit(req, 'GENERATE_FORECASTS', 'HarvestForecast', null, { count: rows.length });
   return ok(res, { generated: rows.length }, 'Forecasts regenerated');
-}
-
-export async function buyerForecast(req, res) {
-  const q = req.valid.query;
-  const forecasts = await HarvestForecastService.list({ where: { farm: { status: 'ACTIVE' } }, ...forecastFilters(q) });
-  const summary = HarvestForecastService.aggregate(forecasts);
-  const cooperatives = await prisma.cooperative.findMany({ select: { id: true, name: true, district: true } });
-  const districts = [...new Set(forecasts.map((f) => f.district))].sort();
-  let demand = [];
-  if (req.user.buyerId) demand = await prisma.buyerDemand.findMany({ where: { buyerId: req.user.buyerId }, orderBy: { neededBy: 'asc' }, include: { species: { select: { commonName: true } } } });
-  const qualityHistory = await prisma.harvestRecord.groupBy({ by: ['qualityGrade'], _count: { _all: true }, _sum: { actualQuantity: true }, where: { harvestDate: { gte: addDays(new Date(), -365) }, qualityGrade: { not: null } } });
-  return ok(res, { summary, supply: forecasts.map(anonymise), filters: { cooperatives, districts }, demand, qualityHistory: qualityHistory.map((g) => ({ grade: g.qualityGrade, harvests: g._count._all, kg: Math.round(g._sum.actualQuantity || 0) })) });
-}
-
-export async function listBuyers(_req, res) {
-  const buyers = await prisma.buyer.findMany({ select: { id: true, companyName: true, district: true, isDemo: true }, orderBy: { companyName: 'asc' } });
-  return ok(res, { buyers });
-}
-
-export async function createDemand(req, res) {
-  if (!req.user.buyerId) throw forbidden('Only buyer accounts can post demand');
-  const d = req.valid.body;
-  if (d.speciesId && !(await prisma.seaweedSpecies.findUnique({ where: { id: d.speciesId } }))) throw badRequest('Unknown species');
-  const demand = await prisma.buyerDemand.create({ data: { buyerId: req.user.buyerId, ...d } });
-  await audit(req, 'CREATE', 'BuyerDemand', demand.id);
-  return created(res, { demand }, 'Demand posted');
 }
 
 /* ───────────── AI assistant & status ───────────── */
@@ -228,7 +189,6 @@ export async function health(_req, res) {
     data: {
       status: database === 'ok' ? 'ok' : 'degraded',
       database,
-      demoMode: env.demoMode,
       providers: { ...EnvironmentService.providerStatus(), llm: getLLMProvider().name, sms: atConfig().smsConfigured ? `africastalking-${atConfig().environment}` : 'NOT_CONFIGURED', ussd: atConfig().ussdConfigured ? `africastalking-${atConfig().environment}` : 'NOT_CONFIGURED' },
       time: new Date().toISOString(),
     },

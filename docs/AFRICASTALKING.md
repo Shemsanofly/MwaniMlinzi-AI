@@ -52,37 +52,56 @@ Restart the API after changing `.env`.
 6. **Delivery reports:** under *SMS → SMS Callback URLs → Delivery Reports*, set
    `https://<PUBLIC_API_URL>/api/integrations/africastalking/sms/delivery?secret=<AT_CALLBACK_SECRET>`.
 7. **Check the setup:** log in as admin and open **Admin → Settings → Africa's Talking**. It shows the environment, whether SMS and USSD are configured, the callback URLs (with placeholders, never the real secret) and recent activity. **Send test SMS** makes one real API call and shows exactly what AT answered: `QUEUED`/`SENT`, `FAILED` with the reason (for example an authentication error), or `NOT_CONFIGURED`.
-8. **Phone simulator:** open AT's sandbox simulator (linked from the sandbox dashboard) and start a phone with a number **registered in MwaniMlinzi**. For the demo data, that is the farmer `+255777000001` (farms FARM001 and FARM002). Dial your USSD code, or send SMS to your short code. Outgoing SMS to that number appear in the simulator.
+8. **Phone simulator:** open AT's sandbox simulator (linked from the sandbox dashboard) and start a phone with your own sandbox test number (a Tanzanian `+255…` number you choose). **Register a farmer with that number first** — on the web at `/register` (then add a farm), or by dialling the USSD code from the simulator and following the registration menu. Then dial your USSD code, or send SMS to your short code. Outgoing SMS to that number appear in the simulator.
 
 > In the sandbox, SMS are only "delivered" to the web simulator, never to real phones. Going live needs a
 > production AT application: set `AT_USERNAME` to its username, `AT_ENVIRONMENT=production`, and use an
-> approved sender ID and a USSD code for the Tanzanian networks. **Demo accounts never receive SMS from a
-> production AT account.**
+> approved sender ID and a USSD code for the Tanzanian networks.
 
 ## 4. The USSD menu
 
 USSD runs only on a phone, through Africa's Talking. The web app has no USSD page or simulator.
 
-A registered number gets the menu in the user's saved language (default Kiswahili). An **unknown number**
-first chooses a language (`CON MWANIMLINZI\n1. Kiswahili\n2. English`) and then gets, in that language,
-`END Namba hii haijasajiliwa MwaniMlinzi. Tafadhali jisajili kwanza.` /
-`END This phone number is not registered with MwaniMlinzi. Please register first.` No farm or personal data is shown.
+A registered number gets the menu in the user's saved language (default Kiswahili). An **unknown number** can
+register itself: it chooses a language (`CON MWANIMLINZI
+1. Kiswahili
+2. English`), then **gives consent**
+(`Taarifa za shamba lako zitatumika kukupa ushauri na kuboresha huduma. 1. Nakubali 2. Sikubali` — choosing 2 ends the
+session and stores nothing), enters a full name, picks a location (Paje, Jambiani, Kiwani or another place name), a species
+and the number of lines. This creates a FARMER account for that phone number and one farm (planting date = today), then shows
+the main menu. A typed "other" place gets no map point until an admin sets it, so no other site's weather is used for it. The
+account has a random password; the farmer can set one on the web with *Forgot your password?* (a code is sent by SMS). No other
+farm or personal data is shown to an unknown number.
+
+The main menu follows the pitch deck (slide 8):
 
 ```
 CON MWANIMLINZI
-1. Hali ya shamba   → (choose a farm if you have several) → END e.g.
-                      FARM001
-                      Hatari: KUBWA (joto/ice-ice)
-                      Kwa nini: Maji ya bahari yana joto kuliko kawaida.
-                      Hatua: Kagua mistari ya mwani ndani ya saa 24 …
-2. Ripoti dalili    → 1 Mwani kuwa mweupe · 2 Kukatika · 3 Ukuaji hafifu · 4 Nyingine
+1. Hali ya shamba   → 1 Hatari na hatua · 2 Maji kupwa na kukausha
+                      (choose a farm if you have several)
+                      1 → END e.g.  FARM001
+                                    Hatari: KUBWA (joto/ice-ice)
+                                    Kwa nini: Maji ya bahari yana joto kuliko kawaida.
+                                    Hatua: Kagua mistari ya mwani ndani ya saa 24 …
+                      2 → END e.g.  FARM002
+                                    Maji kupwa: leo 12:00 (muda wa kazi 10:00-13:00)
+                                    Kukausha leo: NZURI
+                                    Siku nzuri ya kukausha. Anika mwani kwenye vichanja … si ardhini.
+                          (from the stored Open-Meteo forecast; "Hakuna utabiri wa bahari…" when there is none)
+2. Tahadhari        → END the newest unresolved real alerts for your farms (max 3), or "Hakuna tahadhari mpya…"
+3. Ripoti tatizo    → 1 Mwani kuwa mweupe · 2 Kukatika · 3 Ukuaji hafifu · 4 Nyingine
                       → report saved (channel USSD), risk engine re-run, END new risk + action, SMS confirmation
-3. Rekodi mavuno    → "Ingiza kiasi cha mavuno kwa kilo" → kg (validated, 3 tries) → confirm 1/2
+4. Rekodi mavuno    → "Ingiza kiasi cha mavuno kwa kilo" → kg (validated, 3 tries) → confirm 1/2
                       → saved (channel USSD) + SMS confirmation
-4. Ushauri          → END the approved next action (or "Data haitoshi kutoa ushauri wa kuaminika.")
-5. Lugha            → 1 Kiswahili · 2 English → saved to the user's profile, menu shown again in the new language
+5. Msaada           → 1 Ushauri (the next action from the Action Library) · 2 Lugha (1 Kiswahili · 2 English, saved
+                      to the profile) · 3 Kuhusu huduma
 0 = back to the main menu (from any submenu)
 ```
+
+**Drying-weather SMS.** Every morning (06:20) farms that are within 3 days of their expected harvest, or recorded a harvest in
+the last 3 days, get one SMS when rain is likely today or tomorrow during drying hours (07:00–18:00), e.g.
+`MWANIMLINZI FARM002, kesho 01/10: Mvua inatarajiwa. Ikiwezekana, chelewesha kuvuna; funika mwani…` (always one
+160-character SMS segment). At most one per farm per day; warnings about a day that has passed are resolved automatically; it follows the farmer's *harvest reminders* SMS preference. There is no daily broadcast SMS.
 
 All answers come from the same backend services as the web app (`RiskService`, `RecordService`,
 `SMSService`); the USSD handler contains no risk logic of its own. Errors (database down, unexpected
@@ -120,7 +139,7 @@ SMS are sent only after real events, and only if the user allows them (Settings 
 | Reply to an incoming SMS | `SMS_REPLY` | — |
 | Admin "Test SMS" | `ADMIN_TEST` | — |
 
-The admin switch `notifications.smsEnabled` turns all automatic SMS off. Seeding and simulations never send SMS.
+The admin switch `notifications.smsEnabled` turns all automatic SMS off. Seeding and what-if simulations never send SMS.
 Every attempt is stored in `notification_logs` with recipient, type, language, message, provider, AT message ID,
 cost, status (`QUEUED`, `SENT`, `DELIVERED`, `FAILED`, `UNKNOWN`, `NOT_CONFIGURED`), failure reason, `sent_at` and
 `delivered_at`. Delivery reports update the status and never downgrade a final status. Every callback is logged in
@@ -137,8 +156,8 @@ Automated tests (no AT account needed; a fake client replaces the network):
 | 1 | Not configured | No `AT_*` values, Admin → Test SMS | "Not sent: Africa's Talking is not configured", log status `NOT_CONFIGURED` |
 | 2 | Wrong key | `AT_USERNAME=sandbox`, wrong `AT_API_KEY`, Test SMS | `FAILED`: "Authentication failed …" (HTTP 401 from AT) |
 | 3 | Sandbox SMS | Correct sandbox key, Test SMS to the simulator phone | `QUEUED`/`SENT`; message appears in the AT simulator; delivery report later sets `DELIVERED` |
-| 4 | USSD main menu | Dial the code from `+255777000001` | Kiswahili main menu with 5 options |
-| 5 | Unknown number | Dial from an unregistered number, choose `1` or `2` | Language menu, then "Namba hii haijasajiliwa MwaniMlinzi…" / "This phone number is not registered…" |
+| 4 | USSD main menu | Register a farmer with your sandbox simulator number first, then dial the code from that number | Kiswahili main menu with 5 options |
+| 5 | Unknown number | Dial from an unregistered simulator number, choose `1` or `2`, enter a name, location, species and lines | Account and farm created ("Umesajiliwa MwaniMlinzi." / "You are registered with MwaniMlinzi."), then the main menu; the farmer appears in Admin → Users |
 | 6 | Risk | `1` → `1` | `Hatari: NDOGO/YA KATI/KUBWA/KUBWA SANA`, reason and action |
 | 7 | Symptom report | `2` → farm → `1` | Report saved (web app shows a USSD observation), risk re-run, SMS confirmation |
 | 8 | Harvest | `3` → farm → `abc` → `120` → `1` | Error for `abc`; then "Mavuno ya kg 120 yamerekodiwa"; harvest has channel USSD |

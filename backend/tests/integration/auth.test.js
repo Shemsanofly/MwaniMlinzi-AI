@@ -64,6 +64,11 @@ describe('authentication', () => {
     expect(res.status).toBe(400);
   });
 
+  test('public registration cannot create buyer accounts', async () => {
+    const res = await api().post('/api/auth/register').send({ phone: '0659000002', password: 'Passw0rd!x', fullName: 'Old Buyer', role: 'BUYER', consent: true });
+    expect(res.status).toBe(400);
+  });
+
   test('wrong password and bad/missing tokens are rejected', async () => {
     const bad = await api().post('/api/auth/login').send({ identifier: phone, password: 'wrongpass1' });
     expect(bad.status).toBe(401);
@@ -95,9 +100,11 @@ describe('authentication', () => {
     expect((await api().post('/api/auth/login').send({ identifier: phone, password: 'NewPassw0rd1' })).status).toBe(200);
   });
 
-  test('demo accounts can log in', async () => {
-    for (const role of ['farmer', 'cooperative', 'extension', 'buyer', 'admin']) {
+  test('seeded accounts can log in; unknown accounts cannot', async () => {
+    for (const role of ['farmer', 'admin']) {
       expect(await login(role)).toBeTruthy();
     }
+    const buyer = await api().post('/api/auth/login').send({ email: 'buyer@example.test', password: 'Secret123' });
+    expect(buyer.status).toBe(401);
   });
 });

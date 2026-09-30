@@ -4,9 +4,9 @@ import prisma from '../../src/config/prisma.js';
 afterAll(() => prisma.$disconnect());
 
 describe('role-based access control', () => {
-  let farmer; let coop; let buyer; let ext; let admin;
+  let farmer; let admin;
   beforeAll(async () => {
-    [farmer, coop, buyer, ext, admin] = await Promise.all(['farmer', 'cooperative', 'buyer', 'extension', 'admin'].map(login));
+    [farmer, admin] = await Promise.all(['farmer', 'admin'].map(login));
   });
 
   test('farmer only sees own farms', async () => {
@@ -24,38 +24,34 @@ describe('role-based access control', () => {
     expect((await api().post(`/api/farms/${other.id}/observations`).set(auth(farmer)).send({ cropCondition: 'GOOD' })).status).toBe(403);
   });
 
-  test('cooperative admin only sees their cooperative', async () => {
-    const res = await api().get('/api/farms').set(auth(coop));
-    const coopIds = new Set(res.body.data.farms.map((f) => f.cooperative.code));
-    expect([...coopIds]).toEqual(['PAJE']);
-    const jambiani = await farmByCode(admin, 'FARM003'); // Jambiani cooperative
-    expect((await api().get(`/api/farms/${jambiani.id}`).set(auth(coop))).status).toBe(403);
-    const other = await prisma.cooperative.findUnique({ where: { code: 'JAMBIANI' } });
-    expect((await api().get(`/api/cooperatives/${other.id}/dashboard`).set(auth(coop))).status).toBe(403);
-  });
-
-  test('buyer cannot list farms but can see anonymised supply', async () => {
-    expect((await api().get('/api/farms').set(auth(buyer))).status).toBe(403);
-    const res = await api().get('/api/buyers/forecast').set(auth(buyer));
-    expect(res.status).toBe(200);
-    const s = res.body.data.supply[0];
-    expect(s).not.toHaveProperty('farm');
-    expect(s).not.toHaveProperty('farmId');
-    expect(JSON.stringify(res.body.data.supply)).not.toMatch(/\+2557/);
+  test('buyer endpoints are not part of the active product', async () => {
+    expect((await api().get('/api/buyers').set(auth(admin))).status).toBe(404);
+    expect((await api().get('/api/buyers/forecast').set(auth(admin))).status).toBe(404);
+    expect((await api().post('/api/buyers/demand').set(auth(admin)).send({ quantityKg: 100, neededBy: new Date().toISOString() })).status).toBe(404);
   });
 
   test('admin endpoints require ADMIN', async () => {
-    for (const t of [farmer, coop, buyer, ext]) expect((await api().get('/api/admin/users').set(auth(t))).status).toBe(403);
+    expect((await api().get('/api/admin/users').set(auth(farmer))).status).toBe(403);
     expect((await api().get('/api/admin/users').set(auth(admin))).status).toBe(200);
   });
 
-  test('only extension/admin can validate actions and review observations', async () => {
-    const actions = await api().get('/api/actions').set(auth(ext));
+  test('only admin can validate actions and review observations', async () => {
+    const actions = await api().get('/api/actions').set(auth(admin));
     const id = actions.body.data.actions[0].id;
     expect((await api().post(`/api/actions/${id}/validate`).set(auth(farmer)).send({ validated: true })).status).toBe(403);
-    const ok = await api().post(`/api/actions/${id}/validate`).set(auth(ext)).send({ validated: true, note: 'Reviewed with local officers' });
+    const ok = await api().post(`/api/actions/${id}/validate`).set(auth(admin)).send({ validated: true, note: 'Reviewed with local officers' });
     expect(ok.status).toBe(200);
     expect(ok.body.data.action.validated).toBe(true);
+  });
+
+  test('admin cannot assign dormant roles', async () => {
+    const res = await api().post('/api/admin/users').set(auth(admin)).send({
+      email: 'legacy-role@example.com',
+      password: 'Passw0rd!x',
+      fullName: 'Legacy Role',
+      roles: ['BUYER'],
+    });
+    expect(res.status).toBe(400);
   });
 
   test('invalid ids return 404 not 500', async () => {

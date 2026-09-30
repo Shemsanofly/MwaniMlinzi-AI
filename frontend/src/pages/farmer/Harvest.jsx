@@ -3,8 +3,8 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { AlertOctagon, CheckCircle2, ChevronDown, LineChart, Truck } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { useFarmerFarm } from '../../hooks/useFarmerFarm.js';
-import { buyerApi, farmApi } from '../../api/endpoints.js';
-import { Badge, Button, Card, CardHeader, EmptyState, ErrorState, Field, FormError, Notice, PageHeader, Spinner, Toggle, apiErrorMessage, cx } from '../../components/ui/index.jsx';
+import { farmApi } from '../../api/endpoints.js';
+import { Badge, Button, Card, CardHeader, EmptyState, ErrorState, Field, FormError, Notice, PageHeader, Spinner, Toggle, cx } from '../../components/ui/index.jsx';
 import { date as fmtDate, isoDate, kg, num, pct, tzs } from '../../utils/format.js';
 import { FarmGate, FarmSwitcher, SectionTitle, numOrNull, useInvalidateFarm } from './components/shared.jsx';
 
@@ -74,17 +74,16 @@ function ForecastCard({ q }) {
 }
 
 const HARVEST_EMPTY = {
-  harvestDate: isoDate(), estimatedQuantity: '', actualQuantity: '', unit: 'KG_DRY', qualityGrade: '', buyerId: '',
+  harvestDate: isoDate(), estimatedQuantity: '', actualQuantity: '', unit: 'KG_DRY', qualityGrade: '',
   dryingMethod: '', dryingDurationDays: '', pricePerKg: '', moisturePercent: '', groundContact: false, rainDuringDrying: false, notes: '', closeCycle: true,
 };
 
 function HarvestForm({ farmId, hasCycle }) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const invalidate = useInvalidateFarm();
   const [f, setF] = useState(HARVEST_EMPTY);
   const [more, setMore] = useState(false);
   const set = (patch) => setF((s) => ({ ...s, ...patch }));
-  const buyersQ = useQuery({ queryKey: ['buyers'], queryFn: () => buyerApi.list() });
   const save = useMutation({
     mutationFn: () => farmApi.addHarvest(farmId, {
       harvestDate: f.harvestDate,
@@ -92,7 +91,6 @@ function HarvestForm({ farmId, hasCycle }) {
       actualQuantity: Number(f.actualQuantity),
       unit: f.unit,
       qualityGrade: f.qualityGrade || null,
-      buyerId: f.buyerId || null,
       dryingMethod: f.dryingMethod || null,
       dryingDurationDays: numOrNull(f.dryingDurationDays),
       pricePerKg: numOrNull(f.pricePerKg),
@@ -137,12 +135,6 @@ function HarvestForm({ farmId, hasCycle }) {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label={t('farmer.harvest.f.estimated')} htmlFor="h-est" hint={t('farmer.harvest.f.estimatedHint')}>
                 <input id="h-est" type="number" inputMode="decimal" min={0} step="0.1" className="input" value={f.estimatedQuantity} onChange={(e) => set({ estimatedQuantity: e.target.value })} />
-              </Field>
-              <Field label={t('farmer.harvest.f.buyer')} htmlFor="h-buyer" error={buyersQ.error ? apiErrorMessage(buyersQ.error, t, lang) : undefined}>
-                <select id="h-buyer" className="input" value={f.buyerId} onChange={(e) => set({ buyerId: e.target.value })} disabled={buyersQ.isLoading}>
-                  <option value="">{buyersQ.isLoading ? t('actions.loading') : '—'}</option>
-                  {(buyersQ.data?.buyers || []).map((b) => <option key={b.id} value={b.id}>{b.companyName}{b.district ? ` (${b.district})` : ''}</option>)}
-                </select>
               </Field>
               <Field label={t('farmer.harvest.f.price')} htmlFor="h-price">
                 <input id="h-price" type="number" inputMode="decimal" min={0} className="input" value={f.pricePerKg} onChange={(e) => set({ pricePerKg: e.target.value })} />
@@ -266,7 +258,6 @@ function HarvestList({ farmId }) {
               <p className="font-semibold text-slate-900">{fmtDate(h.harvestDate, lang)}</p>
               <div className="flex flex-wrap gap-1.5">
                 {h.qualityGrade && <Badge className="bg-ocean-50 text-ocean-800 ring-ocean-200">{t(`farmer.enums.grade.${h.qualityGrade}`)}</Badge>}
-                {h.isDemo && <Badge className="bg-violet-50 text-violet-800 ring-violet-300">{t('source.demoBadge')}</Badge>}
               </div>
             </div>
             <p className="mt-1 text-sm text-slate-700">

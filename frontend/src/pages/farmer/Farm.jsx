@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarPlus, CheckCircle2, MapPin, Pencil, Plus, Sprout } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { useFarmerFarm } from '../../hooks/useFarmerFarm.js';
 import { farmApi } from '../../api/endpoints.js';
-import { Badge, Button, Card, CardHeader, DemoBadge, EmptyState, ErrorState, Field, FormError, Modal, Notice, PageHeader, PageLoader } from '../../components/ui/index.jsx';
+import { Badge, Button, Card, CardHeader, EmptyState, ErrorState, Field, FormError, Modal, Notice, PageHeader, PageLoader } from '../../components/ui/index.jsx';
 import FarmMap from '../../components/map/FarmMap.jsx';
 import { date as fmtDate, isoDate, num } from '../../utils/format.js';
 import { FarmSwitcher, SectionTitle, numOrNull, useInvalidateFarm } from './components/shared.jsx';
@@ -43,12 +43,15 @@ export default function FarmPage() {
 function CreateFarm({ ff, onDone, onCancel }) {
   const { t } = useI18n();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const create = useMutation({
     mutationFn: (body) => farmApi.create(body),
     onSuccess: async (data) => {
       await qc.invalidateQueries({ queryKey: ['farms'] });
       ff.selectFarm(data.farm.id);
       onDone?.();
+      // A new farm goes straight to the dashboard: risk, next action and what to do first.
+      navigate('/farmer/dashboard');
     },
   });
   return <FarmForm onSubmit={(b) => create.mutate(b)} pending={create.isPending} error={create.error} submitLabel={t('farmer.farm.create')} onCancel={onCancel} />;
@@ -88,7 +91,6 @@ function FarmDetails({ farmId }) {
           action={<Button variant="secondary" size="sm" icon={Pencil} className="min-h-11" onClick={() => { update.reset(); setEditing(true); }}>{t('actions.edit')}</Button>} />
         <div className="px-4 pb-2">
           <div className="flex flex-wrap gap-2 pt-3">
-            {farm.isDemo && <DemoBadge label={t('common.demoFarm')} />}
             <Badge className="bg-ocean-50 text-ocean-800 ring-ocean-200">{t(`farmer.enums.farmStatus.${farm.status}`)}</Badge>
           </div>
           <dl className="divide-y divide-slate-100">
@@ -114,7 +116,7 @@ function FarmDetails({ farmId }) {
           <SectionTitle>{t('farmer.farm.map')}</SectionTitle>
           <Card className="overflow-hidden">
             <FarmMap farms={[farm]} height={240} />
-            <p className="flex items-center gap-1.5 px-3 py-2 text-xs text-slate-500"><MapPin className="h-3.5 w-3.5" aria-hidden />{farm.location.locationName}{farm.isDemo ? ` · ${t('farmer.farm.demoLocation')}` : ''}</p>
+            <p className="flex items-center gap-1.5 px-3 py-2 text-xs text-slate-500"><MapPin className="h-3.5 w-3.5" aria-hidden />{farm.location.locationName}</p>
           </Card>
         </>
       )}

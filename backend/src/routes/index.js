@@ -18,7 +18,7 @@ const upload = multer({
 });
 
 const api = Router();
-const STAFF = ['COOPERATIVE_ADMIN', 'EXTENSION_OFFICER', 'ADMIN'];
+const STAFF = ['ADMIN'];
 
 // Public
 api.get('/health', core.health);
@@ -37,13 +37,13 @@ api.get('/environment/providers', core.environmentProviders);
 
 api.post('/risk/predict', authorize('FARMER', ...STAFF), validate(s.simulationSchema), core.predict);
 api.get('/risk/:farmId', authorize('FARMER', ...STAFF), core.riskForFarm);
-api.post('/risk/predictions/:id/flag', authorize('EXTENSION_OFFICER', 'ADMIN'), validate(s.flagPredictionSchema), core.flagPrediction);
+api.post('/risk/predictions/:id/flag', authorize('ADMIN'), validate(s.flagPredictionSchema), core.flagPrediction);
 
 api.get('/actions', authorize(...STAFF, 'FARMER'), admin.listActionLibrary);
 api.get('/actions/:id', authorize(...STAFF, 'FARMER'), admin.getActionLibrary);
 api.post('/actions', authorize('ADMIN'), validate(s.actionLibrarySchema), admin.createActionLibrary);
 api.patch('/actions/:id', authorize('ADMIN'), validate(s.actionLibraryUpdateSchema, 'body', { partial: true }), admin.updateActionLibrary);
-api.post('/actions/:id/validate', authorize('EXTENSION_OFFICER', 'ADMIN'), validate(s.actionValidateSchema), admin.validateActionLibrary);
+api.post('/actions/:id/validate', authorize('ADMIN'), validate(s.actionValidateSchema), admin.validateActionLibrary);
 
 api.get('/alerts', core.listAlerts);
 api.patch('/alerts/:id', authorize('FARMER', ...STAFF), core.updateAlert);
@@ -59,23 +59,19 @@ api.get('/cooperatives/mine/dashboard', authorize(...STAFF), dash.myCooperativeD
 api.get('/cooperatives/:id/dashboard', authorize(...STAFF), dash.cooperativeDashboard);
 api.get('/cooperatives/:id/farmers', authorize(...STAFF), dash.cooperativeFarmers);
 
-api.get('/extension/dashboard', authorize('EXTENSION_OFFICER', 'ADMIN'), dash.extensionDashboard);
-api.get('/extension/observations', authorize('EXTENSION_OFFICER', 'ADMIN'), dash.extensionObservations);
-api.patch('/extension/observations/:id/review', authorize('EXTENSION_OFFICER', 'ADMIN'), validate(s.reviewSchema), dash.reviewObservation);
-api.get('/extension/recommendations', authorize('EXTENSION_OFFICER', 'ADMIN'), dash.extensionRecommendations);
-api.patch('/extension/recommendations/:id/review', authorize('EXTENSION_OFFICER', 'ADMIN'), validate(s.reviewSchema), dash.reviewRecommendation);
-
-api.get('/buyers', core.listBuyers);
-api.get('/buyers/forecast', authorize('BUYER', 'COOPERATIVE_ADMIN', 'ADMIN'), validate(s.forecastQuerySchema, 'query'), core.buyerForecast);
-api.post('/buyers/demand', authorize('BUYER'), validate(s.demandSchema), core.createDemand);
+api.get('/extension/dashboard', authorize('ADMIN'), dash.extensionDashboard);
+api.get('/extension/observations', authorize('ADMIN'), dash.extensionObservations);
+api.patch('/extension/observations/:id/review', authorize('ADMIN'), validate(s.reviewSchema), dash.reviewObservation);
+api.get('/extension/recommendations', authorize('ADMIN'), dash.extensionRecommendations);
+api.patch('/extension/recommendations/:id/review', authorize('ADMIN'), validate(s.reviewSchema), dash.reviewRecommendation);
 
 api.get('/forecasts/harvest', validate(s.forecastQuerySchema, 'query'), core.harvestForecasts);
-api.post('/forecasts/harvest/generate', authorize('COOPERATIVE_ADMIN', 'ADMIN'), core.generateForecasts);
+api.post('/forecasts/harvest/generate', authorize('ADMIN'), core.generateForecasts);
 
 api.post('/ai/chat', aiLimiter, validate(s.chatSchema), core.chat);
 api.get('/ai/status', core.aiStatus);
 
-api.post('/uploads', authorize('FARMER', 'EXTENSION_OFFICER', 'ADMIN'), upload.single('image'), admin.uploadImage);
+api.post('/uploads', authorize('FARMER', 'ADMIN'), upload.single('image'), admin.uploadImage);
 api.get('/uploads/:id', admin.getUpload);
 
 const adm = Router();

@@ -1,9 +1,9 @@
 /**
- * Demo Action Library. These are STARTING rules written for the MVP demo.
- * They are NOT validated agronomic guidance and must be reviewed by local seaweed
- * extension experts (e.g. Zanzibar Ministry of Blue Economy & Fisheries officers) before real use.
+ * Starter Action Library. These rules are the starting point, based on common seaweed-farming guidance.
+ * Each entry stays "awaiting validation" until an admin confirms it with local seaweed extension
+ * experts (e.g. Zanzibar Ministry of Blue Economy & Fisheries officers) in Admin → Action library.
  */
-const SOURCE = 'MwaniMlinzi demo rule set v1 — requires local expert validation before real-world deployment';
+const SOURCE = 'MwaniMlinzi starter rule set v1 — awaiting validation by local seaweed extension experts';
 const ge = (feature, value) => ({ feature, op: 'gte', value });
 const lt = (feature, value) => ({ feature, op: 'lt', value });
 const le = (feature, value) => ({ feature, op: 'lte', value });
@@ -68,4 +68,15 @@ export const ACTION_LIBRARY = [
   { code: 'HARVEST_PLAN_SOON', riskType: 'HARVEST_WINDOW', minimumRiskLevel: 'MEDIUM', conditions: [ge('maturityRatio', 0.85)], urgency: 'URGENT', urgencyHours: 48, priority: 1,
     action: 'Plan harvest as soon as it is safe, to reduce losses of the mature crop.', actionSw: 'Panga kuvuna mapema pindi itakapokuwa salama, ili kupunguza hasara ya mwani uliokomaa.',
     explanation: 'The crop is mature and current conditions increase the risk of losing it if harvest is delayed.', explanationSw: 'Mwani umekomaa na hali ya sasa inaongeza hatari ya kuupoteza mavuno yakichelewa.' },
+
+  // ── Drying weather (daily sea outlook; GOOD=LOW, CAUTION=MEDIUM, BAD=HIGH) ──
+  { code: 'DRY_LOW_OK', riskType: 'DRYING_WEATHER', minimumRiskLevel: 'LOW', maximumRiskLevel: 'LOW', urgency: 'ROUTINE', urgencyHours: 24,
+    action: 'Good day for drying. Dry seaweed on raised racks or a clean tarpaulin, not on the ground.', actionSw: 'Siku nzuri ya kukausha. Anika mwani kwenye vichanja vilivyoinuliwa au turubai safi, si ardhini.',
+    explanation: 'Little rain is forecast during drying hours. Keeping seaweed off the ground keeps it clean and raises its grade.', explanationSw: 'Mvua kidogo inatarajiwa wakati wa kukausha. Kuweka mwani mbali na ardhi kunaufanya uwe safi na wa daraja la juu.' },
+  { code: 'DRY_MEDIUM_CAUTION', riskType: 'DRYING_WEATHER', minimumRiskLevel: 'MEDIUM', maximumRiskLevel: 'MEDIUM', urgency: 'SOON', urgencyHours: 12,
+    action: 'Some rain is possible. Dry on racks and keep a cover ready; bring seaweed in if rain starts.', actionSw: 'Mvua inaweza kunyesha. Anika kwenye vichanja na weka kifuniko tayari; ondoa mwani mvua ikianza.',
+    explanation: 'Rain on drying seaweed lowers its quality and price. A ready cover prevents most of the damage.', explanationSw: 'Mvua juu ya mwani unaokaushwa hupunguza ubora na bei. Kifuniko kilicho tayari huzuia sehemu kubwa ya hasara.' },
+  { code: 'DRY_HIGH_DELAY', riskType: 'DRYING_WEATHER', minimumRiskLevel: 'HIGH', urgency: 'URGENT', urgencyHours: 12, priority: 1,
+    action: 'Rain is likely. If you can, delay harvest; keep harvested seaweed covered and off the ground until a dry day.', actionSw: 'Mvua inatarajiwa. Ikiwezekana, chelewesha kuvuna; funika mwani uliovunwa na usiuweke ardhini hadi siku kavu.',
+    explanation: 'Heavy or likely rain during drying spoils seaweed. Waiting for a dry day protects its grade.', explanationSw: 'Mvua kubwa au inayotarajiwa wakati wa kukausha huharibu mwani. Kusubiri siku kavu hulinda daraja lake.' },
 ].map((a) => ({ cropStage: 'ANY', priority: 0, escalateToExtension: false, conditions: null, maximumRiskLevel: null, ...a, source: SOURCE, validated: false, enabled: true }));

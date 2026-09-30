@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Archive, BrainCircuit, CheckCircle2, Cpu, FlaskConical, MessageSquareWarning, Pause, Scale, Settings as SettingsIcon, Terminal } from 'lucide-react';
+import { Archive, BrainCircuit, CheckCircle2, Cpu, MessageSquareWarning, Pause, Scale, Settings as SettingsIcon, Terminal } from 'lucide-react';
 import { adminApi } from '../../api/endpoints.js';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { Badge, Button, Card, CardHeader, EmptyState, ErrorState, FormError, Notice, PageHeader, PageLoader, cx } from '../../components/ui/index.jsx';
@@ -35,9 +35,7 @@ function ModelCard({ m, aiMode }) {
       />
       <div className="space-y-4 p-4 sm:p-5">
         <div className="flex flex-wrap gap-2">
-          {m.syntheticData
-            ? <Badge className="bg-violet-50 text-violet-800 ring-violet-300"><FlaskConical className="h-3 w-3" aria-hidden />{t('source.syntheticBadge')}</Badge>
-            : <Badge className="bg-seaweed-50 text-seaweed-700 ring-seaweed-500/30">{t('source.real')}</Badge>}
+          <Badge className="bg-seaweed-50 text-seaweed-700 ring-seaweed-500/30">{t('admin.models.realData')}</Badge>
           {m.status === 'ACTIVE' && aiMode !== 'HYBRID' && <Badge className="bg-amber-50 text-amber-800 ring-amber-300">{t('admin.models.inactiveByMode')}</Badge>}
         </div>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm sm:grid-cols-4">
@@ -70,7 +68,7 @@ function ModelCard({ m, aiMode }) {
             ) : <p className="text-sm text-slate-500">{t('admin.models.noFieldMetrics')}</p>}
           </div>
         </div>
-        {m.notes && <Notice tone={m.syntheticData ? 'demo' : 'info'}>{m.notes}</Notice>}
+        {m.notes && <Notice tone="info">{m.notes}</Notice>}
         <FormError error={upd.error} />
         <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
           {m.status !== 'ACTIVE' && (
@@ -100,7 +98,6 @@ export default function AdminModels() {
   if (error) return <ErrorState error={error} onRetry={refetch} />;
   const hybrid = data.status !== 'Rule-based baseline';
   const fe = data.fieldEvaluation || {};
-  const anySynthetic = data.models.some((m) => m.syntheticData);
 
   return (
     <div className="space-y-6">
@@ -126,8 +123,6 @@ export default function AdminModels() {
         {data.aiMode === 'HYBRID' && !hybrid && <p className="border-t border-slate-100 px-5 py-3 text-sm text-slate-600">{t('admin.models.hybridNoActive')}</p>}
         {data.aiMode === 'RULE_ONLY' && <p className="border-t border-slate-100 px-5 py-3 text-sm text-slate-600">{t('admin.models.ruleOnlyMode')}</p>}
       </Card>
-
-      {anySynthetic && <Notice tone="demo" icon={FlaskConical}>{data.training?.note}</Notice>}
 
       {data.models.length === 0 ? (
         <Card className="p-6">

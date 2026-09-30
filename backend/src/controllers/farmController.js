@@ -8,6 +8,7 @@ import { FarmService } from '../services/farmService.js';
 import { RecordService } from '../services/recordService.js';
 import { RiskService, serializePrediction, serializeRecommendation } from '../services/riskService.js';
 import { EnvironmentService } from '../services/environmentService.js';
+import { SeaOutlookService } from '../services/seaOutlookService.js';
 import { HarvestForecastService } from '../services/harvestForecastService.js';
 import { pageParams } from '../utils/pagination.js';
 import { getSetting } from '../services/settingsService.js';
@@ -41,7 +42,7 @@ export async function getFarm(req, res) {
 
 export async function createFarm(req, res) {
   let targetFarmerId = req.user.farmerId;
-  if (hasRole(req.user, ROLES.ADMIN, ROLES.EXTENSION_OFFICER) && req.body.farmerId) {
+  if (hasRole(req.user, ROLES.ADMIN) && req.body.farmerId) {
     if (!isUuid(req.body.farmerId) || !(await prisma.farmer.findUnique({ where: { id: req.body.farmerId } }))) throw badRequest('Unknown farmer');
     targetFarmerId = req.body.farmerId;
   }
@@ -108,7 +109,7 @@ export async function listObservations(req, res) {
 export async function createObservation(req, res) {
   const id = farmId(req);
   await assertFarmAccess(req.user, id, { write: true });
-  const { observation, risk } = await RecordService.createObservation(id, req.user, req.valid.body, { channel: hasRole(req.user, ROLES.EXTENSION_OFFICER) && req.user.farmerId == null ? 'EXTENSION' : 'APP' });
+  const { observation, risk } = await RecordService.createObservation(id, req.user, req.valid.body);
   await audit(req, 'CREATE', 'FarmObservation', observation.id, { farmId: id });
   return created(res, { observation, risk }, 'Observation recorded');
 }
@@ -254,6 +255,14 @@ export async function farmHistoryTimeline(req, res) {
     ...preds.map((p) => ({ type: 'PREDICTION', date: p.createdAt, id: p.id, data: { riskType: p.riskType, riskLevel: p.riskLevel, probability: p.probability, explanation: p.explanation, explanationSw: p.explanationSw } })),
   ].sort((a, b) => new Date(b.date) - new Date(a.date));
   return ok(res, { events });
+}
+
+/** GET /farms/:id/outlook — today's tides / work window and drying weather (null when no forecast is available). */
+export async function farmOutlook(req, res) {
+  const id = farmId(req);
+  await assertFarmAccess(req.user, id);
+  const farm = await prisma.farm.findUnique({ where: { id }, include: { location: true } });
+  return ok(res, { outlook: await SeaOutlookService.currentForFarm(farm) });
 }
 
 export async function farmEnvironment(req, res) {

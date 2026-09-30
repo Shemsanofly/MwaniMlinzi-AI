@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, ShieldCheck, Sprout, UserPlus } from 'lucide-react';
+import { ShieldCheck, UserPlus } from 'lucide-react';
 import { metaApi } from '../../api/endpoints.js';
 import { HOME_FOR_ROLE, useAuth } from '../../stores/AuthContext.jsx';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
-import { Button, Field, FormError, cx } from '../../components/ui/index.jsx';
+import { Button, Field, FormError, cx, PasswordInput } from '../../components/ui/index.jsx';
 import AuthShell from './components/AuthShell.jsx';
+import RegisterAside from './components/RegisterAside.jsx';
 import { normalizeTzPhone } from '../../utils/phone.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,8 +31,8 @@ export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    fullName: '', email: '', phone: '', password: '', confirm: '', role: 'FARMER', preferredLanguage: lang,
-    cooperativeCode: '', companyName: '', village: '', district: '', smsEnabled: true, consent: false,
+    fullName: '', email: '', phone: '', password: '', confirm: '', preferredLanguage: lang,
+    cooperativeCode: '', village: '', district: '', smsEnabled: true, consent: false,
   });
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState(null);
@@ -48,18 +49,17 @@ export default function Register() {
     const v = validateRegistration(form);
     setErrors(v);
     if (Object.keys(v).length) return;
-    const isFarmer = form.role === 'FARMER';
+    // Public registration creates farmers only; admin accounts are created by an administrator.
     const body = {
       fullName: form.fullName.trim(),
       phone: normalizeTzPhone(form.phone),
       email: form.email.trim() || null,
       password: form.password,
-      role: form.role,
+      role: 'FARMER',
       preferredLanguage: form.preferredLanguage,
-      cooperativeCode: isFarmer && form.cooperativeCode ? form.cooperativeCode : null,
-      companyName: !isFarmer && form.companyName.trim() ? form.companyName.trim() : null,
-      village: isFarmer && form.village.trim() ? form.village.trim() : null,
-      district: isFarmer && form.district.trim() ? form.district.trim() : null,
+      cooperativeCode: form.cooperativeCode || null,
+      village: form.village.trim() || null,
+      district: form.district.trim() || null,
       smsEnabled: form.smsEnabled,
       consent: true,
     };
@@ -73,17 +73,6 @@ export default function Register() {
     }
   };
 
-  const roleOption = (value, Icon) => (
-    <label key={value} className={cx('flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition', form.role === value ? 'border-ocean-500 bg-ocean-50 ring-1 ring-ocean-500' : 'border-slate-200 hover:border-ocean-300')}>
-      <input type="radio" name="role" value={value} checked={form.role === value} onChange={set('role')} className="mt-1 accent-ocean-700" />
-      <Icon className="mt-0.5 h-5 w-5 shrink-0 text-ocean-600" aria-hidden />
-      <span>
-        <span className="block font-semibold text-slate-900">{t(`roles.${value}`)}</span>
-        <span className="block text-xs text-slate-500">{t(`public.register.roleHint.${value}`)}</span>
-      </span>
-    </label>
-  );
-
   const emailField = (
     <Field label={t('public.form.email')} htmlFor="reg-email" hint={t('public.register.emailHint')} error={err('email') || serverErr('email')}>
       <input id="reg-email" type="email" className="input" autoComplete="email" value={form.email} onChange={set('email')} />
@@ -91,16 +80,8 @@ export default function Register() {
   );
 
   return (
-    <AuthShell wide title={t('public.register.title')} subtitle={t('public.register.subtitle')}>
+    <AuthShell wide tone="lagoon" aside={<RegisterAside />} title={t('public.register.title')} subtitle={t('public.register.subtitle')}>
       <form onSubmit={submit} className="space-y-5" noValidate>
-        <fieldset>
-          <legend className="label">{t('public.register.iAm')}</legend>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {roleOption('FARMER', Sprout)}
-            {roleOption('BUYER', Building2)}
-          </div>
-        </fieldset>
-
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label={t('public.form.fullName')} htmlFor="reg-name" required error={err('fullName') || serverErr('fullName')}>
             <input id="reg-name" className="input" autoComplete="name" value={form.fullName} onChange={set('fullName')} />
@@ -109,16 +90,16 @@ export default function Register() {
             <input id="reg-phone" type="tel" inputMode="tel" className="input" autoComplete="tel" placeholder="0777 123 456" value={form.phone} onChange={set('phone')} />
           </Field>
           <Field label={t('public.form.password')} htmlFor="reg-pass" required hint={t('public.register.passwordHint')} error={err('password') || serverErr('password')}>
-            <input id="reg-pass" type="password" className="input" autoComplete="new-password" value={form.password} onChange={set('password')} />
+            <PasswordInput id="reg-pass" autoComplete="new-password" value={form.password} onChange={set('password')} />
           </Field>
           <Field label={t('public.form.confirmPassword')} htmlFor="reg-confirm" required error={err('confirm')}>
-            <input id="reg-confirm" type="password" className="input" autoComplete="new-password" value={form.confirm} onChange={set('confirm')} />
+            <PasswordInput id="reg-confirm" autoComplete="new-password" value={form.confirm} onChange={set('confirm')} />
           </Field>
           <fieldset className="sm:col-span-2">
             <legend className="label">{t('public.form.language')} <span className="text-red-600" aria-hidden>*</span></legend>
             <div className="grid grid-cols-2 gap-3">
               {['sw', 'en'].map((l) => (
-                <label key={l} className={cx('flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-base font-semibold', form.preferredLanguage === l ? 'border-ocean-500 bg-ocean-50 ring-1 ring-ocean-500' : 'border-slate-200')}>
+                <label key={l} className={cx('flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-base font-semibold transition', form.preferredLanguage === l ? 'border-ocean-500 bg-ocean-50 text-ocean-900 ring-1 ring-ocean-500' : 'border-slate-200 text-slate-700 hover:border-ocean-300')}>
                   <input type="radio" name="preferredLanguage" value={l} checked={form.preferredLanguage === l} onChange={set('preferredLanguage')} className="accent-ocean-700" />
                   <span lang={l}>{l === 'sw' ? 'Kiswahili' : 'English'}</span>
                 </label>
@@ -127,14 +108,15 @@ export default function Register() {
           </fieldset>
         </div>
 
-        <label htmlFor="reg-sms" className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3">
+        <label htmlFor="reg-sms" className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3.5 transition hover:border-ocean-300">
           <input id="reg-sms" type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-ocean-700" checked={form.smsEnabled} onChange={set('smsEnabled')} />
           <span className="text-sm text-slate-800"><span className="block font-semibold">{t('public.register.smsOptIn')}</span><span className="block text-xs text-slate-500">{t('public.register.smsOptInHint')}</span></span>
         </label>
 
-        {form.role === 'FARMER' ? (
-          <div className="grid gap-4 rounded-xl border border-slate-200 bg-sand-50 p-4 sm:grid-cols-2">
+        <div className="grid animate-rise gap-4 rounded-2xl border border-slate-200/80 bg-sand-50/80 p-5 sm:grid-cols-2">
             <p className="text-sm font-semibold text-slate-700 sm:col-span-2">{t('public.register.optionalTitle')}</p>
+            {/* Hidden on a fresh system with no cooperatives yet (kept while loading, on error, or when there are some). */}
+            {!(coops.isSuccess && !coops.data?.cooperatives?.length) && (
             <div className="sm:col-span-2">
               <Field label={t('public.form.cooperative')} htmlFor="reg-coop" hint={t('public.register.coopHint')} error={serverErr('cooperativeCode')}>
                 <select id="reg-coop" className="input" value={form.cooperativeCode} onChange={set('cooperativeCode')} disabled={coops.isLoading}>
@@ -144,6 +126,7 @@ export default function Register() {
               </Field>
               {coops.error && <p className="mt-1 text-xs text-red-700">{t('public.register.coopLoadError')}</p>}
             </div>
+            )}
             <Field label={t('public.form.village')} htmlFor="reg-village">
               <input id="reg-village" className="input" value={form.village} onChange={set('village')} />
             </Field>
@@ -152,17 +135,8 @@ export default function Register() {
             </Field>
             <div className="sm:col-span-2">{emailField}</div>
           </div>
-        ) : (
-          <div className="rounded-xl border border-slate-200 bg-sand-50 p-4">
-            <p className="mb-3 text-sm font-semibold text-slate-700">{t('public.register.optionalTitle')}</p>
-            <Field label={t('public.form.companyName')} htmlFor="reg-company" error={serverErr('companyName')}>
-              <input id="reg-company" className="input" autoComplete="organization" value={form.companyName} onChange={set('companyName')} />
-            </Field>
-            <div className="mt-4">{emailField}</div>
-          </div>
-        )}
 
-        <div className={cx('rounded-xl border p-4', errors.consent ? 'border-red-300 bg-red-50' : 'border-ocean-200 bg-ocean-50/60')}>
+        <div className={cx('rounded-2xl border p-4 transition-colors', errors.consent ? 'border-red-300 bg-red-50' : 'border-ocean-200 bg-ocean-50/60')}>
           <label htmlFor="reg-consent" className="flex cursor-pointer items-start gap-3">
             <input id="reg-consent" type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-ocean-700" checked={form.consent} onChange={set('consent')} aria-describedby="reg-consent-more" />
             <span className="text-sm text-slate-800">

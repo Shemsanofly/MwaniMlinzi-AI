@@ -17,7 +17,7 @@ All code lives in `backend/src/ai`, `backend/src/rules`, `backend/src/providers`
 | Component | File | Responsibility |
 |---|---|---|
 | `FarmContextService` | `services/farmContextService.js` | Loads farm, species, active cycle (**crop age = today − planting date**), latest environment, latest observation (≤14 days), farm history |
-| `buildFeatures` | `ai/features.js` | One flat feature set shared by rules, ML and the synthetic dataset |
+| `buildFeatures` | `ai/features.js` | One flat feature set shared by the rules and ML (training and inference) |
 | `RiskRuleEngine` | `ai/riskRuleEngine.js` + `rules/riskRules.js` | Transparent logistic scoring per risk type; always available |
 | `MLRiskProvider` | `ai/mlRiskProvider.js` | Serves the ACTIVE trained model per risk type; returns `null` if none/corrupt |
 | `RiskEngine` | `ai/riskEngine.js` | Orchestrates rules + ML, thresholds, confidence, explanations |
@@ -48,15 +48,18 @@ must be calibrated with local field data before real-world use.
 
 - Levels come from thresholds stored in `system_settings` → `risk.thresholds` (default LOW < 0.30 ≤ MEDIUM < 0.60 ≤ HIGH < 0.80 ≤ CRITICAL). Admins change them in **Admin → Settings**; the backend validates them.
 - **Confidence** reflects data completeness: environment present (+), recent observation (+), active planting cycle (+), farm history (+), missing required inputs (−), cached data (−), ML/rule disagreement (−).
+- Missing inputs are never filled with defaults: a factor whose input is `null` is skipped and lowers the confidence.
+- If a farm has **no environmental reading at all**, the risk is still computed from farm data and farmer reports and stored with `data_source = UNAVAILABLE`; confidence is lower accordingly.
 - If confidence < 0.40 the prediction is flagged `insufficientData` and the Action Engine returns *"Insufficient data for a reliable recommendation"* instead of an action.
 
-### Example (seeded FARM001)
+### Example
 
-39-day-old *Kappaphycus*, SST anomaly ≈ +1.5 °C for 8 days, whitening reported →
-`HEAT_ICE_ICE = HIGH (~78%)`, factors `SST_ANOMALY`, `WHITENING_REPORTED`, `SST_PERSISTENCE`, `CROP_STAGE` …
-→ Action `HEAT_HIGH_INSPECT_24H`: *"Kagua mistari ya mwani ndani ya saa 24 na rekodi dalili za kubadilika rangi au kukatika."*
-Submitting a new observation with whitening + disease symptoms on 30% of lines raises it to **CRITICAL** and the action
-becomes *escalate to an extension officer*; a `HEAT_CRITICAL` alert and notifications are created.
+A 39-day-old *Kappaphycus* farm on a calm day with live readings close to the monthly climatology gets a LOW
+Heat/Ice-Ice risk. When the farmer reports whitening and disease symptoms on 30 % of lines, the engine re-runs at once:
+the factors `WHITENING_REPORTED` and `PERCENT_AFFECTED` are added, the probability rises, and if it reaches HIGH
+the Action Engine selects e.g. `HEAT_HIGH_INSPECT_24H` — *"Kagua mistari ya mwani ndani ya saa 24 na rekodi dalili za
+kubadilika rangi au kukatika."* A HIGH/CRITICAL result creates an alert and notifications. The exact numbers depend on
+the day's live readings.
 
 ## 2. Explainability
 
@@ -70,7 +73,7 @@ assistant and SMS/USSD replies all read these stored factors. An LLM never creat
   `probability = (1 − w)·rule + w·ml` with `w = ai.mlBlendWeight` (default 0.4). Otherwise the rule baseline is used.
 - Predictions record `model_type` (`RULE`/`HYBRID`), `model_version`, `rule_probability` and `ml_probability`; ML outputs are
   also stored in `model_predictions`.
-- The UI shows **"Rule-based baseline"** or **"Hybrid: rule baseline + ML model v1 (trained on synthetic data)"**.
+- The UI shows **"Rule-based baseline"** or **"Hybrid: rule baseline + ML model vN"**.
 - If the model file is missing/corrupt the provider logs a warning and the rule engine is used — no fabricated output.
 
 ### Algorithm
@@ -79,37 +82,31 @@ Dependency-free **logistic regression** (batch gradient descent, L2, class-balan
 over TensorFlow.js for the MVP because it needs no native binaries, is deterministic and fully inspectable. The same
 `featureVector.js` (feature list + imputation) is used for training and inference.
 
-### Training pipeline
+### Training pipeline (field outcomes only)
 
 ```bash
 cd backend
-npm run ai:dataset                       # ai/datasets/synthetic_seaweed_dataset.{json,csv}  (--n 500..20000, --seed)
-npm run ai:train                         # trains 4 models, registers them as TRAINED
+npm run ai:train                         # trains from recorded field outcomes, registers models as TRAINED
 npm run ai:train -- --activate           # …and activates them
-npm run ai:train -- --include-field      # adds recorded outcomes from PostgreSQL as labelled records
 ```
 
-Steps performed by `ai/scripts/trainModel.js`: **load → validate → preprocess (impute + standardise) → train →
-evaluate on a stratified 20% hold-out → save model JSON (`ai/models/<RISK>_vN.json`) → save metrics
+Training data = stored risk predictions (their input feature vectors) labelled by what farmers later recorded as the
+outcome (`action_outcomes.risk_materialized`). Simulations are excluded. Nothing is generated.
+
+Steps performed by `ai/scripts/trainModel.js`: **load field outcomes → validate → preprocess (impute + standardise) →
+train → evaluate on a stratified 20% hold-out → save model JSON (`ai/models/<RISK>_vN.json`) → save metrics
 (`<RISK>_vN.metrics.json`) → register the version in `ml_models` + `model_metrics`**.
-Training is refused for a risk type with fewer than `ai.minTrainingRecords` (default 300) valid records or fewer than
-20 examples of either class — the rule engine stays in use.
+A risk type is skipped when it has fewer than `ai.minTrainingRecords` (default 300) valid records or fewer than 20
+examples of either class; the rule engine stays in use for it. On a new installation every risk type is skipped until
+enough outcomes have been recorded.
 
-Metrics reported: precision, recall, F1, accuracy, ROC-AUC, confusion matrix — all computed on held-out data. **They
-describe how well the model fits the synthetic generating process, not real-world accuracy.**
-
-### Synthetic data
-
-`ai/scripts/generateDataset.js` samples 500–20,000 records from a hand-written latent process (heat stress, storm stress,
-growth stress, harvest-value loss) with interactions and noise, plus noisy farmer observations. It is deliberately different
-from the rule coefficients so the ML model is not a copy of the rules. Every record has `synthetic_demo_data: true`; the
-models are flagged `synthetic_data = true` and the UI shows a SYNTHETIC badge.
+Metrics reported: precision, recall, F1, accuracy, ROC-AUC, confusion matrix — all computed on held-out field outcomes.
 
 ### Model monitoring (field evaluation)
 
 `ModelMonitoringService` compares predictions (HIGH/CRITICAL = positive) with recorded outcomes (`risk_materialized`) and
 reports precision/recall/F1/false positives/false negatives in **Admin → Models**. With fewer than 30 outcomes it says the
-numbers are not yet meaningful. The nightly `model-monitoring` job stores FIELD metrics per model. Seeded outcomes are demo data.
+numbers are not yet meaningful. The nightly `model-monitoring` job stores FIELD metrics per model.
 
 ## 4. Action Engine
 
@@ -118,13 +115,14 @@ Action Library entries (`action_library`) contain: `risk_type`, `minimum_risk_le
 `explanation`/`explanation_sw`, `urgency`, `urgency_hours`, `priority`, `source`, `validated`, `enabled`, `escalate_to_extension`.
 
 Selection: enabled entries of the same risk type whose level range, crop stage and conditions match (conditions on missing
-data fail), most specific first. With `actions.requireValidated = true` only entries validated by an extension officer can be
+data fail), most specific first. With `actions.requireValidated = true` only entries validated (by the admin, with local experts) can be
 recommended. Editing an entry's text resets its validation. Open recommendations for the same risk type are superseded
 when advice changes; unchanged advice keeps its original due date.
 
 The 17 seeded entries (e.g. *"Inspect lines within 24 hours and record whitening or breakage"*, *"Check anchors and loose
-lines"*, *"Harvest window is favorable"*, *"Improve drying setup and avoid ground contact"*) are a **demo rule set that must be
-validated by local seaweed extension experts before real-world deployment**.
+lines"*, *"Harvest window is favorable"*, *"Improve drying setup and avoid ground contact"*) are a **starter rule set**
+(source *"MwaniMlinzi starter rule set v1 — awaiting validation by local seaweed extension experts"*). They start
+unvalidated; the admin validates each entry in **Admin → Action library** after review with local experts.
 
 ## 5. LLM (optional)
 
@@ -141,20 +139,41 @@ Configured with `LLM_PROVIDER=anthropic|openai`, `LLM_API_KEY`, `LLM_MODEL` (def
 
 ## 6. Environmental providers and fallback
 
-| Provider | Live implementation | Demo implementation |
-|---|---|---|
-| Weather | `open-meteo` (no key) or `openweathermap` (`WEATHER_API_KEY`) | `DemoWeatherProvider` |
-| Ocean | `open-meteo-marine` (no key) or `stormglass` (`OCEAN_API_KEY`) | `DemoOceanProvider` |
-| LLM | `anthropic`, `openai` | `TemplateLLMProvider` |
-| SMS | `africastalking` | `SimulatedSMSProvider` |
-| USSD | Africa's Talking callback (`/api/ussd/callback`) | USSD simulator (same state machine) |
+| Provider | Default (empty variable) | Alternative | Disable |
+|---|---|---|---|
+| Weather (`WEATHER_PROVIDER`) | `open-meteo` (free, no key) | `openweathermap` + `WEATHER_API_KEY` | `none` |
+| Ocean (`OCEAN_PROVIDER`) | `open-meteo-marine` (free, no key) | `stormglass` + `OCEAN_API_KEY` | `none` |
+| LLM (`LLM_PROVIDER`) | deterministic templates | `anthropic`, `openai` + `LLM_API_KEY` | — |
+| SMS / USSD | not configured (`NOT_CONFIGURED`) | Africa's Talking (`AT_*`) | — |
 
-`EnvironmentalProvider` tries **LIVE** (only when `DEMO_MODE=false` and configured) → **CACHED** (last live reading near the
-farm within `environment.maxCacheAgeHours`) → **DEMO**. Weather and ocean fall back independently; each record stores
-`source` and `provider`, and the combined per-farm snapshot is labelled DEMO if either part is demo. Live values use the
-worst case over the 72 h forecast where available. SST anomaly for live SST is computed against an approximate Zanzibar
-monthly climatology (`providers/climatology.js`) — replace it with a proper per-cell climatology for production.
-Demo data is deterministic per location/day and follows each demo farm's scenario (NORMAL, HEAT, STORM, NEAR_HARVEST, POOR_GROWTH).
+`EnvironmentalProvider` tries **LIVE** → **CACHED** (the last live reading within ±0.05° of the farm and within
+`environment.maxCacheAgeHours`, default 48 h) → **no reading**. Weather and ocean fall back independently: if one
+provider is down, the available block is stored and the other stays `null`. Each record stores `source` and `provider`;
+the per-farm snapshot is labelled CACHED if either part came from the cache. Values a provider does not supply stay
+`null` — Open-Meteo Marine has no salinity or chlorophyll, so those factors are skipped. Live values use the worst case
+over the 72 h forecast where available. SST anomaly for live SST is computed against an approximate Zanzibar monthly
+climatology (`providers/climatology.js`) — replace it with a proper per-cell climatology for production.
+
+Data sources used on predictions: `LIVE`, `CACHED`, `UNAVAILABLE` (no reading; farm data and reports only) and
+`SIMULATION` (what-if runs).
+
+## 6b. Daily sea outlook: tides and drying weather
+
+Farmers work off-bottom farms at low tide and dry the harvest in the sun, so the app gives a daily outlook per farm
+(`GET /api/farms/:id/outlook`, the farmer dashboard card *Today at sea*, USSD `1 → 2`).
+
+- **Tides** — Open-Meteo Marine hourly `sea_level_height_msl` (3 days, local Africa/Dar_es_Salaam time). Low/high tides are
+  the local minima/maxima of the hourly series. The **work window** of a low tide is the run of hours whose level stays within
+  25 % of the tide range above the low (range measured to the lower of the neighbouring highs). Only low tides between 06:00
+  and 18:30 are suggested for work. It is a model forecast at hourly resolution, labelled *"may differ by about 30 minutes —
+  check the shore"*.
+- **Drying weather** — Open-Meteo hourly rain probability and amount during drying hours (07:00–18:00). Per day:
+  **BAD** above 60 % chance or 5 mm, **CAUTION** from 30 % or 1 mm, otherwise **GOOD** (setting `drying.thresholds`, starter
+  values awaiting local validation). No data → no verdict (never "GOOD" by default).
+- **Advice** — the Action Library entries `DRY_LOW_OK`, `DRY_MEDIUM_CAUTION`, `DRY_HIGH_DELAY` (category *Drying weather*),
+  validated and edited like every other action. This targets ground drying (deck slide 2: ~40 % of farmers dry on the ground).
+- **Fallback** — live → the last stored outlook ≤ `environment.maxCacheAgeHours` (labelled *Last saved reading*) → none
+  ("No sea forecast for this farm yet"). A farm without a map point has no outlook.
 
 ## 7. Harvest forecasting
 
@@ -163,20 +182,21 @@ Demo data is deterministic per location/day and follows each demo farm's scenari
 0.1·P(harvest window) (capped) → low/high range widened by uncertainty (lower confidence and less history ⇒ wider).
 Aggregated by farm, cooperative, district, week and 7/14/30-day horizons. Quantities are kg of dried seaweed.
 
-## 8. Simulation
+## 8. Simulation (What-if planner)
 
-`POST /api/risk/predict` with `overrides` (SST anomaly, elevated-SST days, waves, wind, rain, current, salinity) runs the
-full pipeline — features → rule/ML risk → level → explanation → Action Engine → alerts — on an in-memory copy of the
+The admin **What-if planner** (`/tools/scenarios`) calls `POST /api/risk/predict` with `overrides` (SST anomaly,
+elevated-SST days, waves, wind, rain, current, salinity). This runs the full pipeline — features → rule/ML risk → level → explanation → Action Engine → alerts — on an in-memory copy of the
 environment. Results are stored with `is_simulation = true` / source `SIMULATION`, alerts are prefixed `[SIMULATION]`, no
-SMS is sent and real "current risk" views ignore simulations.
+SMS is sent, nothing is sent to farmers, and real "current risk" views ignore simulations.
 
 ## 9. Scheduled jobs (node-cron, Africa/Dar_es_Salaam)
 
 | Job | Schedule | What |
 |---|---|---|
-| `fetch-environment` | every 6 h | provider chain for every active farm |
-| `run-risk-predictions` | every 6 h (+15 min) | features → risk → actions → alerts |
-| `harvest-forecasts` | every 6 h (+30 min) | regenerate forecasts |
+| `fetch-environment` | 06:00 and 14:00 | weather + ocean provider chain and the tide / drying-weather outlook for every active farm |
+| `run-risk-predictions` | 06:10 and 14:10 | features → risk → actions → alerts |
+| `drying-alerts` | 06:20 | drying-weather warnings (in-app + SMS) for farms at or near harvest when rain is likely today/tomorrow |
+| `harvest-forecasts` | 06:30 and 14:30 | regenerate forecasts |
 | `missing-reports` | daily 06:00 | MISSING_REPORT alerts |
 | `model-monitoring` | daily 02:00 | field metrics from outcomes |
 

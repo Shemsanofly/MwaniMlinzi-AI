@@ -8,9 +8,10 @@ import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { useAuth } from '../../stores/AuthContext.jsx';
 import { farmApi } from '../../api/endpoints.js';
 import FarmMap from '../../components/map/FarmMap.jsx';
+import SeaOutlookCard from '../../components/outlook/SeaOutlookCard.jsx';
 import { EnvironmentSummary, NextActionCard, RiskCard, ModelStatusBadge } from '../../components/risk/RiskComponents.jsx';
 import {
-  Badge, Button, Card, DemoBadge, EmptyState, ErrorState, Field, FormError, Notice, PageHeader, PageLoader, RiskBadge, SourceBadge, Spinner, Table, cx,
+  Badge, Button, Card, EmptyState, ErrorState, Field, FormError, Notice, PageHeader, PageLoader, RiskBadge, SourceBadge, Spinner, Table, cx,
 } from '../../components/ui/index.jsx';
 import { RISK_LEVELS } from '../../utils/risk.js';
 import { date, dateTime, isoDate, num, pct, timeAgo, tzs } from '../../utils/format.js';
@@ -81,6 +82,8 @@ function OverviewTab({ farm, base }) {
         </Section>
       </div>
 
+      <SeaOutlookCard farmId={farm.id} />
+
       <Section title={t('extension.farm.environment')} icon={Thermometer} action={env.data?.current && <SourceBadge source={env.data.current.source} />}>
         <Loading q={env}>
           {env.data?.current ? <EnvironmentSummary env={env.data.current} /> : <EmptyState title={t('extension.farm.noEnvironment')} />}
@@ -112,7 +115,7 @@ function OverviewTab({ farm, base }) {
       <Section title={t('extension.farm.map')} icon={MapPin} bodyClassName="p-2 sm:p-3">
         {farm.location ? <FarmMap farms={[farm]} height={300} key={farm.id} /> : <EmptyState title={t('extension.farm.noLocation')} />}
         <p className="px-1 pt-1 text-xs text-slate-500">
-          <Link to={base === '/extension' ? '/extension/risk-map' : '/cooperative/map'} className="font-semibold text-ocean-700 hover:underline">{t('extension.farm.allOnMap')} →</Link>
+          <Link to={base === '/cooperative' ? '/cooperative/map' : `${base}/risk-map`} className="font-semibold text-ocean-700 hover:underline">{t('extension.farm.allOnMap')} →</Link>
         </p>
       </Section>
     </div>
@@ -148,7 +151,6 @@ function RiskTab({ farm, canFlag }) {
       <Loading q={q}>
         {data && (
           <>
-            {data.predictions.some((p) => p.dataSource === 'DEMO') && <Notice tone="demo">{t('extension.farm.demoDataNote')}</Notice>}
             <div className="grid gap-4 lg:grid-cols-3">
               <div className="lg:col-span-1">
                 <NextActionCard nextAction={data.nextAction} insufficientDataMessage={data.insufficientDataMessage} />
@@ -358,9 +360,9 @@ export default function StaffFarmDetail() {
   const [params, setParams] = useSearchParams();
   const tab = TABS.includes(params.get('tab')) ? params.get('tab') : 'overview';
   const q = useQuery({ queryKey: ['farm', id], queryFn: () => farmApi.get(id) });
-  const canFlag = hasRole('EXTENSION_OFFICER', 'ADMIN');
-  const canReview = hasRole('EXTENSION_OFFICER', 'ADMIN');
-  const canNote = hasRole('EXTENSION_OFFICER', 'COOPERATIVE_ADMIN', 'ADMIN');
+  const canFlag = hasRole('ADMIN');
+  const canReview = hasRole('ADMIN');
+  const canNote = hasRole('ADMIN');
 
   const back = <Link to={`${base}/farms`} className="mb-3 inline-flex items-center gap-1 text-sm font-semibold text-ocean-700 hover:underline"><ArrowLeft className="h-4 w-4" aria-hidden />{t('extension.farm.back')}</Link>;
   if (q.isLoading) return <PageLoader />;
@@ -376,12 +378,10 @@ export default function StaffFarmDetail() {
         badge={(
           <>
             <RiskBadge level={farm.overallRiskLevel} long size="lg" />
-            {farm.isDemo && <DemoBadge />}
             {farm.status !== 'ACTIVE' && <Badge>{t(`extension.shared.farmStatus.${farm.status}`)}</Badge>}
           </>
         )}
       />
-      {farm.isDemo && <Notice tone="demo" className="mb-4">{t('extension.farm.demoFarmNote')}</Notice>}
       <div role="tablist" aria-label={t('extension.farm.sections')} className="mb-4 flex gap-1 overflow-x-auto border-b border-slate-200">
         {TABS.map((k) => {
           const Icon = TAB_ICON[k];

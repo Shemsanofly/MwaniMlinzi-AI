@@ -5,11 +5,9 @@ import { forbidden, unauthorized } from '../utils/errors.js';
 
 export const ROLES = Object.freeze({
   FARMER: 'FARMER',
-  COOPERATIVE_ADMIN: 'COOPERATIVE_ADMIN',
-  EXTENSION_OFFICER: 'EXTENSION_OFFICER',
-  BUYER: 'BUYER',
   ADMIN: 'ADMIN',
 });
+export const ACTIVE_ROLE_NAMES = Object.freeze(Object.values(ROLES));
 
 export const signToken = (user) => jwt.sign({ sub: user.id }, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
 
@@ -17,7 +15,7 @@ export const signToken = (user) => jwt.sign({ sub: user.id }, env.jwtSecret, { e
 export async function loadUser(userId) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: { roles: { include: { role: true } }, farmer: true, buyer: true },
+    include: { roles: { include: { role: true } }, farmer: true },
   });
   if (!user) return null;
   return {
@@ -27,15 +25,13 @@ export async function loadUser(userId) {
     phone: user.phone,
     preferredLanguage: user.preferredLanguage,
     isActive: user.isActive,
-    isDemo: user.isDemo,
     smsEnabled: user.smsEnabled,
     notifyRiskAlerts: user.notifyRiskAlerts,
     notifyHarvest: user.notifyHarvest,
     notifySystem: user.notifySystem,
     cooperativeId: user.cooperativeId,
     farmerId: user.farmer?.id || null,
-    buyerId: user.buyer?.id || null,
-    roles: user.roles.map((r) => r.role.name),
+    roles: user.roles.map((r) => r.role.name).filter((r) => ACTIVE_ROLE_NAMES.includes(r)),
   };
 }
 
@@ -57,7 +53,7 @@ export async function authenticate(req, _res, next) {
 
 export const hasRole = (user, ...roles) => !!user && user.roles.some((r) => roles.includes(r));
 
-/** authorize('ADMIN') or authorize('ADMIN', 'EXTENSION_OFFICER') — any matching role passes. */
+/** authorize('ADMIN') or authorize('FARMER', 'ADMIN') — any matching active role passes. */
 export const authorize = (...roles) => (req, _res, next) => {
   if (!req.user) return next(unauthorized());
   if (!hasRole(req.user, ...roles)) return next(forbidden());

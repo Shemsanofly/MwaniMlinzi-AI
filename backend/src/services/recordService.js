@@ -77,14 +77,12 @@ export const RecordService = {
       const fc = await prisma.harvestForecast.findFirst({ where: { farmId, isCurrent: true } });
       estimated = fc ? fc.riskAdjustedQuantityKg : null;
     }
-    if (data.buyerId && !(await prisma.buyer.findUnique({ where: { id: data.buyerId } }))) throw badRequest('Unknown buyer');
     const metrics = harvestMetrics({ estimatedQuantity: estimated, actualQuantity: data.actualQuantity, pricePerKg: data.pricePerKg });
     const harvest = await prisma.$transaction(async (tx) => {
       const h = await tx.harvestRecord.create({
         data: {
           farmId,
           plantingCycleId: cycle?.id || null,
-          buyerId: data.buyerId || null,
           harvestDate: data.harvestDate,
           estimatedQuantity: estimated ?? null,
           actualQuantity: data.actualQuantity,

@@ -8,7 +8,7 @@ import { ok, created } from '../utils/response.js';
 import { badRequest, conflict, forbidden, notFound } from '../utils/errors.js';
 import { audit } from '../utils/audit.js';
 import { pageParams } from '../utils/pagination.js';
-import { hasRole, ROLES } from '../middleware/auth.js';
+import { ACTIVE_ROLE_NAMES, hasRole, ROLES } from '../middleware/auth.js';
 import { DEFAULT_SETTINGS, getAllSettings, setSetting } from '../services/settingsService.js';
 import { MLRiskProvider } from '../ai/mlRiskProvider.js';
 import { ModelMonitoringService } from '../services/modelMonitoringService.js';
@@ -23,10 +23,10 @@ import { assertFarmAccess, isUuid } from '../services/accessService.js';
 /* ───────────── Users & roles ───────────── */
 
 const userSelect = {
-  id: true, email: true, fullName: true, phone: true, isActive: true, isDemo: true, preferredLanguage: true, lastLoginAt: true, createdAt: true,
+  id: true, email: true, fullName: true, phone: true, isActive: true, preferredLanguage: true, lastLoginAt: true, createdAt: true,
   cooperative: { select: { id: true, name: true } }, roles: { select: { role: { select: { name: true } } } },
 };
-const flatUser = (u) => ({ ...u, roles: u.roles.map((r) => r.role.name) });
+const flatUser = (u) => ({ ...u, roles: u.roles.map((r) => r.role.name).filter((r) => ACTIVE_ROLE_NAMES.includes(r)) });
 
 export async function listUsers(req, res) {
   const { take, skip, page, limit } = pageParams(req.query);
@@ -61,7 +61,6 @@ export async function createUser(req, res) {
       const farmer = await tx.farmer.create({ data: { userId: u.id, farmerCode: `FMR-${u.id.slice(0, 8).toUpperCase()}` } });
       if (d.cooperativeId) await tx.cooperativeMember.create({ data: { cooperativeId: d.cooperativeId, farmerId: farmer.id } });
     }
-    if (d.roles.includes('BUYER')) await tx.buyer.create({ data: { userId: u.id, companyName: d.fullName, contactName: d.fullName } });
     return u;
   });
   await audit(req, 'CREATE', 'User', user.id, { roles: d.roles });
@@ -71,7 +70,7 @@ export async function createUser(req, res) {
 export async function updateUser(req, res) {
   const { id } = req.params;
   if (!isUuid(id)) throw notFound('User');
-  const existing = await prisma.user.findUnique({ where: { id }, include: { farmer: true, buyer: true } });
+  const existing = await prisma.user.findUnique({ where: { id }, include: { farmer: true } });
   if (!existing) throw notFound('User');
   const { roles, ...data } = req.valid.body;
   if (id === req.user.id && (data.isActive === false || (roles && !roles.includes('ADMIN')))) throw forbidden('You cannot disable or remove the admin role from your own account');
@@ -86,7 +85,6 @@ export async function updateUser(req, res) {
       await tx.userRole.deleteMany({ where: { userId: id } });
       await tx.userRole.createMany({ data: rs.map((r) => ({ userId: id, roleId: r.id })) });
       if (roles.includes('FARMER') && !existing.farmer) await tx.farmer.create({ data: { userId: id, farmerCode: `FMR-${id.slice(0, 8).toUpperCase()}` } });
-      if (roles.includes('BUYER') && !existing.buyer) await tx.buyer.create({ data: { userId: id, companyName: existing.fullName } });
     }
   });
   await audit(req, 'UPDATE', 'User', id, { fields: Object.keys(req.valid.body) });
@@ -94,7 +92,7 @@ export async function updateUser(req, res) {
 }
 
 export async function listRoles(_req, res) {
-  const roles = await prisma.role.findMany({ include: { permissions: { include: { permission: true } }, _count: { select: { users: true } } } });
+  const roles = await prisma.role.findMany({ where: { name: { in: ACTIVE_ROLE_NAMES } }, include: { permissions: { include: { permission: true } }, _count: { select: { users: true } } } });
   return ok(res, { roles: roles.map((r) => ({ id: r.id, name: r.name, description: r.description, users: r._count.users, permissions: r.permissions.map((p) => p.permission.key) })) });
 }
 
@@ -124,8 +122,9 @@ const SETTING_VALIDATORS = {
   'alerts.missingReportDays': (v) => Number.isInteger(v) && v >= 1 && v <= 90,
   'alerts.dedupHours': (v) => Number.isInteger(v) && v >= 1 && v <= 168,
   'environment.maxCacheAgeHours': (v) => Number.isInteger(v) && v >= 1 && v <= 720,
-  'environment.preferLive': (v) => typeof v === 'boolean',
   'notifications.smsEnabled': (v) => typeof v === 'boolean',
+  'drying.thresholds': (v) => !!v && ['cautionProbability', 'badProbability', 'cautionRainMm', 'badRainMm'].every((k) => typeof v[k] === 'number' && v[k] >= 0)
+    && v.badProbability <= 100 && v.cautionProbability <= v.badProbability && v.cautionRainMm <= v.badRainMm,
 };
 
 export async function getSettings(_req, res) {
@@ -136,10 +135,9 @@ export async function getSettings(_req, res) {
   return ok(res, {
     settings,
     system: {
-      demoMode: env.demoMode,
       jobsEnabled: env.enableJobs,
       providers: { ...EnvironmentService.providerStatus(), llm: getLLMProvider().name, sms: SMSService.status().configured ? SMSService.status().provider : 'NOT_CONFIGURED', ussd: atConfig().ussdConfigured ? 'africastalking' : 'NOT_CONFIGURED' },
-      note: 'DEMO_MODE and provider credentials are set in backend/.env (never stored in the database).',
+      note: 'Provider selection and credentials are set in backend/.env (never stored in the database).',
     },
   });
 }
@@ -178,7 +176,7 @@ export async function listModels(_req, res) {
     ruleBaseline: { version: 'rules-v1', predictions: await prisma.riskPrediction.count({ where: { modelType: 'RULE', isSimulation: false } }) },
     fieldEvaluation: field,
     feedback: feedback.map((f) => ({ type: f.feedbackType, count: f._count._all })),
-    training: { command: 'cd backend && npm run ai:dataset && npm run ai:train', note: 'Models trained on synthetic demo data are labelled as such and must be re-trained on field outcomes before real use.' },
+    training: { command: 'cd backend && npm run ai:train', note: 'Models are trained only on recorded field outcomes (farmer-reported results of real predictions). Until enough outcomes exist, the rule-based engine is used.' },
   });
 }
 

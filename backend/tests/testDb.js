@@ -11,4 +11,4 @@ export function testDatabaseUrl() {
   u.pathname = `${u.pathname.replace(/\/$/, '')}_test`;
   return u.toString();
 }
-export const TEST_PASSWORD = 'TestDemo123!';
+export const TEST_PASSWORD = 'TestFixture123!';

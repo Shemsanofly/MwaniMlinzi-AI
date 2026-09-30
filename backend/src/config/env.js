@@ -20,13 +20,13 @@ export const env = {
   jwtSecret: process.env.JWT_SECRET || 'test-only-secret-not-for-production',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   corsOrigins: (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',').map((s) => s.trim()).filter(Boolean),
-  demoMode: bool(process.env.DEMO_MODE, true),
   enableJobs: bool(process.env.ENABLE_JOBS, true) && nodeEnv !== 'test',
   llm: {
     provider: (process.env.LLM_PROVIDER || '').toLowerCase(),
     apiKey: process.env.LLM_API_KEY || '',
     model: process.env.LLM_MODEL || '',
   },
+  // Live environmental data. Empty = Open-Meteo / Open-Meteo Marine (free, no key); 'none' disables a provider.
   weather: { provider: (process.env.WEATHER_PROVIDER || '').toLowerCase(), apiKey: process.env.WEATHER_API_KEY || '' },
   ocean: { provider: (process.env.OCEAN_PROVIDER || '').toLowerCase(), apiKey: process.env.OCEAN_API_KEY || '' },
   // Africa's Talking (SMS + USSD). Credentials only come from the environment — never from the database or the UI.
@@ -38,6 +38,8 @@ export const env = {
     ussdServiceCode: process.env.AT_USSD_SERVICE_CODE || '',
     // Shared secret appended to the callback URLs you register in the Africa's Talking dashboard (?secret=...).
     callbackSecret: process.env.AT_CALLBACK_SECRET || '',
+    // Local/sandbox USSD simulator compatibility. Never enabled in production.
+    allowUnsignedSandboxUssd: bool(process.env.AT_ALLOW_UNSIGNED_SANDBOX_USSD, false),
   },
   // Public HTTPS base URL of this API (used to show the callback URLs to admins), e.g. https://api.example.org
   publicApiUrl: (process.env.PUBLIC_API_URL || '').replace(/\/$/, ''),

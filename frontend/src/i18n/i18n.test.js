@@ -32,7 +32,7 @@ describe('i18n (i18next resources)', () => {
   });
 
   test('area namespaces are nested and common keys stay at the top level', () => {
-    for (const ns of ['farmer', 'coop', 'extension', 'buyer', 'admin', 'demo', 'public']) expect(typeof en[ns]).toBe('object');
+    for (const ns of ['farmer', 'coop', 'extension', 'admin', 'tools', 'public']) expect(typeof en[ns]).toBe('object');
     expect(typeof en.risk.level.HIGH).toBe('string');
   });
 

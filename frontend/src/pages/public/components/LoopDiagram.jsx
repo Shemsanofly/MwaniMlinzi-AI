@@ -7,10 +7,10 @@ import { useI18n } from '../../../i18n/I18nProvider.jsx';
 export function LoopDiagram() {
   const { t } = useI18n();
   const nodes = [
-    { key: 'monitor', x: 160, y: 40, color: '#1f8daa' },
+    { key: 'monitor', x: 160, y: 40, color: '#25899b' },
     { key: 'predict', x: 280, y: 160, color: '#ea580c' },
-    { key: 'act', x: 160, y: 280, color: '#177f56' },
-    { key: 'learn', x: 40, y: 160, color: '#0b4f6c' },
+    { key: 'act', x: 160, y: 280, color: '#1a8156' },
+    { key: 'learn', x: 40, y: 160, color: '#0c4254' },
   ];
   // Quarter arcs between the nodes (radius 120 around the centre 160,160), trimmed so they do not overlap the node circles.
   const arcs = [
@@ -23,15 +23,17 @@ export function LoopDiagram() {
     <svg viewBox="0 0 320 320" className="h-auto w-full max-w-xs" role="img" aria-label={t('public.loop.aria')}>
       <defs>
         <marker id="loop-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M 0 0 L 10 5 L 0 10 z" fill="#78cadd" />
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#45a6b6" />
         </marker>
       </defs>
-      <circle cx="160" cy="160" r="120" fill="none" stroke="#d5eef5" strokeWidth="18" />
-      {arcs.map((d) => <path key={d} d={d} fill="none" stroke="#78cadd" strokeWidth="3" markerEnd="url(#loop-arrow)" />)}
+      <circle cx="160" cy="160" r="120" fill="none" stroke="#d7eef1" strokeWidth="18" />
+      <circle cx="160" cy="160" r="78" fill="#fbf9f5" stroke="#e8dfcf" strokeDasharray="2 6" className="origin-center motion-safe:animate-[spin-slow_60s_linear_infinite]" />
+      {arcs.map((d) => <path key={d} d={d} fill="none" stroke="#45a6b6" strokeWidth="3" strokeLinecap="round" strokeDasharray="10 6" markerEnd="url(#loop-arrow)" className="motion-safe:animate-[dash_3s_linear_infinite]" />)}
       <text x="160" y="152" textAnchor="middle" className="fill-ocean-900" fontSize="15" fontWeight="700">{t('public.loop.centre1')}</text>
       <text x="160" y="172" textAnchor="middle" className="fill-slate-500" fontSize="11">{t('public.loop.centre2')}</text>
-      {nodes.map((n) => (
-        <g key={n.key}>
+      {nodes.map((n, i) => (
+        <g key={n.key} className="animate-pop" style={{ animationDelay: `${i * 120}ms`, transformOrigin: `${n.x}px ${n.y}px` }}>
+          <circle cx={n.x} cy={n.y} r="40" fill={n.color} opacity=".14" />
           <circle cx={n.x} cy={n.y} r="34" fill={n.color} />
           <text x={n.x} y={n.y + 4} textAnchor="middle" fill="#fff" fontSize="11.5" fontWeight="700">{t(`public.loop.${n.key}`)}</text>
         </g>
@@ -45,10 +47,10 @@ export function PipelineFlow() {
   const { t } = useI18n();
   const inputs = ['farmData', 'environment', 'observations'];
   const steps = ['aiRisk', 'validatedAction', 'farmerResponse', 'outcome', 'learningData'];
-  const Arrow = () => <span aria-hidden className="text-lg font-bold text-ocean-400 max-md:rotate-90 md:mx-1">→</span>;
+  const Arrow = () => <span aria-hidden className="text-lg font-bold text-ocean-300 max-md:rotate-90 md:mx-1">→</span>;
   return (
     <div className="flex flex-col items-center gap-2 md:flex-row md:flex-wrap md:justify-center">
-      <div className="flex flex-col gap-1.5 rounded-xl border border-ocean-200 bg-white p-2.5">
+      <div className="flex flex-col gap-1.5 rounded-2xl border border-ocean-200/80 bg-white p-2.5 shadow-[var(--shadow-soft)]">
         {inputs.map((k, i) => (
           <div key={k} className="flex items-center gap-1.5">
             {i > 0 && <span className="text-xs font-bold text-ocean-500" aria-hidden>+</span>}
@@ -59,7 +61,7 @@ export function PipelineFlow() {
       {steps.map((k, i) => (
         <div key={k} className="flex flex-col items-center gap-2 md:flex-row">
           <Arrow />
-          <span className={`rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-wide ${i === 0 ? 'bg-orange-50 text-orange-800 ring-1 ring-orange-200' : i === 1 ? 'bg-seaweed-50 text-seaweed-700 ring-1 ring-seaweed-100' : 'bg-white text-slate-700 ring-1 ring-slate-200'}`}>
+          <span className={`rounded-xl px-3 py-2 text-xs font-bold uppercase tracking-wide shadow-[var(--shadow-soft)] transition-transform duration-300 hover:-translate-y-0.5 ${i === 0 ? 'bg-orange-50 text-orange-800 ring-1 ring-orange-200' : i === 1 ? 'bg-seaweed-50 text-seaweed-700 ring-1 ring-seaweed-100' : 'bg-white text-slate-700 ring-1 ring-slate-200'}`}>
             {t(`public.flow.${k}`)}
           </span>
         </div>

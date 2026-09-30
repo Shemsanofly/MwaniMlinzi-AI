@@ -22,7 +22,7 @@ describe('Farm assistant', () => {
     const user = userEvent.setup();
     aiApi.chat.mockResolvedValue({
       intent: 'WHAT_TO_DO', language: 'en', reply: 'Next action: Inspect lines within 24 hours', generatedBy: 'TEMPLATE',
-      approvedAction: { text: 'Inspect lines within 24 hours', source: 'Demo rule set', validated: false, recommendationId: 'r1', riskType: 'HEAT_ICE_ICE' },
+      approvedAction: { text: 'Inspect lines within 24 hours', source: 'Extension guideline', validated: false, recommendationId: 'r1', riskType: 'HEAT_ICE_ICE' },
       observationDraft: null, facts: {}, farm: { id: FARM.id, farmCode: 'FARM001', name: FARM.name },
     });
     renderPage(<AssistantPage />);

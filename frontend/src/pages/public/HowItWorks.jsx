@@ -20,21 +20,21 @@ const CHANNELS = [
   { key: 'sms', icon: MessageSquare },
   { key: 'ussd', icon: Smartphone },
 ];
-const ROLES = ['FARMER', 'COOPERATIVE_ADMIN', 'EXTENSION_OFFICER', 'BUYER', 'ADMIN'];
+const ROLES = ['FARMER', 'ADMIN'];
 
 export default function HowItWorks() {
   const { t } = useI18n();
   return (
     <div>
       <PublicHero eyebrow={t('nav.howItWorks')} title={t('public.how.title')} subtitle={t('public.how.subtitle')} />
-      <div className="mx-auto max-w-5xl space-y-14 px-4 py-12 sm:px-6">
+      <div className="mx-auto max-w-5xl space-y-20 px-4 py-16 sm:px-6">
         <section>
-          <h2 className="text-2xl font-bold text-slate-900">{t('public.how.pipelineTitle')}</h2>
-          <ol className="relative mt-6 space-y-4 border-l-2 border-ocean-200 pl-6">
+          <h2 className="display text-3xl font-medium text-ocean-950 sm:text-4xl">{t('public.how.pipelineTitle')}</h2>
+          <ol className="relative mt-8 space-y-4 border-l-2 border-dashed border-ocean-200 pl-6">
             {STEPS.map(({ key, icon: Icon, optional }, i) => (
               <li key={key} className="relative">
-                <span className={`absolute -left-[39px] flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white ${optional ? 'bg-slate-400' : 'bg-ocean-700'}`}>{i + 1}</span>
-                <div className={`rounded-xl border bg-white p-4 ${optional ? 'border-dashed border-slate-300' : 'border-slate-200'}`}>
+                <span className={`absolute -left-[39px] flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white ${optional ? 'bg-slate-400' : 'bg-ocean-900 ring-4 ring-sand-50'}`}>{i + 1}</span>
+                <div className={`lift rounded-2xl border bg-white p-5 shadow-[var(--shadow-soft)] ${optional ? 'border-dashed border-slate-300' : 'border-slate-200/80'}`}>
                   <div className="flex flex-wrap items-center gap-2">
                     <Icon className="h-5 w-5 text-ocean-600" aria-hidden />
                     <h3 className="font-semibold text-slate-900">{t(`public.how.steps.${key}.title`)}</h3>
@@ -52,10 +52,10 @@ export default function HowItWorks() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-slate-900">{t('public.how.channelsTitle')}</h2>
+          <h2 className="display text-3xl font-medium text-ocean-950 sm:text-4xl">{t('public.how.channelsTitle')}</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-3">
             {CHANNELS.map(({ key, icon: Icon }) => (
-              <div key={key} className="rounded-xl border border-slate-200 bg-white p-5">
+              <div key={key} className="surface lift p-6">
                 <Icon className="h-6 w-6 text-ocean-600" aria-hidden />
                 <h3 className="mt-3 font-semibold text-slate-900">{t(`public.how.channels.${key}.title`)}</h3>
                 <p className="mt-1 text-sm text-slate-600">{t(`public.how.channels.${key}.text`)}</p>
@@ -65,8 +65,8 @@ export default function HowItWorks() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-slate-900">{t('public.how.rolesTitle')}</h2>
-          <div className="mt-5 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <h2 className="display text-3xl font-medium text-ocean-950 sm:text-4xl">{t('public.how.rolesTitle')}</h2>
+          <div className="surface mt-6 overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200 text-sm">
               <thead className="bg-slate-50">
                 <tr>
@@ -87,8 +87,8 @@ export default function HowItWorks() {
         </section>
 
         <div className="flex flex-wrap gap-3">
-          <Link to="/demo" className="rounded-lg bg-ocean-700 px-5 py-3 font-semibold text-white hover:bg-ocean-800">{t('public.hero.tryDemo')}</Link>
-          <Link to="/about" className="rounded-lg px-5 py-3 font-semibold text-ocean-800 ring-1 ring-inset ring-ocean-200 hover:bg-ocean-50">{t('nav.about')}</Link>
+          <Link to="/register" className="rounded-xl bg-ocean-900 px-5 py-3 font-semibold text-white transition hover:bg-ocean-800 active:scale-[0.97]">{t('actions.register')}</Link>
+          <Link to="/about" className="rounded-xl bg-white px-5 py-3 font-semibold text-ocean-800 ring-1 ring-inset ring-slate-300/80 transition hover:bg-ocean-50 active:scale-[0.97]">{t('nav.about')}</Link>
         </div>
       </div>
     </div>

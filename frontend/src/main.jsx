@@ -4,11 +4,19 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import '@fontsource-variable/manrope';
+import '@fontsource-variable/fraunces/opsz.css';
+import '@fontsource-variable/fraunces/opsz-italic.css';
 import 'leaflet/dist/leaflet.css';
 import './index.css';
 import App from './App.jsx';
 import { AuthProvider } from './stores/AuthContext.jsx';
 import { I18nProvider } from './i18n/I18nProvider.jsx';
+
+// Scroll-reveal animations only run where they can finish (IntersectionObserver) and are wanted.
+if (typeof IntersectionObserver !== 'undefined' && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+  document.documentElement.classList.add('motion-ok');
+}
 
 const DAY = 24 * 60 * 60 * 1000;
 const queryClient = new QueryClient({

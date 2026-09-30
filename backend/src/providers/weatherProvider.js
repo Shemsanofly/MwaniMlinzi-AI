@@ -1,20 +1,13 @@
 import { env } from '../config/env.js';
 import { fetchJson } from './http.js';
-import { demoWeather } from './demoProfiles.js';
 
 /**
  * WeatherProvider interface:
  *   name: string, isLive: boolean
- *   fetch({ latitude, longitude, profile?, at? }) → { observedAt, airTemperatureC, rainfallMm, windSpeedKmh,
+ *   fetch({ latitude, longitude }) → { observedAt, airTemperatureC, rainfallMm, windSpeedKmh,
  *                                                     windDirectionDeg, humidityPct, condition }
  * Live values use the worst case over the next 72 h where forecasts are available (risk horizon).
  */
-export class DemoWeatherProvider {
-  name = 'demo-weather';
-  isLive = false;
-  async fetch(loc) { return demoWeather(loc); }
-}
-
 const WMO = { 0: 'Clear', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast', 45: 'Fog', 51: 'Drizzle', 61: 'Rain', 63: 'Rain', 65: 'Heavy rain', 80: 'Rain showers', 81: 'Rain showers', 82: 'Violent rain showers', 95: 'Thunderstorm', 96: 'Thunderstorm', 99: 'Thunderstorm' };
 
 /** Open-Meteo — free, no API key required. https://open-meteo.com */
@@ -68,10 +61,9 @@ const maxOf = (arr) => {
   return vals.length ? Math.max(...vals) : null;
 };
 
-/** Returns the configured live provider, or null when not configured / DEMO_MODE. */
+/** Returns the configured live provider (Open-Meteo by default), or null when disabled / missing its key. */
 export function createLiveWeatherProvider(config = env) {
-  if (config.demoMode) return null;
-  switch (config.weather.provider) {
+  switch (config.weather.provider || 'open-meteo') {
     case 'open-meteo': return new OpenMeteoWeatherProvider();
     case 'openweathermap': return config.weather.apiKey ? new OpenWeatherMapProvider(config.weather.apiKey) : null;
     default: return null;

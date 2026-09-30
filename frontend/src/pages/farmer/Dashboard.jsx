@@ -5,12 +5,13 @@ import {
   AlertOctagon, AlertTriangle, BellRing, Bot, BrainCircuit, CalendarClock, ChevronDown, ClipboardList, Clock, Eye,
   Info, RefreshCw, ShieldCheck, Sprout, Truck, Waves,
 } from 'lucide-react';
+import SeaOutlookCard from '../../components/outlook/SeaOutlookCard.jsx';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { useAuth } from '../../stores/AuthContext.jsx';
 import { useFarmerFarm } from '../../hooks/useFarmerFarm.js';
 import { environmentApi, farmApi } from '../../api/endpoints.js';
-import { Button, Card, DemoBadge, ErrorState, FormError, Notice, Spinner, cx } from '../../components/ui/index.jsx';
-import { EnvironmentSummary, RISK_ICON, modelStatusText } from '../../components/risk/RiskComponents.jsx';
+import { Button, Card, ErrorState, FormError, Notice, Spinner, cx } from '../../components/ui/index.jsx';
+import { EnvironmentSummary, NoLiveDataNote, RISK_ICON, modelStatusText } from '../../components/risk/RiskComponents.jsx';
 import { dateTime, date as fmtDate, kg, timeAgo } from '../../utils/format.js';
 import { levelRank, riskStyle } from '../../utils/risk.js';
 import { ActionRecordedNotice, AlertList, BigLink, FarmGate, FarmSwitcher, SectionTitle, useInvalidateFarm, useRecordAction } from './components/shared.jsx';
@@ -41,9 +42,21 @@ export default function DashboardPage() {
   );
 }
 
-function CurrentRiskCard({ risk }) {
+function CurrentRiskCard({ risk, onCheck, checking, checkError }) {
   const { t, tx, lang } = useI18n();
   const main = mainRisk(risk.predictions);
+  if (!risk.predictions?.length) {
+    // First run: no risk check has been made for this farm yet — say so honestly and offer the next step.
+    return (
+      <Card className="border-l-4 border-ocean-300 p-4" data-testid="current-risk">
+        <p className="text-sm font-semibold text-slate-500">{t('farmer.dashboard.currentRisk')}</p>
+        <p className="mt-1 text-lg font-semibold text-slate-800">{t('farmer.dashboard.notCheckedTitle')}</p>
+        <p className="mt-1 text-sm text-slate-600">{t('farmer.dashboard.notCheckedText')}</p>
+        {onCheck && <Button className="mt-3 min-h-11" icon={RefreshCw} loading={checking} onClick={onCheck}>{t('farmer.dashboard.checkNow')}</Button>}
+        <FormError error={checkError} />
+      </Card>
+    );
+  }
   if (!main) {
     return (
       <Card className="border-l-4 border-slate-300 p-4" data-testid="current-risk">
@@ -78,14 +91,26 @@ function CurrentRiskCard({ risk }) {
             </ul>
           </div>
         )}
+        <NoLiveDataNote predictions={[main]} />
       </div>
     </Card>
   );
 }
 
-function NextActionSimple({ risk, onRecordAction, actionLoading }) {
+function NextActionSimple({ risk, hasCycle, onRecordAction, actionLoading }) {
   const { t, tx, lang } = useI18n();
   const next = risk.nextAction;
+  if (!risk.predictions?.length) {
+    return (
+      <Card className="p-4" data-testid="next-action">
+        <p className="text-slate-700">{t('farmer.dashboard.noActionYet')}</p>
+        <div className="mt-2 flex flex-col gap-1">
+          <Link to="/farmer/observations" className="inline-flex min-h-11 items-center font-semibold text-ocean-700">{t('actions.recordSymptoms')} →</Link>
+          {!hasCycle && <Link to="/farmer/farm" className="inline-flex min-h-11 items-center font-semibold text-ocean-700">{t('farmer.dashboard.addPlantingHint')} →</Link>}
+        </div>
+      </Card>
+    );
+  }
   if (!next) {
     return (
       <Card className="p-4">
@@ -146,6 +171,7 @@ function DashboardBody({ ff }) {
   const risksQ = useQuery({ queryKey: ['risks', farmId], queryFn: () => farmApi.risks(farmId) });
   const alertsQ = useQuery({ queryKey: ['farmAlerts', farmId], queryFn: () => farmApi.alerts(farmId) });
   const recordAction = useRecordAction(farmId);
+  const firstCheck = useMutation({ mutationFn: () => farmApi.runRisks(farmId), onSuccess: () => invalidate(farmId) });
 
   const onRecordAction = (rec, taken) => {
     setRecorded(null);
@@ -164,17 +190,20 @@ function DashboardBody({ ff }) {
       {/* Current risk + why (the card carries its own heading) */}
       {risksQ.isLoading ? <div className="flex justify-center p-6"><Spinner /></div>
         : risksQ.error ? <ErrorState error={risksQ.error} onRetry={risksQ.refetch} compact />
-        : <CurrentRiskCard risk={risk} />}
+        : <CurrentRiskCard risk={risk} onCheck={() => firstCheck.mutate()} checking={firstCheck.isPending} checkError={firstCheck.error} />}
 
       {/* Next action + when */}
       <SectionTitle>{t('farmer.dashboard.nextAction')}</SectionTitle>
       {risk && (
         <div className="space-y-2">
-          <NextActionSimple risk={risk} onRecordAction={onRecordAction} actionLoading={recordAction.isPending} />
+          <NextActionSimple risk={risk} hasCycle={!!cycle} onRecordAction={onRecordAction} actionLoading={recordAction.isPending} />
           <FormError error={recordAction.error} />
           <ActionRecordedNotice action={recorded} onClose={() => setRecorded(null)} />
         </div>
       )}
+
+      {/* Today at sea: low-tide work window + drying weather (daily use) */}
+      <SeaOutlookCard farmId={farmId} />
 
       {/* Farm, crop age, expected harvest */}
       <Card className="mt-4 p-4">
@@ -182,7 +211,6 @@ function DashboardBody({ ff }) {
           <Sprout className="h-5 w-5 text-seaweed-600" aria-hidden />
           <p className="text-lg font-bold text-slate-900">{farm.name}</p>
           <span className="text-sm font-semibold text-slate-500">{farm.farmCode}</span>
-          {farm.isDemo && <DemoBadge label={t('common.demoFarm')} />}
         </div>
         {cycle ? (
           <div className="mt-3 grid grid-cols-2 gap-3">

@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { z } from 'zod';
+import { env } from '../config/env.js';
 import prisma from '../config/prisma.js';
 import { atConfig } from '../providers/africastalking/config.js';
 import { UssdService } from '../services/ussdService.js';
@@ -49,6 +50,16 @@ function secretOk(req) {
   return crypto.timingSafeEqual(a, b) && given.length > 0;
 }
 
+function unsignedSandboxUssdOk(req, kind) {
+  const cfg = atConfig();
+  return kind === 'USSD'
+    && cfg.unsignedSandboxUssdAllowed
+    && !env.isProduction
+    && req.path === '/api/ussd/MwaniMlinzi'
+    && !req.query.secret
+    && !req.get('x-callback-secret');
+}
+
 async function logEvent(data) {
   try {
     await prisma.integrationEvent.create({ data: { provider: 'AFRICASTALKING', ...data } });
@@ -60,11 +71,13 @@ async function logEvent(data) {
 /** Common guard: configured + secret. Returns true when the request was already answered. */
 async function rejectUnauthorized(req, res, kind, { ussd = false } = {}) {
   if (!atConfig().callbackSecret) {
+    if (unsignedSandboxUssdOk(req, kind)) return false;
     await logEvent({ kind, status: 'REJECTED', error: 'AT_CALLBACK_SECRET not configured' });
     res.status(503).type('text/plain').send(ussd ? 'END Service is not configured. Please try again later.' : 'NOT_CONFIGURED');
     return true;
   }
   if (!secretOk(req)) {
+    if (unsignedSandboxUssdOk(req, kind)) return false;
     await logEvent({ kind, status: 'REJECTED', error: 'Invalid callback secret' });
     res.status(403).type('text/plain').send(ussd ? 'END Access denied.' : 'FORBIDDEN');
     return true;

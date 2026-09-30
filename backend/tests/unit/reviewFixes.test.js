@@ -3,7 +3,7 @@ import { jest } from '@jest/globals';
 import { resolveModelPath, MODELS_DIR } from '../../src/ai/paths.js';
 import { OpenMeteoWeatherProvider } from '../../src/providers/weatherProvider.js';
 import { OpenMeteoMarineProvider } from '../../src/providers/oceanProvider.js';
-import { EnvironmentalProvider } from '../../src/providers/environmentalProvider.js';
+import { OpenMeteoOutlookProvider, createOutlookProvider } from '../../src/providers/outlookProvider.js';
 
 describe('model path guard', () => {
   test('accepts files inside the models directory', () => {
@@ -29,11 +29,43 @@ describe('live providers with missing forecast values', () => {
     const o = await new OpenMeteoMarineProvider().fetch({ latitude: -6, longitude: 39 });
     expect(o.waveHeightM).toBeNull();
   });
+});
 
-  test('useLive=false skips live providers (environment.preferLive)', async () => {
-    const live = { name: 'live', isLive: true, fetch: jest.fn(async () => ({ rainfallMm: 1 })) };
-    const r = await new EnvironmentalProvider({ weatherLive: live, oceanLive: live }).fetch({ latitude: -6, longitude: 39 }, { useLive: false });
-    expect(live.fetch).not.toHaveBeenCalled();
-    expect(r.weather.source).toBe('DEMO');
+describe('Open-Meteo outlook provider (tides + drying rain)', () => {
+  const realFetch = global.fetch;
+  afterEach(() => { global.fetch = realFetch; });
+  const route = (handlers) => {
+    global.fetch = jest.fn(async (url) => {
+      const h = handlers.find(([host]) => String(url).includes(host));
+      if (!h || h[1] === 'fail') return { ok: false, status: 503, text: async () => 'down' };
+      return { ok: true, json: async () => h[1] };
+    });
+  };
+  const times = ['2026-09-30T11:00', '2026-09-30T12:00', '2026-09-30T13:00'];
+
+  test('parses sea level and rain series requested in local Zanzibar time', async () => {
+    route([
+      ['marine-api', { hourly: { time: times, sea_level_height_msl: [-1.1, -1.2, -1.0] } }],
+      ['api.open-meteo.com', { hourly: { time: times, precipitation_probability: [10, 20, 15], precipitation: [0, 0, 0.1] } }],
+    ]);
+    const r = await new OpenMeteoOutlookProvider().fetch({ latitude: -6.27, longitude: 39.56 });
+    expect(r.tide).toEqual({ times, levels: [-1.1, -1.2, -1.0] });
+    expect(r.rain).toEqual({ times, probability: [10, 20, 15], mm: [0, 0, 0.1] });
+    expect(r.providers).toEqual({ tide: 'open-meteo-marine', rain: 'open-meteo' });
+    expect(String(global.fetch.mock.calls[0][0])).toMatch(/timezone=Africa%2FDar_es_Salaam/);
+  });
+
+  test('a failing or empty part is null with an error, the other part still works', async () => {
+    route([['marine-api', 'fail'], ['api.open-meteo.com', { hourly: { time: times, precipitation_probability: [null, null, null], precipitation: [null, null, null] } }]]);
+    const r = await new OpenMeteoOutlookProvider().fetch({ latitude: -6.27, longitude: 39.56 });
+    expect(r.tide).toBeNull();
+    expect(r.rain).toBeNull();
+    expect(r.errors.tide).toMatch(/503/);
+    expect(r.errors.rain).toMatch(/no values/);
+  });
+
+  test("'none' disables a part; both 'none' disables the provider", () => {
+    expect(createOutlookProvider({ weather: { provider: 'none' }, ocean: { provider: 'none' } })).toBeNull();
+    expect(createOutlookProvider({ weather: { provider: '' }, ocean: { provider: 'none' } })).toMatchObject({ tideEnabled: false, rainEnabled: true });
   });
 });

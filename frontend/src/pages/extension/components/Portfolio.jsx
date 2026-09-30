@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { AlertTriangle, BarChart3, Bell, ClipboardX, Package, Tractor, Users } from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nProvider.jsx';
-import { Card, DemoBadge, EmptyState, RiskBadge, StatCard, Table } from '../../../components/ui/index.jsx';
+import { Card, EmptyState, RiskBadge, StatCard, Table } from '../../../components/ui/index.jsx';
 import { date, num, pct } from '../../../utils/format.js';
 import { ActivityChart, HarvestWeeklyChart, RiskByTypeChart, RiskDistributionChart, SERIES, SimpleBarChart } from './charts.jsx';
 import { FarmForecastCell, RiskMiniBadges, Section } from './common.jsx';
@@ -22,6 +22,9 @@ export function PortfolioStats({ cards, onNavigate }) {
   );
 }
 
+/** True when a chart's rows contain at least one non-zero count (so empty charts show a message, not blank axes). */
+const hasCounts = (rows = []) => rows.some((r) => Object.values(r || {}).some((v) => typeof v === 'number' && v > 0));
+
 /** All portfolio charts (risk, forecast, activity, losses, alerts, symptoms). */
 export function PortfolioCharts({ charts }) {
   const { t } = useI18n();
@@ -32,16 +35,16 @@ export function PortfolioCharts({ charts }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Section title={t('extension.shared.charts.riskDistribution')} subtitle={t('extension.shared.charts.riskDistributionSub')} icon={BarChart3}>
-        <RiskDistributionChart data={charts.riskDistribution?.overall} />
+        {hasCounts(charts.riskDistribution?.overall) ? <RiskDistributionChart data={charts.riskDistribution.overall} /> : <EmptyState title={t('extension.shared.charts.noPredictions')} />}
       </Section>
       <Section title={t('extension.shared.charts.byType')} subtitle={t('extension.shared.charts.byTypeSub')} icon={BarChart3}>
-        <RiskByTypeChart data={charts.riskDistribution?.byType} />
+        {hasCounts(charts.riskDistribution?.byType) ? <RiskByTypeChart data={charts.riskDistribution.byType} /> : <EmptyState title={t('extension.shared.charts.noPredictions')} />}
       </Section>
       <Section title={t('extension.shared.charts.harvestByWeek')} subtitle={t('extension.shared.charts.harvestByWeekSub')} icon={Package} className="lg:col-span-2">
         {charts.harvestForecast?.length ? <HarvestWeeklyChart data={charts.harvestForecast} /> : <EmptyState title={t('extension.shared.noForecasts')} />}
       </Section>
       <Section title={t('extension.shared.charts.activity')} subtitle={t('extension.shared.charts.activitySub')} icon={BarChart3} className="lg:col-span-2">
-        <ActivityChart data={charts.farmActivity} />
+        {hasCounts(charts.farmActivity) ? <ActivityChart data={charts.farmActivity} /> : <EmptyState title={t('extension.shared.charts.noActivity')} />}
       </Section>
       <Section title={t('extension.shared.charts.losses')} subtitle={t('extension.shared.charts.lossesSub')} icon={BarChart3}>
         {losses.length ? (
@@ -57,7 +60,7 @@ export function PortfolioCharts({ charts }) {
         {alertsByType.length ? <SimpleBarChart data={alertsByType} xKey="label" yKey="count" name={t('extension.shared.charts.count')} vertical labelWidth={130} height={Math.max(160, alertsByType.length * 40)} valueFormatter={(v) => num(v, 0)} /> : <EmptyState title={t('extension.shared.alerts.empty')} />}
       </Section>
       <Section title={t('extension.shared.charts.symptoms')} subtitle={t('extension.shared.charts.symptomsSub', { n: obs.total || 0 })} icon={BarChart3} className="lg:col-span-2">
-        <SimpleBarChart data={symptoms} xKey="label" yKey="count" name={t('extension.shared.charts.reports')} color={SERIES.primary} height={200} valueFormatter={(v) => num(v, 0)} />
+        {hasCounts(symptoms) ? <SimpleBarChart data={symptoms} xKey="label" yKey="count" name={t('extension.shared.charts.reports')} color={SERIES.primary} height={200} valueFormatter={(v) => num(v, 0)} /> : <EmptyState title={t('extension.shared.noSymptoms')} />}
       </Section>
     </div>
   );
@@ -137,8 +140,4 @@ export function GroupTable({ rows = [], keyHeader, unit = 'kg' }) {
     { key: 'conf', header: t('risk.confidence'), className: 'text-right', render: (r) => pct(r.avgConfidence) },
   ];
   return <Table columns={columns} rows={rows} rowKey="key" />;
-}
-
-export function DemoMark({ show }) {
-  return show ? <DemoBadge /> : null;
 }

@@ -64,13 +64,9 @@ function buildMessage(farm, prediction, action, kind) {
 async function recipientsFor(farm, severity) {
   const users = [];
   if (farm.farmer?.user) users.push({ ...farm.farmer.user, channels: ['IN_APP', 'SMS'], lang: farm.farmer.user.preferredLanguage });
-  if (levelRank(severity) >= levelRank('HIGH') && farm.cooperativeId) {
-    const staff = await prisma.user.findMany({ where: { cooperativeId: farm.cooperativeId, isActive: true, roles: { some: { role: { name: 'COOPERATIVE_ADMIN' } } } } });
-    staff.forEach((u) => users.push({ ...u, channels: ['IN_APP'], lang: u.preferredLanguage }));
-  }
-  if (severity === 'CRITICAL') {
-    const officers = await prisma.user.findMany({ where: { isActive: true, roles: { some: { role: { name: 'EXTENSION_OFFICER' } } } } });
-    officers.forEach((u) => users.push({ ...u, channels: ['IN_APP'], lang: u.preferredLanguage }));
+  if (levelRank(severity) >= levelRank('HIGH')) {
+    const admins = await prisma.user.findMany({ where: { isActive: true, roles: { some: { role: { name: 'ADMIN' } } } } });
+    admins.forEach((u) => users.push({ ...u, channels: ['IN_APP'], lang: u.preferredLanguage }));
   }
   const seen = new Set();
   return users.filter((u) => (seen.has(u.id) ? false : seen.add(u.id)));
@@ -103,7 +99,7 @@ export const AlertService = {
       const alert = await prisma.alert.create({
         data: {
           farmId: farm.id, cooperativeId: farm.cooperativeId, predictionId: p.id, type, severity: p.riskLevel,
-          ...msg, isSimulation: simulation, isDemo: farm.isDemo,
+          ...msg, isSimulation: simulation,
           ...(simulation ? { title: `[SIMULATION] ${msg.title}`, titleSw: `[MAJARIBIO] ${msg.titleSw}` } : {}),
         },
       });
@@ -139,7 +135,7 @@ export const AlertService = {
       if (await isDuplicate(farm.id, 'MISSING_REPORT')) continue;
       const alert = await prisma.alert.create({
         data: {
-          farmId: farm.id, cooperativeId: farm.cooperativeId, type: 'MISSING_REPORT', severity: 'MEDIUM', isDemo: farm.isDemo,
+          farmId: farm.id, cooperativeId: farm.cooperativeId, type: 'MISSING_REPORT', severity: 'MEDIUM',
           title: `No farm report for ${days}+ days — ${farm.farmCode}`,
           titleSw: `Hakuna ripoti ya shamba kwa siku ${days}+ — ${farm.farmCode}`,
           message: `${farm.name} has no observation in the last ${days} days. Please record the seaweed condition so risks can be assessed.`,

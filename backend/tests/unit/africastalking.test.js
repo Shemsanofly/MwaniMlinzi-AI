@@ -108,7 +108,7 @@ describe('SMSService (with a fake provider)', () => {
   afterAll(() => setSMSClient(original));
 
   test("sends in the user's language and logs the provider result", async () => {
-    const u = await prisma.user.findUnique({ where: { phone: '+255777000004' } }); // demo farmer with English preference
+    const u = await prisma.user.findUnique({ where: { phone: '+255777000004' } }); // fixture farmer with English preference
     expect(u.preferredLanguage).toBe('en');
     const r = await SMSService.sendHarvestReminder(u, { text: { en: 'Harvest soon', sw: 'Vuna hivi karibuni' } });
     expect(r.status).toBe('QUEUED');

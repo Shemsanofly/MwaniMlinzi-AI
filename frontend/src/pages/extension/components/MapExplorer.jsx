@@ -5,7 +5,7 @@ import { MapPin } from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nProvider.jsx';
 import { cooperativeApi, farmApi } from '../../../api/endpoints.js';
 import FarmMap from '../../../components/map/FarmMap.jsx';
-import { Card, DemoBadge, EmptyState, ErrorState, PageHeader, PageLoader, RiskBadge } from '../../../components/ui/index.jsx';
+import { Card, EmptyState, ErrorState, PageHeader, PageLoader, RiskBadge } from '../../../components/ui/index.jsx';
 import { RISK_LEVELS, RISK_TYPES, levelRank } from '../../../utils/risk.js';
 import { pct } from '../../../utils/format.js';
 
@@ -58,7 +58,15 @@ export default function MapExplorer({ base, title, subtitle, showCooperative = f
 
       {q.isLoading ? <PageLoader /> : q.error ? <ErrorState error={q.error} onRetry={q.refetch} /> : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <Card className="min-w-0 overflow-hidden p-2">
+          <Card className="relative min-w-0 overflow-hidden p-2">
+            {!(q.data?.farms || []).length && (
+              <div className="pointer-events-none absolute inset-x-0 top-6 z-[1000] flex justify-center px-4" role="status">
+                <div className="max-w-sm rounded-xl bg-white/95 px-4 py-3 text-center shadow-lg ring-1 ring-slate-200">
+                  <p className="font-semibold text-slate-900">{t('extension.shared.map.noFarmsYet')}</p>
+                  <p className="text-sm text-slate-600">{t('extension.shared.map.noFarmsYetText')}</p>
+                </div>
+              </div>
+            )}
             <FarmMap key={`${cooperativeId}-${level}`} farms={farms} height="min(70vh, 640px)" linkTo={(f) => `${base}/farms/${f.id}`} colorBy={colorBy === 'OVERALL' ? undefined : levelOf} />
             <p className="px-1 pt-1 text-xs text-slate-500">
               {t('extension.shared.map.coloredBy', { what: colorBy === 'OVERALL' ? t('extension.shared.filters.overall') : t(`risk.type.${colorBy}`) })}
@@ -80,7 +88,6 @@ export default function MapExplorer({ base, title, subtitle, showCooperative = f
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-slate-900">{f.farmCode} · {f.name}</p>
                           <p className="truncate text-xs text-slate-500">{f.farmer?.fullName || '—'}{f.location?.locationName ? ` · ${f.location.locationName}` : ''}</p>
-                          {f.isDemo && <div className="mt-1"><DemoBadge /></div>}
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-0.5">
                           <RiskBadge level={lvl} />

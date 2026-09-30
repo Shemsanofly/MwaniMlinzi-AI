@@ -13,8 +13,9 @@ const settings = {
   settings: [
     { key: 'risk.thresholds', value: { HIGH: 0.6, MEDIUM: 0.3, CRITICAL: 0.8 }, default: { MEDIUM: 0.3, HIGH: 0.6, CRITICAL: 0.8 }, description: 'Probability lower bounds', updatedAt: null },
     { key: 'ai.mode', value: 'HYBRID', default: 'HYBRID', description: 'mode', updatedAt: null },
+    { key: 'drying.thresholds', value: { cautionProbability: 30, badProbability: 60, cautionRainMm: 1, badRainMm: 5 }, default: { cautionProbability: 30, badProbability: 60, cautionRainMm: 1, badRainMm: 5 }, description: 'Drying verdict thresholds', updatedAt: null },
   ],
-  system: { demoMode: true, jobsEnabled: false, providers: { weather: { live: null, demo: 'demo-weather' }, ocean: { live: null, demo: 'demo-ocean' }, llm: 'template', sms: 'NOT_CONFIGURED', ussd: 'NOT_CONFIGURED' }, note: 'Secrets live in backend/.env' },
+  system: { jobsEnabled: false, providers: { weather: { live: 'open-meteo' }, ocean: { live: null }, llm: 'template', sms: 'NOT_CONFIGURED', ussd: 'NOT_CONFIGURED' }, note: 'Secrets live in backend/.env' },
 };
 
 function renderPage() {
@@ -32,6 +33,13 @@ beforeEach(() => {
     callbackUrls: { ussd: 'https://api.example.org/api/integrations/africastalking/ussd?secret=<AT_CALLBACK_SECRET>' },
   });
   adminApi.testSms.mockReset().mockResolvedValue({ status: 'NOT_CONFIGURED', to: '+2557****0001', reason: "Africa's Talking is not configured" });
+});
+
+test('provider rows show the live provider name or "Not available" (no demo mode)', async () => {
+  renderPage();
+  expect(await screen.findByText('open-meteo')).toBeInTheDocument();
+  expect(screen.getAllByText('Not available').length).toBeGreaterThan(0);
+  expect(screen.queryByText(/demo/i)).toBeNull();
 });
 
 describe("Africa's Talking panel", () => {
@@ -80,4 +88,20 @@ test('non-ascending thresholds cannot be saved; valid ones are sent to the backe
   expect(save).toBeEnabled();
   await userEvent.click(save);
   await waitFor(() => expect(adminApi.updateSetting).toHaveBeenCalledWith('risk.thresholds', { MEDIUM: 0.35, HIGH: 0.6, CRITICAL: 0.8 }));
+});
+
+test('drying-weather thresholds: four labelled numbers, rejected when caution exceeds bad, saved as numbers', async () => {
+  const user = userEvent.setup();
+  renderPage();
+  expect(await screen.findByText('Drying weather thresholds')).toBeInTheDocument();
+  const caution = screen.getByLabelText('Caution from rain chance (%)');
+  const row = caution.closest('.py-4');
+  await user.clear(caution);
+  await user.type(caution, '70');
+  expect(within(row).getByRole('alert')).toHaveTextContent('caution values not above bad values');
+  expect(within(row).getByRole('button', { name: /Save/ })).toBeDisabled();
+  await user.clear(caution);
+  await user.type(caution, '35');
+  await user.click(within(row).getByRole('button', { name: /Save/ }));
+  await waitFor(() => expect(adminApi.updateSetting).toHaveBeenCalledWith('drying.thresholds', { cautionProbability: 35, badProbability: 60, cautionRainMm: 1, badRainMm: 5 }));
 });

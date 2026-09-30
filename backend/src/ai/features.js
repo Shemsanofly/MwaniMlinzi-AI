@@ -2,7 +2,7 @@ import { ANCHOR_WEAKNESS, EXPOSURE_SCORE } from './constants.js';
 
 /**
  * Flattens a farm context (farm + cycle + environment + observation + history) into the
- * numeric feature set shared by the rule engine, the ML model and the synthetic dataset.
+ * numeric feature set shared by the rule engine, the ML model and the training pipeline.
  * Missing values stay `null`; each consumer decides how to treat them.
  */
 export function buildFeatures(ctx) {

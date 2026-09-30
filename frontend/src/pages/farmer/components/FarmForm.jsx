@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { LocateFixed } from 'lucide-react';
+import { LocateFixed, Map as MapIcon } from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nProvider.jsx';
 import { useAuth } from '../../../stores/AuthContext.jsx';
 import { metaApi } from '../../../api/endpoints.js';
-import { Button, Field, FormError, Notice, apiErrorMessage } from '../../../components/ui/index.jsx';
+import { Button, Disclosure, Field, FormError, Notice, apiErrorMessage } from '../../../components/ui/index.jsx';
+import LocationPicker from '../../../components/map/LocationPicker.jsx';
 import { isoDate } from '../../../utils/format.js';
 import { numOrNull, numOrUndef } from './shared.jsx';
 
@@ -33,13 +34,17 @@ const fromFarm = (farm) => ({
   linesPlanted: '',
 });
 
-/** Create (farm = null) or edit a farm. `onSubmit(body)` returns the mutation promise. */
+/**
+ * Create (farm = null) or edit a farm. `onSubmit(body)` returns the mutation promise.
+ * Defaults (off-bottom, moderate exposure, wooden stakes) are the most common set-up for Zanzibar seaweed farms.
+ */
 export default function FarmForm({ farm, onSubmit, pending, error, submitLabel, onCancel }) {
   const { t, lang } = useI18n();
   const { memberships = [] } = useAuth();
   const isEdit = !!farm;
   const [f, setF] = useState(() => fromFarm(farm));
   const [geo, setGeo] = useState({ state: 'idle', message: null });
+  const [showMap, setShowMap] = useState(false);
   const set = (patch) => setF((s) => ({ ...s, ...patch }));
   const speciesQ = useQuery({ queryKey: ['species'], queryFn: () => metaApi.species(), staleTime: 3600000 });
 
@@ -85,6 +90,12 @@ export default function FarmForm({ farm, onSubmit, pending, error, submitLabel, 
   const coopOptions = farm?.cooperative && !memberships.some((m) => m.id === farm.cooperative.id) ? [...memberships, farm.cooperative] : memberships;
   const opt = (group, list) => list.map((v) => <option key={v} value={v}>{t(`farmer.enums.${group}.${v}`)}</option>);
 
+  const latNum = f.latitude === '' ? NaN : Number(f.latitude);
+  const lngNum = f.longitude === '' ? NaN : Number(f.longitude);
+  const pick = (lat, lng) => { set({ latitude: lat.toFixed(5), longitude: lng.toFixed(5) }); setGeo({ state: 'idle', message: null }); };
+
+  // Only what is needed to start: name, species, place and GPS point (+ planting date, encouraged).
+  // The technical fields already have sensible defaults and sit under "More details (optional)".
   return (
     <form className="space-y-4" onSubmit={submit}>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -96,27 +107,6 @@ export default function FarmForm({ farm, onSubmit, pending, error, submitLabel, 
             <option value="">{speciesQ.isLoading ? t('actions.loading') : t('farmer.farm.choose')}</option>
             {(speciesQ.data?.species || []).map((s) => <option key={s.id} value={s.id}>{lang === 'sw' ? s.commonNameSw : s.commonName} — {s.scientificName}</option>)}
           </select>
-        </Field>
-        <Field label={t('farmer.farm.f.method')} htmlFor="ff-method" required>
-          <select id="ff-method" className="input" value={f.farmingMethod} onChange={(e) => set({ farmingMethod: e.target.value })}>{opt('method', FARMING_METHODS)}</select>
-        </Field>
-        <Field label={t('farmer.farm.f.exposure')} htmlFor="ff-exp" required>
-          <select id="ff-exp" className="input" value={f.exposure} onChange={(e) => set({ exposure: e.target.value })}>{opt('exposure', EXPOSURES)}</select>
-        </Field>
-        <Field label={t('farmer.farm.f.anchoring')} htmlFor="ff-anchor" required>
-          <select id="ff-anchor" className="input" value={f.anchoringMethod} onChange={(e) => set({ anchoringMethod: e.target.value })}>{opt('anchoring', ANCHORING)}</select>
-        </Field>
-        <Field label={t('farmer.farm.f.cooperative')} htmlFor="ff-coop">
-          <select id="ff-coop" className="input" value={f.cooperativeId} onChange={(e) => set({ cooperativeId: e.target.value })}>
-            <option value="">{t('common.none')}</option>
-            {coopOptions.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.code})</option>)}
-          </select>
-        </Field>
-        <Field label={t('farmer.farm.f.area')} htmlFor="ff-area">
-          <input id="ff-area" type="number" inputMode="decimal" min={0} step="0.01" className="input" value={f.areaHectares} onChange={(e) => set({ areaHectares: e.target.value })} />
-        </Field>
-        <Field label={t('farmer.farm.f.lines')} htmlFor="ff-lines">
-          <input id="ff-lines" type="number" inputMode="numeric" min={0} step="1" className="input" value={f.lineCount} onChange={(e) => set({ lineCount: e.target.value })} />
         </Field>
         {isEdit && (
           <Field label={t('common.status')} htmlFor="ff-status" required>
@@ -138,6 +128,17 @@ export default function FarmForm({ farm, onSubmit, pending, error, submitLabel, 
             <input id="ff-region" className="input" required maxLength={80} value={f.region} onChange={(e) => set({ region: e.target.value })} />
           </Field>
         </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" icon={LocateFixed} className="min-h-11" loading={geo.state === 'loading'} onClick={locate}>{t('farmer.farm.useLocation')}</Button>
+          <Button variant="ghost" icon={MapIcon} className="min-h-11" aria-expanded={showMap} onClick={() => setShowMap((v) => !v)}>{showMap ? t('farmer.farm.hideMap') : t('farmer.farm.pickOnMap')}</Button>
+        </div>
+        {geo.message && <Notice tone={geo.state === 'ok' ? 'success' : 'warning'}>{geo.message}</Notice>}
+        {showMap && (
+          <div>
+            <p className="mb-2 text-sm text-slate-600">{t('farmer.farm.pickHint')}</p>
+            <LocationPicker lat={latNum} lng={lngNum} onPick={pick} />
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <Field label={t('farmer.farm.f.lat')} htmlFor="ff-lat" required>
             <input id="ff-lat" type="number" inputMode="decimal" step="any" min={-90} max={90} className="input" required value={f.latitude} onChange={(e) => set({ latitude: e.target.value })} />
@@ -146,13 +147,12 @@ export default function FarmForm({ farm, onSubmit, pending, error, submitLabel, 
             <input id="ff-lng" type="number" inputMode="decimal" step="any" min={-180} max={180} className="input" required value={f.longitude} onChange={(e) => set({ longitude: e.target.value })} />
           </Field>
         </div>
-        <Button variant="secondary" icon={LocateFixed} className="min-h-11" loading={geo.state === 'loading'} onClick={locate}>{t('farmer.farm.useLocation')}</Button>
-        {geo.message && <Notice tone={geo.state === 'ok' ? 'success' : 'warning'}>{geo.message}</Notice>}
       </fieldset>
 
       {!isEdit && (
-        <fieldset className="space-y-4 rounded-xl border border-slate-200 p-3">
+        <fieldset className="space-y-4 rounded-xl border border-seaweed-100 bg-seaweed-50/40 p-3">
           <legend className="px-1 text-sm font-bold text-slate-700">{t('farmer.farm.plantingOptional')}</legend>
+          <p className="text-sm text-slate-600">{t('farmer.farm.plantingEncourage')}</p>
           <div className="grid grid-cols-2 gap-3">
             <Field label={t('common.plantingDate')} htmlFor="ff-pdate">
               <input id="ff-pdate" type="date" className="input" max={isoDate()} value={f.plantingDate} onChange={(e) => set({ plantingDate: e.target.value })} />
@@ -164,9 +164,35 @@ export default function FarmForm({ farm, onSubmit, pending, error, submitLabel, 
         </fieldset>
       )}
 
-      <Field label={t('common.notes')} htmlFor="ff-notes">
-        <textarea id="ff-notes" rows={2} maxLength={2000} className="input" value={f.notes} onChange={(e) => set({ notes: e.target.value })} />
-      </Field>
+      <Disclosure id="ff-more" title={t('farmer.farm.moreDetails')} subtitle={t('farmer.farm.moreDetailsSub')}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label={t('farmer.farm.f.method')} htmlFor="ff-method">
+            <select id="ff-method" className="input" value={f.farmingMethod} onChange={(e) => set({ farmingMethod: e.target.value })}>{opt('method', FARMING_METHODS)}</select>
+          </Field>
+          <Field label={t('farmer.farm.f.exposure')} htmlFor="ff-exp">
+            <select id="ff-exp" className="input" value={f.exposure} onChange={(e) => set({ exposure: e.target.value })}>{opt('exposure', EXPOSURES)}</select>
+          </Field>
+          <Field label={t('farmer.farm.f.anchoring')} htmlFor="ff-anchor">
+            <select id="ff-anchor" className="input" value={f.anchoringMethod} onChange={(e) => set({ anchoringMethod: e.target.value })}>{opt('anchoring', ANCHORING)}</select>
+          </Field>
+          <Field label={t('farmer.farm.f.cooperative')} htmlFor="ff-coop">
+            <select id="ff-coop" className="input" value={f.cooperativeId} onChange={(e) => set({ cooperativeId: e.target.value })}>
+              <option value="">{t('common.none')}</option>
+              {coopOptions.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.code})</option>)}
+            </select>
+          </Field>
+          <Field label={t('farmer.farm.f.area')} htmlFor="ff-area">
+            <input id="ff-area" type="number" inputMode="decimal" min={0} step="0.01" className="input" value={f.areaHectares} onChange={(e) => set({ areaHectares: e.target.value })} />
+          </Field>
+          <Field label={t('farmer.farm.f.lines')} htmlFor="ff-lines">
+            <input id="ff-lines" type="number" inputMode="numeric" min={0} step="1" className="input" value={f.lineCount} onChange={(e) => set({ lineCount: e.target.value })} />
+          </Field>
+        </div>
+        <Field label={t('common.notes')} htmlFor="ff-notes">
+          <textarea id="ff-notes" rows={2} maxLength={2000} className="input" value={f.notes} onChange={(e) => set({ notes: e.target.value })} />
+        </Field>
+      </Disclosure>
+
       <FormError error={error} />
       <div className="flex flex-wrap justify-end gap-2">
         {onCancel && <Button variant="ghost" className="min-h-11" onClick={onCancel}>{t('actions.cancel')}</Button>}

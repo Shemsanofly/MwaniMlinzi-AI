@@ -7,12 +7,11 @@ import * as s from '../validators/schemas.js';
 const r = Router();
 r.use(authenticate);
 
-// Buyers never see individual farms (only aggregated supply).
-const farmViewers = authorize('FARMER', 'COOPERATIVE_ADMIN', 'EXTENSION_OFFICER', 'ADMIN');
-const recorders = authorize('FARMER', 'EXTENSION_OFFICER', 'ADMIN');
+const farmViewers = authorize('FARMER', 'ADMIN');
+const recorders = authorize('FARMER', 'ADMIN');
 
 r.get('/', farmViewers, c.listFarms);
-r.post('/', authorize('FARMER', 'ADMIN', 'EXTENSION_OFFICER'), validate(s.farmSchema), c.createFarm);
+r.post('/', authorize('FARMER', 'ADMIN'), validate(s.farmSchema), c.createFarm);
 r.get('/predictions/:predictionId', farmViewers, c.latestPrediction);
 r.get('/:id', farmViewers, c.getFarm);
 r.patch('/:id', recorders, validate(s.farmUpdateSchema, 'body', { partial: true }), c.updateFarm);
@@ -45,9 +44,10 @@ r.post('/:id/outcomes', recorders, validate(s.outcomeSchema), c.createOutcome);
 
 r.get('/:id/history', farmViewers, c.farmHistoryTimeline);
 r.get('/:id/environment', farmViewers, c.farmEnvironment);
+r.get('/:id/outlook', farmViewers, c.farmOutlook);
 r.get('/:id/alerts', farmViewers, c.farmAlerts);
 
 r.get('/:id/notes', farmViewers, c.listNotes);
-r.post('/:id/notes', authorize('EXTENSION_OFFICER', 'COOPERATIVE_ADMIN', 'ADMIN'), validate(s.extensionNoteSchema), c.createNote);
+r.post('/:id/notes', authorize('ADMIN'), validate(s.extensionNoteSchema), c.createNote);
 
 export default r;

@@ -51,6 +51,7 @@ export const farmApi = {
   addOutcome: (id, body) => unwrap(http.post(`/farms/${id}/outcomes`, body)),
   history: (id) => unwrap(http.get(`/farms/${id}/history`)),
   environment: (id, params) => unwrap(http.get(`/farms/${id}/environment${qs(params)}`)),
+  outlook: (id) => unwrap(http.get(`/farms/${id}/outlook`)),
   alerts: (id, params) => unwrap(http.get(`/farms/${id}/alerts${qs(params)}`)),
   notes: (id) => unwrap(http.get(`/farms/${id}/notes`)),
   addNote: (id, body) => unwrap(http.post(`/farms/${id}/notes`, body)),
@@ -104,12 +105,6 @@ export const extensionApi = {
   reviewObservation: (id, status, note) => unwrap(http.patch(`/extension/observations/${id}/review`, { status, note })),
   recommendations: (params) => unwrap(http.get(`/extension/recommendations${qs(params)}`)),
   reviewRecommendation: (id, status, note) => unwrap(http.patch(`/extension/recommendations/${id}/review`, { status, note })),
-};
-
-export const buyerApi = {
-  list: () => unwrap(http.get('/buyers')),
-  forecast: (params) => unwrap(http.get(`/buyers/forecast${qs(params)}`)),
-  createDemand: (body) => unwrap(http.post('/buyers/demand', body)),
 };
 
 export const forecastApi = {

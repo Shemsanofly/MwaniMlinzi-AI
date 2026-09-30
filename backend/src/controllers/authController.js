@@ -11,7 +11,7 @@ import { SMSService } from '../services/smsService.js';
 // Used to equalise response time when the email does not exist.
 const DUMMY_HASH = bcrypt.hashSync('timing-equaliser-not-a-password', 12);
 
-const primaryRole = (roles) => ['ADMIN', 'COOPERATIVE_ADMIN', 'EXTENSION_OFFICER', 'BUYER', 'FARMER'].find((r) => roles.includes(r)) || roles[0];
+const primaryRole = (roles) => ['ADMIN', 'FARMER'].find((r) => roles.includes(r)) || roles[0];
 const withPrimary = (u) => ({ ...u, primaryRole: primaryRole(u.roles) });
 
 export async function register(req, res) {
@@ -38,8 +38,6 @@ export async function register(req, res) {
       const count = await tx.farmer.count();
       const farmer = await tx.farmer.create({ data: { userId: u.id, farmerCode: `FMR-${String(count + 1).padStart(4, '0')}-${u.id.slice(0, 4).toUpperCase()}`, village: d.village || null, district: d.district || null } });
       if (cooperative) await tx.cooperativeMember.create({ data: { cooperativeId: cooperative.id, farmerId: farmer.id } });
-    } else if (d.role === 'BUYER') {
-      await tx.buyer.create({ data: { userId: u.id, companyName: d.companyName || d.fullName, contactName: d.fullName, phone: d.phone || null } });
     }
     return u;
   });

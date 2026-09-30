@@ -5,29 +5,35 @@ import { AlertService } from '../services/alertService.js';
 import { HarvestForecastService } from '../services/harvestForecastService.js';
 import { ModelMonitoringService } from '../services/modelMonitoringService.js';
 import { UssdService } from '../services/ussdService.js';
+import { SeaOutlookService } from '../services/seaOutlookService.js';
+import { DryingAlertService } from '../services/dryingAlertService.js';
 
 const activeFarms = () => prisma.farm.findMany({ where: { status: 'ACTIVE' }, include: { location: true } });
 
 /** Job definitions. Each returns a JSON summary stored in `job_runs`. */
 export const JOBS = {
   'fetch-environment': {
-    schedule: '0 */6 * * *',
-    description: 'Fetch weather + ocean data for every active farm (LIVE → CACHED → DEMO)',
+    // Morning run (06:00 Africa/Dar_es_Salaam) + an afternoon refresh for weather that develops during the day.
+    schedule: '0 6,14 * * *',
+    description: 'Fetch weather + ocean data and the tide / drying-weather outlook for every active farm (LIVE → CACHED; farms with no reading are counted as unavailable)',
     async run() {
       const farms = await activeFarms();
-      const sources = { LIVE: 0, CACHED: 0, DEMO: 0 };
-      let failed = 0;
+      const sources = { LIVE: 0, CACHED: 0, UNAVAILABLE: 0 };
+      let failed = 0; let outlooks = 0;
       for (const farm of farms) {
         try {
           const env = await EnvironmentService.refreshForFarm(farm);
-          if (env) sources[env.source] += 1;
+          sources[env ? env.source : 'UNAVAILABLE'] += 1;
         } catch { failed += 1; }
+        try {
+          if (await SeaOutlookService.refreshForFarm(farm)) outlooks += 1;
+        } catch (err) { console.warn('[job] outlook failed for', farm.farmCode, err.message); }
       }
-      return { farms: farms.length, sources, failed };
+      return { farms: farms.length, sources, outlooks, failed };
     },
   },
   'run-risk-predictions': {
-    schedule: '15 */6 * * *',
+    schedule: '10 6,14 * * *',
     description: 'Calculate features, run the risk engine, select actions and generate alerts for every active farm',
     async run() {
       const farms = await activeFarms();
@@ -51,8 +57,13 @@ export const JOBS = {
       return { alertsCreated: created.length };
     },
   },
+  'drying-alerts': {
+    schedule: '20 6 * * *',
+    description: 'Warn farmers who are harvesting when rain is likely today or tomorrow during drying hours (SMS + in-app)',
+    async run() { return DryingAlertService.run(); },
+  },
   'harvest-forecasts': {
-    schedule: '30 */6 * * *',
+    schedule: '30 6,14 * * *',
     description: 'Regenerate risk-adjusted harvest forecasts',
     async run() {
       const rows = await HarvestForecastService.generate();

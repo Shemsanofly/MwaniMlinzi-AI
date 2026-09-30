@@ -1,5 +1,6 @@
 import { api, auth, login, farmByCode } from '../helpers.js';
 import prisma from '../../src/config/prisma.js';
+import { getEnvironmentalProvider, setEnvironmentalProvider } from '../../src/services/environmentService.js';
 
 afterAll(() => prisma.$disconnect());
 
@@ -21,13 +22,15 @@ describe('end-to-end risk → action → outcome flow', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.farm.cropAgeDays).toBe(39);
     expect(res.body.data.farm.currentCycle.status).toBe('ACTIVE');
-    expect(res.body.data.farm.isDemo).toBe(true);
+    expect(res.body.data.farm).not.toHaveProperty('isDemo');
+    expect(res.body.data.farm).not.toHaveProperty('demoScenario');
   });
 
   test('environment is labelled with its source', async () => {
     const res = await api().get(`/api/environment/current?farmId=${farm.id}`).set(auth(farmer));
     expect(res.status).toBe(200);
-    expect(res.body.data.current.source).toBe('DEMO');
+    expect(res.body.data.current.source).toBe('LIVE');
+    expect(res.body.data).not.toHaveProperty('demoMode');
     expect(res.body.data.current.sstAnomalyC).toBeGreaterThan(1);
   });
 
@@ -120,27 +123,64 @@ describe('end-to-end risk → action → outcome flow', () => {
     expect(res.status).toBe(201);
     expect(res.body.data.farm.cropAgeDays).toBe(12);
     expect(res.body.data.farm.latestRisks).not.toBeNull();
+    // Next to other farms: a recent real reading from the same area (±0.05°) is reused and labelled CACHED.
+    const nearby = await api().get(`/api/environment/current?farmId=${res.body.data.farm.id}`).set(auth(farmer));
+    expect(nearby.body.data.current.source).toBe('CACHED');
+  });
+
+  test('a farm with no live or cached reading gets no invented values; its risk is marked UNAVAILABLE', async () => {
+    const species = (await api().get('/api/species')).body.data.species[0];
+    const plantingDate = new Date(Date.now() - 12 * 86400000).toISOString().slice(0, 10);
+    const res = await api().post('/api/farms').set(auth(farmer)).send({
+      name: 'Remote farm', speciesId: species.id, latitude: -7.9, longitude: 39.75, locationName: 'Kilindoni', district: 'Mafia', region: 'Pwani', lineCount: 40, plantingDate,
+    });
+    expect(res.status).toBe(201);
+    const env = await api().get(`/api/environment/current?farmId=${res.body.data.farm.id}`).set(auth(farmer));
+    expect(env.body.data.current).toBeNull();
+    const risks = await api().get(`/api/farms/${res.body.data.farm.id}/risks`).set(auth(farmer));
+    const heat = risks.body.data.predictions.find((p) => p.riskType === 'HEAT_ICE_ICE');
+    expect(heat.dataSource).toBe('UNAVAILABLE');
+    expect(heat.insufficientData).toBe(true);
+
+    // Weather available but the ocean provider down: the reading is stored as partial, ocean values stay null.
+    const original = getEnvironmentalProvider();
+    setEnvironmentalProvider({
+      status: () => ({ weather: { live: 'weather-only' }, ocean: { live: null } }),
+      fetch: async () => ({ weather: { airTemperatureC: 29, rainfallMm: 0, windSpeedKmh: 12, source: 'LIVE', provider: 'weather-only' }, ocean: null, errors: { ocean: ['down'] } }),
+    });
+    try {
+      const partial = await api().get(`/api/environment/current?farmId=${res.body.data.farm.id}`).set(auth(farmer));
+      expect(partial.body.data.current.source).toBe('LIVE');
+      expect(partial.body.data.current.weatherSource).toBe('LIVE');
+      expect(partial.body.data.current.oceanSource).toBeNull();
+      expect(partial.body.data.current.seaSurfaceTempC).toBeNull();
+      expect(partial.body.data.current.airTemperatureC).toBe(29);
+    } finally {
+      setEnvironmentalProvider(original);
+    }
   });
 });
 
 describe('dashboards and forecasts', () => {
   test('cooperative dashboard has cards, charts and map farms', async () => {
-    const res = await api().get('/api/cooperatives/mine/dashboard').set(auth(await login('cooperative')));
+    const token = await login('admin');
+    const { cooperatives } = (await api().get('/api/cooperatives').set(auth(token))).body.data;
+    const res = await api().get(`/api/cooperatives/${cooperatives[0].id}/dashboard`).set(auth(token));
     expect(res.status).toBe(200);
     expect(res.body.data.cards).toEqual(expect.objectContaining({ totalFarmers: expect.any(Number), highRiskFarms: expect.any(Number), expectedHarvestKg30d: expect.any(Number) }));
     expect(res.body.data.farms[0].location.latitude).toBeDefined();
     expect(res.body.data.charts.riskDistribution.overall).toHaveLength(4);
   });
 
-  test('extension dashboard prioritises visits', async () => {
-    const res = await api().get('/api/extension/dashboard').set(auth(await login('extension')));
+  test('field overview (extension dashboard) prioritises visits for the admin', async () => {
+    const res = await api().get('/api/extension/dashboard').set(auth(await login('admin')));
     expect(res.status).toBe(200);
     expect(res.body.data.visitPriority.length).toBeGreaterThan(0);
     expect(res.body.data.visitPriority[0].score).toBeGreaterThanOrEqual(res.body.data.visitPriority[1].score);
   });
 
-  test('buyer forecast gives 7/14/30-day horizons with uncertainty ranges', async () => {
-    const res = await api().get('/api/buyers/forecast?days=30').set(auth(await login('buyer')));
+  test('admin harvest forecast gives 7/14/30-day horizons with uncertainty ranges', async () => {
+    const res = await api().get('/api/forecasts/harvest?days=30').set(auth(await login('admin')));
     const h = res.body.data.summary.horizons;
     expect(h.next7Days.riskAdjustedKg).toBeLessThanOrEqual(h.next14Days.riskAdjustedKg);
     expect(h.next30Days.lowKg).toBeLessThanOrEqual(h.next30Days.riskAdjustedKg);
@@ -151,6 +191,10 @@ describe('dashboards and forecasts', () => {
     const admin = await login('admin');
     expect((await api().put('/api/admin/settings/risk.thresholds').set(auth(admin)).send({ value: { MEDIUM: 0.7, HIGH: 0.6, CRITICAL: 0.8 } })).status).toBe(400);
     expect((await api().put('/api/admin/settings/risk.thresholds').set(auth(admin)).send({ value: { MEDIUM: 0.3, HIGH: 0.6, CRITICAL: 0.8 } })).status).toBe(200);
+    const drying = (value) => api().put('/api/admin/settings/drying.thresholds').set(auth(admin)).send({ value });
+    expect((await drying({ cautionProbability: 70, badProbability: 60, cautionRainMm: 1, badRainMm: 5 })).status).toBe(400);
+    expect((await drying({ cautionProbability: 30, badProbability: 60, cautionRainMm: 1 })).status).toBe(400);
+    expect((await drying({ cautionProbability: 30, badProbability: 60, cautionRainMm: 1, badRainMm: 5 })).status).toBe(200);
     const job = await api().post('/api/admin/jobs/harvest-forecasts/run').set(auth(admin));
     expect(job.status).toBe(200);
     expect(job.body.data.run.status).toBe('SUCCESS');
