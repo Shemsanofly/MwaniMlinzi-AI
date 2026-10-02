@@ -5,7 +5,7 @@ import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { useFarmerFarm } from '../../hooks/useFarmerFarm.js';
 import { farmApi } from '../../api/endpoints.js';
 import { Badge, Button, Card, CardHeader, EmptyState, ErrorState, Field, FormError, Notice, PageHeader, Spinner, Toggle, cx } from '../../components/ui/index.jsx';
-import { date as fmtDate, isoDate, kg, num, pct, tzs } from '../../utils/format.js';
+import { date as fmtDate, isoDate, kg, num, tzs } from '../../utils/format.js';
 import { FarmGate, FarmSwitcher, SectionTitle, numOrNull, useInvalidateFarm } from './components/shared.jsx';
 
 const GRADES = ['A', 'B', 'C', 'REJECT'];
@@ -66,7 +66,7 @@ function ForecastCard({ q }) {
             <p className="text-lg font-bold text-slate-900">{kg(fc.riskAdjustedQuantityKg)}</p>
             <p className="text-xs text-slate-600">{t('farmer.harvest.range', { low: num(fc.lowQuantityKg, 0), high: num(fc.highQuantityKg, 0) })}</p>
           </div>
-          <p className="col-span-2 text-xs text-slate-500">{t('risk.confidence')}: <strong>{pct(fc.confidence)}</strong> · {t('farmer.harvest.forecastNote')}</p>
+          <p className="col-span-2 text-xs text-slate-500">{t('intelligence.historicalRange', { n: fc.inputs?.completedCycles })}</p>
         </div>
       ) : <p className="p-4 text-sm text-slate-500">{t('farmer.harvest.noForecast')}</p>}
     </Card>
@@ -136,7 +136,7 @@ function HarvestForm({ farmId, hasCycle }) {
               <Field label={t('farmer.harvest.f.estimated')} htmlFor="h-est" hint={t('farmer.harvest.f.estimatedHint')}>
                 <input id="h-est" type="number" inputMode="decimal" min={0} step="0.1" className="input" value={f.estimatedQuantity} onChange={(e) => set({ estimatedQuantity: e.target.value })} />
               </Field>
-              <Field label={t('farmer.harvest.f.price')} htmlFor="h-price">
+              <Field label={t('farmer.harvest.f.price')} htmlFor="h-price" hint={t('farmer.harvest.f.priceHint')}>
                 <input id="h-price" type="number" inputMode="decimal" min={0} className="input" value={f.pricePerKg} onChange={(e) => set({ pricePerKg: e.target.value })} />
               </Field>
               <Field label={t('farmer.harvest.f.moisture')} htmlFor="h-moist">

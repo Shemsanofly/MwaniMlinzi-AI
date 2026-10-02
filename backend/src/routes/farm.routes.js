@@ -7,7 +7,9 @@ import * as s from '../validators/schemas.js';
 const r = Router();
 r.use(authenticate);
 
-const farmViewers = authorize('FARMER', 'ADMIN');
+// Viewing is open to farm owners, their cooperative staff, extension officers and admins.
+// Writing (observations, harvests, actions) stays owner-only to keep farmer-reported data authored by farmers.
+const farmViewers = authorize('FARMER', 'COOPERATIVE_ADMIN', 'EXTENSION_OFFICER', 'ADMIN');
 const recorders = authorize('FARMER', 'ADMIN');
 
 r.get('/', farmViewers, c.listFarms);
@@ -29,7 +31,15 @@ r.post('/:id/harvests', recorders, validate(s.harvestSchema), c.createHarvest);
 r.get('/:id/losses', farmViewers, c.listLosses);
 r.post('/:id/losses', recorders, validate(s.lossSchema), c.createLoss);
 
+r.get('/:id/records/summary', farmViewers, c.recordSummary);
+for (const [kind, schema] of [['sales', s.saleSchema], ['costs', s.costSchema], ['work', s.workSchema]]) {
+  r.get(`/:id/${kind}`, farmViewers, c.listRecords(kind));
+  r.post(`/:id/${kind}`, recorders, validate(schema), c.createRecord(kind));
+  r.delete(`/:id/${kind}/:recordId`, recorders, c.deleteRecord(kind));
+}
+
 r.get('/:id/risks', farmViewers, c.getRisks);
+r.get('/:id/intelligence', farmViewers, c.farmIntelligence);
 r.post('/:id/risks/run', farmViewers, c.runRisks);
 r.get('/:id/risks/history', farmViewers, c.riskHistory);
 

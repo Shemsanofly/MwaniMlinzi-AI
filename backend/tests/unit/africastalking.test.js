@@ -1,7 +1,9 @@
+import { events } from '../../src/db/records.js';
+import { jest } from '@jest/globals';
 import prisma from '../../src/config/prisma.js';
 import { normalizeTzPhone, maskPhone } from '../../src/utils/phone.js';
 import { AfricasTalkingSMSClient, mapDeliveryStatus } from '../../src/providers/africastalking/smsClient.js';
-import { atPublicStatus } from '../../src/providers/africastalking/config.js';
+import { atConfig, atPublicStatus } from '../../src/providers/africastalking/config.js';
 import { SMSService, smsPolicy, smsText, setSMSClient, getSMSClient } from '../../src/services/smsService.js';
 import { parseKg, fitScreen } from '../../src/services/ussdService.js';
 import { simpleReason } from '../../src/ai/simpleReasons.js';
@@ -74,6 +76,27 @@ describe("Africa's Talking SMS client", () => {
     expect(mapDeliveryStatus('Weird')).toBe('UNKNOWN');
   });
 
+  test('dev-capture mode short-circuits without any HTTP call and returns a synthetic QUEUED', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      let called = false;
+      const client = new AfricasTalkingSMSClient({ ...cfg, apiKey: '', smsDevCapture: true });
+      expect(client.configured).toBe(true);
+      expect(client.name).toMatch(/devcapture$/);
+      const r = await client.send('+255777123456', 'hello', { fetchImpl: async () => { called = true; throw new Error('must not call AT'); } });
+      expect(called).toBe(false);
+      expect(r).toMatchObject({ status: 'QUEUED', providerStatus: '102 DevCapture' });
+      expect(r.providerRef).toMatch(/^ATXid_devcap_/);
+    } finally { warn.mockRestore(); }
+  });
+
+  test('dev-capture is refused when the AT environment is production, so it can never fake real delivery', () => {
+    // The config helper gates capture on environment='sandbox' regardless of any external flag —
+    // that alone prevents a production deployment from silently capturing SMS locally.
+    const c = atConfig({ username: '', apiKey: '', environment: 'production', callbackSecret: '', allowUnsignedSandboxUssd: false, smsDevCapture: true });
+    expect(c.smsDevCapture).toBe(false);
+  });
+
   test('public status never contains the API key or callback secret', () => {
     const s = JSON.stringify(atPublicStatus({ ...cfg, callbackSecret: 'very-secret-value' }));
     expect(s).not.toContain('test-key');
@@ -113,7 +136,7 @@ describe('SMSService (with a fake provider)', () => {
     const r = await SMSService.sendHarvestReminder(u, { text: { en: 'Harvest soon', sw: 'Vuna hivi karibuni' } });
     expect(r.status).toBe('QUEUED');
     expect(fake.sent.at(-1)).toEqual({ to: '+255777000004', message: 'Harvest soon' });
-    const log = await prisma.notificationLog.findUnique({ where: { id: r.logId } });
+    const log = await events(prisma, 'DELIVERY').findUnique({ where: { id: r.logId } });
     expect(log).toMatchObject({ channel: 'SMS', status: 'QUEUED', messageType: 'HARVEST_REMINDER', language: 'en', recipient: '+255777000004', provider: 'fake-africastalking' });
     expect(log.sentAt).toBeTruthy();
   });
@@ -123,7 +146,7 @@ describe('SMSService (with a fake provider)', () => {
     const r = await SMSService.sendRaw('0777000004', 'x', { type: 'ADMIN_TEST' });
     fake.nextStatus = 'QUEUED';
     expect(r.status).toBe('FAILED');
-    const log = await prisma.notificationLog.findUnique({ where: { id: r.logId } });
+    const log = await events(prisma, 'DELIVERY').findUnique({ where: { id: r.logId } });
     expect(log.error).toMatch(/InvalidPhoneNumber/);
     expect(log.sentAt).toBeNull();
   });

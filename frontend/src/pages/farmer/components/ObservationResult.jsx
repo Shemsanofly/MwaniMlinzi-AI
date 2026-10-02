@@ -14,11 +14,12 @@ export default function ObservationResult({ risk, previous, farmId }) {
   const recordAction = useRecordAction(farmId);
   if (!risk) return null;
   const prevBy = Object.fromEntries((previous || []).map((p) => [p.riskType, p]));
-  const changed = (risk.predictions || []).filter((p) => prevBy[p.riskType] && levelRank(prevBy[p.riskType].riskLevel) !== levelRank(p.riskLevel));
+  const comparable = (risk.predictions || []).filter((p) => !p.insufficientData && prevBy[p.riskType] && !prevBy[p.riskType].insufficientData);
+  const changed = comparable.filter((p) => levelRank(prevBy[p.riskType].riskLevel) !== levelRank(p.riskLevel));
   const alerts = risk.alerts || [];
   return (
     <div className="space-y-4">
-      {previous && (
+      {previous && comparable.length > 0 && (
         <Notice tone={changed.length ? 'warning' : 'info'}>
           {changed.length
             ? changed.map((p) => (

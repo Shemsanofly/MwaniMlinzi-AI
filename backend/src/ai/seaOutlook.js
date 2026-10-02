@@ -66,17 +66,20 @@ export function extractTides(times, levels) {
 }
 
 /** Per local day: max rain probability and total rain during drying hours → GOOD / CAUTION / BAD (null if no data). */
-export function dryingDays(times, probability, rainMm, thresholds = DEFAULT_DRYING_THRESHOLDS) {
+export function dryingDays(times, probability, rainMm, thresholds = DEFAULT_DRYING_THRESHOLDS, { fromLocal = null } = {}) {
   const th = { ...DEFAULT_DRYING_THRESHOLDS, ...thresholds };
   const days = new Map();
   times.forEach((time, i) => {
     const hour = Number(time.slice(11, 13));
-    if (hour < DRYING_HOURS.from || hour >= DRYING_HOURS.to) return;
+    // Rain values describe the preceding hour: 08:00 covers 07:00–08:00.
+    const start = `${time.slice(0, 10)}T${String(hour - 1).padStart(2, '0')}:00`;
+    if (hour <= DRYING_HOURS.from || hour > DRYING_HOURS.to || (fromLocal && start < fromLocal)) return;
     const date = time.slice(0, 10);
-    if (!days.has(date)) days.set(date, { probs: [], mm: [] });
+    const firstHour = fromLocal?.startsWith(date) ? Math.max(DRYING_HOURS.from, Number(fromLocal.slice(11, 13)) + (Number(fromLocal.slice(14, 16)) > 0 ? 1 : 0)) : DRYING_HOURS.from;
+    if (!days.has(date)) days.set(date, { probs: [], mm: [], firstHour });
     const d = days.get(date);
-    if (isNum(probability?.[i])) d.probs.push(probability[i]);
-    if (isNum(rainMm?.[i])) d.mm.push(rainMm[i]);
+    if (isNum(probability?.[i]) && probability[i] >= 0 && probability[i] <= 100) d.probs.push(probability[i]);
+    if (isNum(rainMm?.[i]) && rainMm[i] >= 0) d.mm.push(rainMm[i]);
   });
   return [...days.entries()].map(([date, d]) => {
     const maxRainProbability = d.probs.length ? Math.max(...d.probs) : null;
@@ -85,9 +88,12 @@ export function dryingDays(times, probability, rainMm, thresholds = DEFAULT_DRYI
     // need both measures for most of the drying hours. Otherwise there is no verdict.
     let verdict = null;
     if ((maxRainProbability ?? -1) > th.badProbability || (total ?? -1) > th.badRainMm) verdict = 'BAD';
-    else if (d.probs.length >= MIN_DRYING_HOURS && d.mm.length >= MIN_DRYING_HOURS) {
+    else if (d.probs.length >= Math.min(MIN_DRYING_HOURS, Math.ceil((DRYING_HOURS.to - d.firstHour) * 0.8))
+      && d.mm.length >= Math.min(MIN_DRYING_HOURS, Math.ceil((DRYING_HOURS.to - d.firstHour) * 0.8))) {
       verdict = maxRainProbability >= th.cautionProbability || total >= th.cautionRainMm ? 'CAUTION' : 'GOOD';
     }
-    return { date, maxRainProbability, rainMm: total, verdict, level: verdict ? VERDICT_LEVEL[verdict] : null };
+    return { date, maxRainProbability, rainMm: total, verdict, level: verdict ? VERDICT_LEVEL[verdict] : null,
+      windowStart: `${date}T${String(d.firstHour).padStart(2, '0')}:00`, windowEnd: `${date}T18:00`,
+      probabilityMeaning: 'Maximum hourly precipitation probability in this forecast window; not current rain or a whole-day probability.' };
   });
 }

@@ -38,6 +38,12 @@ describe('EnvironmentalProvider fallback (LIVE → CACHED → unavailable)', () 
     expect(r.weather).toBeNull();
     expect(r.ocean).toBeNull();
   });
+  test('a provider with a missing timestamp or empty result cannot manufacture a live reading', async () => {
+    const p = new EnvironmentalProvider({ weatherLive: working('w', { rainfallMm: 2, observedAt: null }), oceanLive: working('o', null) });
+    const result = await p.fetch(loc);
+    expect(result.weather).toBeNull();
+    expect(result.ocean).toBeNull();
+  });
   test('Open-Meteo is the default; keyed providers need their key', () => {
     expect(createLiveWeatherProvider({ weather: { provider: '' } }).name).toBe('open-meteo');
     expect(createLiveWeatherProvider({ weather: { provider: 'openweathermap', apiKey: '' } })).toBeNull();
@@ -56,16 +62,20 @@ describe('EnvironmentalProvider fallback (LIVE → CACHED → unavailable)', () 
 describe('harvest forecast + records math', () => {
   const cycle = { linesPlanted: 100, plantingDate: new Date(Date.now() - 30 * 86400000), expectedHarvestDate: new Date(Date.now() + 15 * 86400000) };
   const species = { yieldKgDryPerLine: 1.3 };
-  test('risk-adjusted quantity is lower than expected and the range brackets it', () => {
+  test('quantity requires completed farm history and does not invent defaults, grade or loss deductions', () => {
     const low = forecastForCycle({ farm: { lineCount: 100 }, cycle, species, latestRisks: {}, history: { harvestCount: 0 } });
-    const risky = forecastForCycle({ farm: { lineCount: 100 }, cycle, species, latestRisks: { HEAT_ICE_ICE: { probability: 0.9, confidence: 0.8 } }, history: { harvestCount: 3, yieldPerLine: 1.1 } });
-    expect(low.expectedQuantityKg).toBe(130);
+    const risky = forecastForCycle({ farm: { lineCount: 100 }, cycle, species, latestRisks: { HEAT_ICE_ICE: { probability: 0.9, confidence: 0.8 } }, history: { harvestCount: 3, yieldPerLine: 1.1, lowYieldPerLine: 0.9, highYieldPerLine: 1.3 } });
+    expect(low).toBeNull();
     expect(risky.expectedQuantityKg).toBe(110);
-    expect(risky.riskAdjustedQuantityKg).toBeLessThan(risky.expectedQuantityKg);
+    expect(risky.riskAdjustedQuantityKg).toBe(risky.expectedQuantityKg);
     expect(risky.lowQuantityKg).toBeLessThanOrEqual(risky.riskAdjustedQuantityKg);
     expect(risky.highQuantityKg).toBeGreaterThanOrEqual(risky.riskAdjustedQuantityKg);
     expect(risky.inputs.yieldSource).toBe('FARM_HISTORY');
-    expect(risky.confidence).toBeGreaterThan(low.confidence);
+    expect(risky.confidence).toBe(0);
+    expect(risky.expectedGrade).toBeNull();
+    expect(risky.expectedHarvestDate).toBe(cycle.expectedHarvestDate);
+    expect(risky.lowQuantityKg).toBe(90);
+    expect(risky.highQuantityKg).toBe(130);
   });
   test('aggregate buckets by horizon', () => {
     const mk = (days, kg) => ({ expectedHarvestDate: new Date(Date.now() + days * 86400000), expectedQuantityKg: kg, riskAdjustedQuantityKg: kg, lowQuantityKg: kg * 0.8, highQuantityKg: kg * 1.1, confidence: 0.7, district: 'Kusini' });

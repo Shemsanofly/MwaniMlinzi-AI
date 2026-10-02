@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { ArrowLeft, Camera, CheckCircle2, ChevronDown, ChevronUp, ImagePlus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Camera, CheckCircle2, ImagePlus, Trash2 } from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nProvider.jsx';
 import { farmApi, uploadApi } from '../../../api/endpoints.js';
 import { Button, Card, Field, FormError, Notice, cx } from '../../../components/ui/index.jsx';
@@ -15,7 +15,7 @@ const STEPS = ['condition', 'whitening', 'breakage', 'unusualGrowth', 'details',
 
 const EMPTY = {
   cropCondition: null, whitening: null, breakage: null, unusualGrowth: null,
-  epiphytes: false, diseaseSymptoms: false, percentAffected: null,
+  epiphytes: null, diseaseSymptoms: null, percentAffected: null,
   waterAppearance: '', lineCondition: '', anchorCondition: '', confidence: 'MEDIUM', notes: '',
 };
 
@@ -26,8 +26,8 @@ export function buildObservationBody(form, imageFileId) {
     whitening: !!form.whitening,
     breakage: !!form.breakage,
     unusualGrowth: !!form.unusualGrowth,
-    epiphytes: !!form.epiphytes,
-    diseaseSymptoms: !!form.diseaseSymptoms,
+    epiphytes: form.epiphytes,
+    diseaseSymptoms: form.diseaseSymptoms,
     confidence: form.confidence || 'MEDIUM',
   };
   if (form.percentAffected != null) body.percentAffected = Number(form.percentAffected);
@@ -83,18 +83,20 @@ export default function ObservationWizard({ farmId, previousPredictions, onRecor
   const invalidate = useInvalidateFarm();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(EMPTY);
-  const [showDetails, setShowDetails] = useState(false);
   const [photo, setPhoto] = useState(null); // { file, preview }
   const [photoError, setPhotoError] = useState(null);
   const [result, setResult] = useState(null); // { observation, risk, previous }
   const fileRef = useRef(null);
+  const headingRef = useRef(null);
+
+  useEffect(() => { headingRef.current?.focus({ preventScroll: true }); }, [step]);
 
   // Revoke the local preview URL when it changes or the wizard unmounts.
   useEffect(() => () => { if (photo?.preview) URL.revokeObjectURL(photo.preview); }, [photo]);
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
-  const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
-  const back = () => setStep((s) => Math.max(s - 1, 0));
+  const next = () => setStep((s) => (s >= 3 ? 6 : s + 1));
+  const back = () => setStep((s) => (s === 6 ? 3 : s === 4 || s === 5 ? 6 : Math.max(s - 1, 0)));
   const choose = (patch) => { set(patch); next(); };
 
   const submit = useMutation({
@@ -123,7 +125,7 @@ export default function ObservationWizard({ farmId, previousPredictions, onRecor
   };
 
   const reset = () => {
-    setForm(EMPTY); setStep(0); setPhoto(null); setPhotoError(null); setResult(null); setShowDetails(false); submit.reset();
+    setForm(EMPTY); setStep(0); setPhoto(null); setPhotoError(null); setResult(null); submit.reset();
     onRecordAnother?.();
   };
 
@@ -157,7 +159,7 @@ export default function ObservationWizard({ farmId, previousPredictions, onRecor
       {/* Progress */}
       <div className="mb-4">
         <div className="flex items-center justify-between text-sm font-semibold text-slate-600">
-          <span>{t('farmer.obs.stepOf', { n: step + 1, total: STEPS.length })}</span>
+          <span>{step === 4 || step === 5 ? t('common.optional') : t('farmer.obs.stepOf', { n: step === 6 ? 5 : step + 1, total: 5 })}</span>
           {step > 0 && (
             <button type="button" onClick={back} className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-ocean-700 hover:bg-ocean-50">
               <ArrowLeft className="h-4 w-4" aria-hidden />{t('actions.back')}
@@ -165,11 +167,11 @@ export default function ObservationWizard({ farmId, previousPredictions, onRecor
           )}
         </div>
         <div className="mt-1.5 flex gap-1" aria-hidden>
-          {STEPS.map((s, i) => <span key={s} className={cx('h-2 flex-1 rounded-full', i <= step ? 'bg-ocean-600' : 'bg-slate-200')} />)}
+          {[...STEPS.slice(0, 4), 'review'].map((s, i) => <span key={s} className={cx('h-2 flex-1 rounded-full', i <= Math.min(step, 4) ? 'bg-ocean-600' : 'bg-slate-200')} />)}
         </div>
       </div>
 
-      <h2 className="mb-4 text-xl font-bold leading-snug text-slate-900">{t(`farmer.obs.q.${key}`)}</h2>
+      <h2 ref={headingRef} tabIndex={-1} className="mb-4 text-xl font-bold leading-snug text-slate-900 outline-none">{t(`farmer.obs.q.${key}`)}</h2>
 
       {key === 'condition' && (
         <div className="space-y-3">
@@ -185,37 +187,31 @@ export default function ObservationWizard({ farmId, previousPredictions, onRecor
       {key === 'details' && (
         <div className="space-y-4">
           <p className="-mt-2 text-sm text-slate-500">{t('farmer.obs.hint.details')}</p>
-          <button type="button" onClick={() => setShowDetails((v) => !v)} aria-expanded={showDetails}
-            className="flex min-h-12 w-full items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-base font-semibold text-ocean-800 ring-1 ring-slate-200">
-            {t('farmer.obs.moreDetails')} {showDetails ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-          </button>
-          {showDetails && (
-            <div className="space-y-4">
-              <SmallChoices id="epi" label={t('farmer.obs.f.epiphytes')} value={form.epiphytes ? 'Y' : 'N'} options={['Y', 'N']}
-                labelFor={(o) => (o === 'Y' ? t('actions.yes') : t('actions.no'))} onChange={(v) => set({ epiphytes: v === 'Y' })} />
-              <SmallChoices id="dis" label={t('farmer.obs.f.disease')} value={form.diseaseSymptoms ? 'Y' : 'N'} options={['Y', 'N']}
-                labelFor={(o) => (o === 'Y' ? t('actions.yes') : t('actions.no'))} onChange={(v) => set({ diseaseSymptoms: v === 'Y' })} />
-              <Field label={t('farmer.obs.f.percent')} htmlFor="obs-pct" hint={form.percentAffected == null ? t('farmer.obs.f.percentUnset') : null}>
-                <div className="flex items-center gap-3">
-                  <input id="obs-pct" type="range" min={0} max={100} step={5} value={form.percentAffected ?? 0}
-                    onChange={(e) => set({ percentAffected: Number(e.target.value) })} className="h-11 flex-1 accent-ocean-700" />
-                  <span className="w-14 text-right text-lg font-bold text-slate-900">{form.percentAffected == null ? '—' : `${form.percentAffected}%`}</span>
-                </div>
-              </Field>
-              <SmallChoices id="water" label={t('farmer.obs.f.water')} value={form.waterAppearance} options={['CLEAR', 'TURBID', 'DISCOLORED']}
-                labelFor={(o) => t(`farmer.enums.water.${o}`)} onChange={(v) => set({ waterAppearance: v })} />
-              <SmallChoices id="line" label={t('farmer.obs.f.line')} value={form.lineCondition} options={GEAR}
-                labelFor={(o) => t(`farmer.enums.gear.${o}`)} onChange={(v) => set({ lineCondition: v })} />
-              <SmallChoices id="anchor" label={t('farmer.obs.f.anchor')} value={form.anchorCondition} options={GEAR}
-                labelFor={(o) => t(`farmer.enums.gear.${o}`)} onChange={(v) => set({ anchorCondition: v })} />
-              <SmallChoices id="conf" label={t('farmer.obs.f.confidence')} value={form.confidence} options={['LOW', 'MEDIUM', 'HIGH']}
-                labelFor={(o) => t(`farmer.enums.confidence.${o}`)} onChange={(v) => set({ confidence: v || 'MEDIUM' })} />
-              <Field label={t('common.notes')} htmlFor="obs-notes">
-                <textarea id="obs-notes" rows={3} maxLength={2000} className="input" value={form.notes} onChange={(e) => set({ notes: e.target.value })} />
-              </Field>
-            </div>
-          )}
-          <Button size="lg" className="min-h-14 w-full" onClick={next}>{showDetails ? t('actions.next') : t('farmer.obs.skip')}</Button>
+          <div className="space-y-4">
+            <SmallChoices id="epi" label={t('farmer.obs.f.epiphytes')} value={form.epiphytes == null ? '' : form.epiphytes ? 'Y' : 'N'} options={['Y', 'N']}
+              labelFor={(o) => (o === 'Y' ? t('actions.yes') : t('actions.no'))} onChange={(v) => set({ epiphytes: v ? v === 'Y' : null })} />
+            <SmallChoices id="dis" label={t('farmer.obs.f.disease')} value={form.diseaseSymptoms == null ? '' : form.diseaseSymptoms ? 'Y' : 'N'} options={['Y', 'N']}
+              labelFor={(o) => (o === 'Y' ? t('actions.yes') : t('actions.no'))} onChange={(v) => set({ diseaseSymptoms: v ? v === 'Y' : null })} />
+            <Field label={t('farmer.obs.f.percent')} htmlFor="obs-pct" hint={form.percentAffected == null ? t('farmer.obs.f.percentUnset') : null}>
+              <div className="flex items-center gap-3">
+                <input id="obs-pct" type="range" min={0} max={100} step={5} value={form.percentAffected ?? 0}
+                  onChange={(e) => set({ percentAffected: Number(e.target.value) })} className="h-11 flex-1 accent-ocean-700" />
+                <span className="w-14 text-right text-lg font-bold text-slate-900">{form.percentAffected == null ? '—' : `${form.percentAffected}%`}</span>
+              </div>
+            </Field>
+            <SmallChoices id="water" label={t('farmer.obs.f.water')} value={form.waterAppearance} options={['CLEAR', 'TURBID', 'DISCOLORED']}
+              labelFor={(o) => t(`farmer.enums.water.${o}`)} onChange={(v) => set({ waterAppearance: v })} />
+            <SmallChoices id="line" label={t('farmer.obs.f.line')} value={form.lineCondition} options={GEAR}
+              labelFor={(o) => t(`farmer.enums.gear.${o}`)} onChange={(v) => set({ lineCondition: v })} />
+            <SmallChoices id="anchor" label={t('farmer.obs.f.anchor')} value={form.anchorCondition} options={GEAR}
+              labelFor={(o) => t(`farmer.enums.gear.${o}`)} onChange={(v) => set({ anchorCondition: v })} />
+            <SmallChoices id="conf" label={t('farmer.obs.f.confidence')} value={form.confidence} options={['LOW', 'MEDIUM', 'HIGH']}
+              labelFor={(o) => t(`farmer.enums.confidence.${o}`)} onChange={(v) => set({ confidence: v || 'MEDIUM' })} />
+            <Field label={t('common.notes')} htmlFor="obs-notes">
+              <textarea id="obs-notes" rows={3} maxLength={2000} className="input" value={form.notes} onChange={(e) => set({ notes: e.target.value })} />
+            </Field>
+          </div>
+          <Button size="lg" className="min-h-14 w-full" onClick={next}>{t('actions.next')}</Button>
         </div>
       )}
 
@@ -251,22 +247,26 @@ export default function ObservationWizard({ farmId, previousPredictions, onRecor
               [t('farmer.obs.r.whitening'), form.whitening ? t('actions.yes') : t('actions.no')],
               [t('farmer.obs.r.breakage'), form.breakage ? t('actions.yes') : t('actions.no')],
               [t('farmer.obs.r.unusualGrowth'), form.unusualGrowth ? t('actions.yes') : t('actions.no')],
-              [t('farmer.obs.f.epiphytes'), form.epiphytes ? t('actions.yes') : t('actions.no')],
-              [t('farmer.obs.f.disease'), form.diseaseSymptoms ? t('actions.yes') : t('actions.no')],
+              ...(form.epiphytes != null ? [[t('farmer.obs.f.epiphytes'), t(form.epiphytes ? 'actions.yes' : 'actions.no')]] : []),
+              ...(form.diseaseSymptoms != null ? [[t('farmer.obs.f.disease'), t(form.diseaseSymptoms ? 'actions.yes' : 'actions.no')]] : []),
               ...(form.percentAffected != null ? [[t('farmer.obs.f.percent'), `${form.percentAffected}%`]] : []),
               ...(form.waterAppearance ? [[t('farmer.obs.f.water'), t(`farmer.enums.water.${form.waterAppearance}`)]] : []),
               ...(form.lineCondition ? [[t('farmer.obs.f.line'), t(`farmer.enums.gear.${form.lineCondition}`)]] : []),
               ...(form.anchorCondition ? [[t('farmer.obs.f.anchor'), t(`farmer.enums.gear.${form.anchorCondition}`)]] : []),
-              [t('farmer.obs.f.confidence'), t(`farmer.enums.confidence.${form.confidence}`)],
+              ...(form.confidence !== 'MEDIUM' ? [[t('farmer.obs.f.confidence'), t(`farmer.enums.confidence.${form.confidence}`)]] : []),
               ...(form.notes.trim() ? [[t('common.notes'), form.notes.trim()]] : []),
-              [t('farmer.obs.r.photo'), photo ? t('actions.yes') : t('actions.no')],
+              ...(photo ? [[t('farmer.obs.r.photo'), t('actions.yes')]] : []),
             ].map(([k, v]) => (
-              <div key={k} className="flex justify-between gap-3 px-3 py-2.5">
+              <div key={k} className="grid grid-cols-2 gap-3 px-3 py-2.5 [overflow-wrap:anywhere]">
                 <dt className="text-slate-600">{k}</dt>
                 <dd className="text-right font-semibold text-slate-900">{v}</dd>
               </div>
             ))}
           </dl>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" onClick={() => setStep(4)}>{t('farmer.obs.moreDetails')}</Button>
+            <Button variant="secondary" icon={Camera} onClick={() => setStep(5)}>{photo ? t('farmer.obs.changePhoto') : t('farmer.obs.addPhoto')}</Button>
+          </div>
           {photo && <img src={photo.preview} alt={t('farmer.obs.photoAlt')} className="h-24 w-24 rounded-lg object-cover" />}
           {!form.cropCondition && <Notice tone="warning">{t('farmer.obs.needCondition')}</Notice>}
           <FormError error={submit.error} />

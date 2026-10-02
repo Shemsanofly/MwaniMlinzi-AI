@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import prisma from '../config/prisma.js';
 import { localDate } from '../ai/seaOutlook.js';
 import { SeaOutlookService } from './seaOutlookService.js';
@@ -50,13 +51,13 @@ export const DryingAlertService = {
     const farms = await prisma.farm.findMany({
       where: {
         status: 'ACTIVE',
-        location: { isNot: null },
+        location: { not: Prisma.DbNull },
         OR: [
           { plantingCycles: { some: { status: 'ACTIVE', expectedHarvestDate: { lt: horizon } } } },
           { harvests: { some: { harvestDate: { gte: recentHarvest } } } },
         ],
       },
-      include: { location: true, farmer: { include: { user: true } } },
+      include: { farmer: { include: { user: true } } },
     });
     let alerts = 0;
     for (const farm of farms) {

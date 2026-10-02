@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { events } from '../../backend/src/db/records.js';
+import { loadFieldRecords } from '../../backend/src/ai/fieldTrainingData.js';
 /**
  * Trains one logistic-regression model per risk type from REAL field outcomes only.
  *
@@ -33,19 +35,6 @@ async function loadDb() {
   const { prisma } = await import('../../backend/src/config/prisma.js');
   await prisma.$queryRaw`SELECT 1`;
   return prisma;
-}
-
-/** Field data: stored prediction features labelled by recorded outcomes (the feedback loop). */
-async function loadFieldRecords(prisma) {
-  const rows = await prisma.actionOutcome.findMany({
-    where: { riskMaterialized: { not: null }, prediction: { isSimulation: false } },
-    include: { prediction: { select: { riskType: true, features: true } } },
-  });
-  return rows.filter((r) => r.prediction).map((r) => ({
-    id: `FIELD-${r.id}`,
-    features: r.prediction.features,
-    labels: { [r.prediction.riskType]: r.riskMaterialized ? 1 : 0 },
-  }));
 }
 
 function validateRecords(records, riskType) {
@@ -123,7 +112,7 @@ async function main() {
       },
     });
     const details = { confusionMatrix: metrics.confusionMatrix, support: metrics.support, threshold: metrics.threshold, positiveRate: metrics.positiveRate };
-    await prisma.modelMetric.createMany({ data: ['precision', 'recall', 'f1', 'accuracy', 'rocAuc'].map((metric) => ({ modelId: row.id, dataset: 'TEST', metric, value: metrics[metric], details })) });
+    await events(prisma, 'METRIC').createMany({ data: ['precision', 'recall', 'f1', 'accuracy', 'rocAuc'].map((metric) => ({ modelId: row.id, dataset: 'TEST', metric, value: metrics[metric], details })) });
     console.log(`[train] ${riskType} ${version} (${status}) — test n=${te.length}: precision=${metrics.precision} recall=${metrics.recall} F1=${metrics.f1} accuracy=${metrics.accuracy} AUC=${metrics.rocAuc} CM=${JSON.stringify(metrics.confusionMatrix)}`);
     summary.push({ riskType, version, status, ...metrics });
   }

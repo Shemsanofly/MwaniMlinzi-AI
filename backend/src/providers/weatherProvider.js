@@ -1,3 +1,5 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { env } from '../config/env.js';
 import { fetchJson } from './http.js';
 
@@ -20,12 +22,12 @@ export class OpenMeteoWeatherProvider {
       latitude, longitude,
       current: 'temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code',
       daily: 'precipitation_sum,wind_speed_10m_max',
-      forecast_days: '3', timezone: 'Africa/Dar_es_Salaam',
+      forecast_days: '3', timezone: 'UTC', timeformat: 'unixtime',
     }).toString();
     const d = await fetchJson(url);
     const c = d.current || {};
     return {
-      observedAt: new Date(),
+      observedAt: Number.isFinite(c.time) ? new Date(c.time * 1000) : null,
       airTemperatureC: c.temperature_2m ?? null,
       rainfallMm: maxOf(d.daily?.precipitation_sum),
       windSpeedKmh: maxOf([c.wind_speed_10m, maxOf(d.daily?.wind_speed_10m_max)]),
@@ -45,9 +47,10 @@ export class OpenWeatherMapProvider {
     const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${encodeURIComponent(this.apiKey)}`;
     const d = await fetchJson(url);
     return {
-      observedAt: new Date(),
+      observedAt: Number.isFinite(d.dt) ? new Date(d.dt * 1000) : null,
       airTemperatureC: d.main?.temp ?? null,
-      rainfallMm: d.rain?.['1h'] != null ? d.rain['1h'] * 24 : (d.rain?.['3h'] ?? 0) * 8,
+      // Current rainfall is not a 72-hour forecast; leave the risk input unavailable.
+      rainfallMm: null,
       windSpeedKmh: d.wind?.speed != null ? d.wind.speed * 3.6 : null,
       windDirectionDeg: d.wind?.deg ?? null,
       humidityPct: d.main?.humidity ?? null,
@@ -61,11 +64,69 @@ const maxOf = (arr) => {
   return vals.length ? Math.max(...vals) : null;
 };
 
+/** Tanzania Meteorological Authority — authoritative national bulletins (deck slide 5).
+ *  TMA has no public JSON API as of 2026, so this provider reads a JSON bulletin file dropped by sysops
+ *  each morning (SFTP, scp, or an uploader cron). The file layout is region-keyed so Zanzibar farms are
+ *  matched to Unguja or Pemba. If the file is missing or stale, we return null → the cache tier is used
+ *  → otherwise the record is written as UNAVAILABLE (never invented).
+ *
+ *  Expected file shape (TMA_BULLETIN_PATH):
+ *    {
+ *      "issuedAt": "2026-10-01T06:00:00Z",
+ *      "regions": {
+ *        "Unguja": { "temperatureC": 29, "rainfallMm": 2.5, "windSpeedKmh": 18,
+ *                    "windDirectionDeg": 120, "humidityPct": 78, "condition": "Partly cloudy" },
+ *        "Pemba":  { ... }, "default": { ... }
+ *      }
+ *    }
+ *  Max accepted age: `TMA_BULLETIN_MAX_HOURS` (default 24 h). */
+export class TMAWeatherProvider {
+  name = 'tma';
+  providerLabel = 'Tanzania Meteorological Authority (bulletin file)';
+  isLive = true;
+  constructor({ bulletinPath, maxAgeHours = 24 } = {}) {
+    this.bulletinPath = bulletinPath;
+    this.maxAgeMs = maxAgeHours * 3600 * 1000;
+  }
+  // Rough bounding boxes for Zanzibar islands; everything outside falls to "default".
+  static regionFor(latitude, longitude) {
+    if (latitude >= -5.6 && latitude <= -4.7 && longitude >= 39.5 && longitude <= 40.0) return 'Pemba';
+    if (latitude >= -6.6 && latitude <= -5.6 && longitude >= 39.0 && longitude <= 39.7) return 'Unguja';
+    return 'default';
+  }
+  async fetch({ latitude, longitude }) {
+    if (!this.bulletinPath) return null;
+    const abs = path.isAbsolute(this.bulletinPath) ? this.bulletinPath : path.resolve(process.cwd(), this.bulletinPath);
+    let text;
+    try { text = await fs.readFile(abs, 'utf8'); } catch { return null; }
+    let payload;
+    try { payload = JSON.parse(text); } catch { return null; }
+    const issuedAt = payload?.issuedAt ? new Date(payload.issuedAt) : null;
+    if (!issuedAt || Number.isNaN(+issuedAt)) return null;
+    if (Date.now() - +issuedAt > this.maxAgeMs) return null; // stale → let cache/UNAVAILABLE take over
+    const region = TMAWeatherProvider.regionFor(latitude, longitude);
+    const row = payload.regions?.[region] || payload.regions?.default;
+    if (!row) return null;
+    return {
+      observedAt: issuedAt,
+      airTemperatureC: row.temperatureC ?? null,
+      rainfallMm: row.rainfallMm ?? null,
+      windSpeedKmh: row.windSpeedKmh ?? null,
+      windDirectionDeg: row.windDirectionDeg ?? null,
+      humidityPct: row.humidityPct ?? null,
+      condition: row.condition || 'Unknown',
+    };
+  }
+}
+
 /** Returns the configured live provider (Open-Meteo by default), or null when disabled / missing its key. */
 export function createLiveWeatherProvider(config = env) {
   switch (config.weather.provider || 'open-meteo') {
     case 'open-meteo': return new OpenMeteoWeatherProvider();
     case 'openweathermap': return config.weather.apiKey ? new OpenWeatherMapProvider(config.weather.apiKey) : null;
+    case 'tma': return config.weather.tmaBulletinPath
+      ? new TMAWeatherProvider({ bulletinPath: config.weather.tmaBulletinPath, maxAgeHours: config.weather.tmaMaxAgeHours })
+      : null;
     default: return null;
   }
 }

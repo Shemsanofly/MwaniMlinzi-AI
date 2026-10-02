@@ -27,9 +27,10 @@ export default function RiskTiles({ predictions = [], previous, linkTo }) {
               <Icon className={cx('h-4 w-4 shrink-0', s.text)} aria-hidden />
               <p className="truncate text-xs font-semibold text-slate-600">{t(`risk.type.${p.riskType}`)}</p>
             </div>
-            <p className={cx('mt-1 text-lg font-bold leading-tight', s.text)}>{t(`risk.level.${p.riskLevel}`)}</p>
+            <p className={cx('mt-1 text-lg font-bold leading-tight', s.text)}>{p.insufficientData ? t('common.noData') : t(`risk.level.${p.riskLevel}`)}</p>
             <div className="mt-0.5 flex items-center gap-1.5">
-              <span className="text-2xl font-bold text-slate-900">{pct(p.probability)}</span>
+              <span className="text-2xl font-bold text-slate-900">{p.insufficientData ? '—' : pct(p.probability)}</span>
+              <span className="text-xs text-slate-500">{t('intelligence.riskScore')}</span>
               {change !== 0 && (
                 <span className={cx('inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs font-bold', change > 0 ? 'bg-red-100 text-red-800' : 'bg-seaweed-100 text-seaweed-700')}>
                   {change > 0 ? <ArrowUp className="h-3 w-3" aria-hidden /> : <ArrowDown className="h-3 w-3" aria-hidden />}

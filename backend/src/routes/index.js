@@ -3,11 +3,12 @@ import multer from 'multer';
 import { env } from '../config/env.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
-import { aiLimiter } from '../middleware/rateLimit.js';
+import { aiLimiter, locationLimiter } from '../middleware/rateLimit.js';
 import * as s from '../validators/schemas.js';
 import * as core from '../controllers/coreController.js';
 import * as dash from '../controllers/dashboardController.js';
 import * as admin from '../controllers/adminController.js';
+import * as pub from '../controllers/publicController.js';
 import authRoutes from './auth.routes.js';
 import farmRoutes from './farm.routes.js';
 
@@ -18,23 +19,33 @@ const upload = multer({
 });
 
 const api = Router();
-const STAFF = ['ADMIN'];
+// Any staff seat. Fine-grained checks (cooperative scoping, admin-only ops) are enforced per-route below.
+const STAFF = ['COOPERATIVE_ADMIN', 'EXTENSION_OFFICER', 'ADMIN'];
+// Staff seats that can see across cooperatives (not scoped to a single one).
+const CROSS_COOP_STAFF = ['EXTENSION_OFFICER', 'ADMIN'];
 
 // Public
 api.get('/health', core.health);
 api.get('/species', core.species);
 api.get('/cooperatives/public', core.publicCooperatives);
 
+// Signed-token exports for buyers/processors (forecasts) and programmes/NGOs (adoption).
+// Auth is the token itself (`?token=…`, `X-Access-Token: …`, or `Authorization: Bearer …`).
+api.get('/public/forecasts', pub.forecasts);
+api.get('/public/adoption', pub.adoption);
+
 api.use('/auth', authRoutes);
 api.use('/farms', farmRoutes);
 
 // Everything below requires a valid JWT
 api.use(authenticate);
+api.get('/location/reverse', authorize('FARMER', 'ADMIN'), locationLimiter, validate(s.reverseGeocodeSchema, 'query'), core.reverseGeocode);
 
 api.get('/environment/current', authorize('FARMER', ...STAFF), core.environmentCurrent);
 api.get('/environment/history', authorize('FARMER', ...STAFF), core.environmentHistory);
 api.get('/environment/providers', core.environmentProviders);
 
+// What-if planner (overrides on request body) is admin-only; a plain forecast request has no overrides.
 api.post('/risk/predict', authorize('FARMER', ...STAFF), validate(s.simulationSchema), core.predict);
 api.get('/risk/:farmId', authorize('FARMER', ...STAFF), core.riskForFarm);
 api.post('/risk/predictions/:id/flag', authorize('ADMIN'), validate(s.flagPredictionSchema), core.flagPrediction);
@@ -59,14 +70,18 @@ api.get('/cooperatives/mine/dashboard', authorize(...STAFF), dash.myCooperativeD
 api.get('/cooperatives/:id/dashboard', authorize(...STAFF), dash.cooperativeDashboard);
 api.get('/cooperatives/:id/farmers', authorize(...STAFF), dash.cooperativeFarmers);
 
-api.get('/extension/dashboard', authorize('ADMIN'), dash.extensionDashboard);
-api.get('/extension/observations', authorize('ADMIN'), dash.extensionObservations);
-api.patch('/extension/observations/:id/review', authorize('ADMIN'), validate(s.reviewSchema), dash.reviewObservation);
-api.get('/extension/recommendations', authorize('ADMIN'), dash.extensionRecommendations);
-api.patch('/extension/recommendations/:id/review', authorize('ADMIN'), validate(s.reviewSchema), dash.reviewRecommendation);
+// Extension-wide operations: observable to extension officers and admins across cooperatives.
+api.get('/extension/dashboard', authorize(...CROSS_COOP_STAFF), dash.extensionDashboard);
+api.get('/extension/observations', authorize(...CROSS_COOP_STAFF), dash.extensionObservations);
+api.patch('/extension/observations/:id/review', authorize(...CROSS_COOP_STAFF), validate(s.reviewSchema), dash.reviewObservation);
+api.get('/extension/recommendations', authorize(...CROSS_COOP_STAFF), dash.extensionRecommendations);
+api.patch('/extension/recommendations/:id/review', authorize(...CROSS_COOP_STAFF), validate(s.reviewSchema), dash.reviewRecommendation);
 
 api.get('/forecasts/harvest', validate(s.forecastQuerySchema, 'query'), core.harvestForecasts);
 api.post('/forecasts/harvest/generate', authorize('ADMIN'), core.generateForecasts);
+
+// Slide-11 pilot targets, scoped by role.
+api.get('/dashboard/impact', authorize(...STAFF), dash.impactMetrics);
 
 api.post('/ai/chat', aiLimiter, validate(s.chatSchema), core.chat);
 api.get('/ai/status', core.aiStatus);
@@ -91,6 +106,12 @@ adm.post('/jobs/:name/run', admin.runJobNow);
 adm.get('/notification-logs', admin.notificationLogs);
 adm.get('/integrations/africastalking', admin.africasTalkingStatus);
 adm.post('/integrations/africastalking/test-sms', validate(s.testSmsSchema), admin.testSms);
+// Issue, list and revoke signed access tokens for the buyer/NGO public export endpoints.
+adm.get('/public-tokens', admin.listPublicTokens);
+adm.post('/public-tokens', validate(s.publicAccessTokenCreateSchema), admin.createPublicToken);
+adm.delete('/public-tokens/:id', admin.revokePublicToken);
+adm.get('/tma-bulletin', admin.getTmaBulletin);
+adm.put('/tma-bulletin', admin.putTmaBulletin);
 api.use('/admin', adm);
 
 export default api;

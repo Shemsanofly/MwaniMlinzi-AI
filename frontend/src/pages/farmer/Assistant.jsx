@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { ClipboardCheck, Database, Info, SendHorizontal, ShieldCheck, Sprout, Trash2, UserRound } from 'lucide-react';
+import { ClipboardCheck, Database, SendHorizontal, ShieldCheck, Sprout, Trash2, UserRound } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { useFarmerFarm } from '../../hooks/useFarmerFarm.js';
+import { usePhone } from '../../hooks/useMediaQuery.js';
 import { aiApi, farmApi } from '../../api/endpoints.js';
-import { Badge, Button, FormError, Notice, PageHeader, apiErrorMessage, cx } from '../../components/ui/index.jsx';
+import { Button, FormError, Notice, PageHeader, apiErrorMessage } from '../../components/ui/index.jsx';
 import { ValidationBadge } from './components/RecommendationPanel.jsx';
 import ObservationResult from './components/ObservationResult.jsx';
 import { FarmGate, FarmSwitcher, useInvalidateFarm } from './components/shared.jsx';
 
-const SUGGESTIONS = ['why', 'todo', 'harvest', 'sea', 'white', 'medicine'];
+const SUGGESTIONS = ['why', 'todo', 'harvest', 'sea'];
 const storeKey = (farmId) => `mwanimlinzi.chat.${farmId}`;
 const load = (farmId) => { try { return JSON.parse(sessionStorage.getItem(storeKey(farmId)) || '[]'); } catch { return []; } };
 const save = (farmId, msgs) => { try { sessionStorage.setItem(storeKey(farmId), JSON.stringify(msgs.slice(-40))); } catch { /* storage unavailable */ } };
@@ -29,6 +30,7 @@ export default function AssistantPage() {
 
 function Chat({ ff }) {
   const { t, lang } = useI18n();
+  const phone = usePhone();
   const { farmId, farm } = ff;
   const [messages, setMessages] = useState(() => load(farmId));
   const [text, setText] = useState('');
@@ -56,6 +58,7 @@ function Chat({ ff }) {
   return (
     <div className="flex flex-col">
       <FarmSwitcher ff={ff} />
+      <p className="mb-4 text-sm text-slate-600">{t('farmer.assistant.recordNote')}</p>
       <div className="rounded-2xl border border-slate-200 bg-white">
         <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-seaweed-50 text-seaweed-700"><Sprout className="h-5 w-5" aria-hidden /></span>
@@ -75,7 +78,7 @@ function Chat({ ff }) {
           {messages.map((m) => (
             m.role === 'user' ? (
               <div key={m.id} className="flex justify-end gap-2">
-                <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-ocean-700 px-4 py-2.5 text-white">{m.text}</p>
+                <p className="min-w-0 max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-ocean-700 px-4 py-2.5 text-white [overflow-wrap:anywhere]">{m.text}</p>
                 <UserRound className="mt-1 h-5 w-5 shrink-0 text-slate-400" aria-hidden />
               </div>
             ) : m.role === 'error' ? (
@@ -96,10 +99,10 @@ function Chat({ ff }) {
         {/* Suggested questions */}
         <div className="border-t border-slate-100 px-3 pt-3 sm:px-4">
           <p className="mb-2 text-xs font-semibold text-slate-500">{t('farmer.assistant.suggested')}</p>
-          <div className="-mx-3 flex gap-2 overflow-x-auto px-3 pb-2 sm:mx-0 sm:flex-wrap sm:px-0">
+          <div className="grid grid-cols-2 gap-2 pb-3">
             {SUGGESTIONS.map((k) => (
               <button key={k} type="button" disabled={chat.isPending} onClick={() => send(t(`farmer.assistant.q.${k}`))}
-                className="min-h-11 shrink-0 rounded-full bg-seaweed-50 px-3.5 py-2 text-sm font-semibold text-seaweed-700 ring-1 ring-inset ring-seaweed-500/30 hover:bg-seaweed-100 disabled:opacity-60">
+                className="min-h-11 min-w-0 rounded-xl bg-seaweed-50 px-3 py-2 text-sm font-semibold text-seaweed-700 ring-1 ring-inset ring-seaweed-500/30 hover:bg-seaweed-100 disabled:opacity-60">
                 {t(`farmer.assistant.q.${k}`)}
               </button>
             ))}
@@ -108,26 +111,17 @@ function Chat({ ff }) {
 
         <form className="flex items-end gap-2 border-t border-slate-100 p-3" onSubmit={(e) => { e.preventDefault(); send(text); }}>
           <label htmlFor="chat-input" className="sr-only">{t('farmer.assistant.inputLabel')}</label>
-          <textarea id="chat-input" rows={1} maxLength={1000} className="input min-h-12 resize-none" placeholder={t('farmer.assistant.placeholder')} value={text}
+          <textarea id="chat-input" rows={1} maxLength={1000} className="input min-h-12 flex-1 resize-none" placeholder={t('farmer.assistant.placeholder')} value={text}
             onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(text); } }} />
-          <Button type="submit" className="min-h-12 min-w-12" disabled={!text.trim()} loading={chat.isPending} aria-label={t('farmer.assistant.send')}>
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && !phone) { e.preventDefault(); send(text); } }} />
+          <Button type="submit" className="min-h-12 min-w-12 shrink-0" disabled={!text.trim()} loading={chat.isPending} aria-label={t('farmer.assistant.send')}>
             {!chat.isPending && <SendHorizontal className="h-5 w-5" aria-hidden />}
           </Button>
         </form>
       </div>
 
-      <Notice tone="info" icon={Info} className="mt-4">{t('farmer.assistant.footer')}</Notice>
     </div>
   );
-}
-
-function sourceLabel(generatedBy, t) {
-  if (!generatedBy) return null;
-  if (generatedBy === 'TEMPLATE') return t('farmer.assistant.gen.template');
-  if (generatedBy === 'SAFETY_POLICY') return t('farmer.assistant.gen.safety');
-  if (generatedBy.startsWith('LLM')) return t('farmer.assistant.gen.llm', { name: generatedBy.split(':')[1] || 'LLM' });
-  return generatedBy;
 }
 
 function AssistantMessage({ msg, farmId, onPatch }) {
@@ -138,7 +132,7 @@ function AssistantMessage({ msg, farmId, onPatch }) {
       <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-seaweed-50 text-seaweed-700"><Sprout className="h-4 w-4" aria-hidden /></span>
       <div className="min-w-0 max-w-[92%] flex-1 space-y-2">
         <div className="rounded-2xl rounded-tl-sm bg-sand-100 px-4 py-2.5 text-slate-900">
-          <p className="whitespace-pre-wrap">{r.reply}</p>
+          <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{r.reply}</p>
         </div>
         {r.approvedAction && (
           <div className="rounded-xl border-2 border-seaweed-500/50 bg-seaweed-50 p-3">
@@ -155,7 +149,6 @@ function AssistantMessage({ msg, farmId, onPatch }) {
         <p className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
           <Database className="h-3.5 w-3.5" aria-hidden />
           {r.farm ? t('farmer.assistant.fromRecords', { farm: r.farm.farmCode }) : t('farmer.assistant.noFarmRecords')}
-          <Badge className={cx(r.generatedBy?.startsWith('LLM') ? 'bg-sky-50 text-sky-800 ring-sky-300' : 'bg-slate-100 text-slate-700 ring-slate-200')}>{sourceLabel(r.generatedBy, t)}</Badge>
         </p>
       </div>
     </div>

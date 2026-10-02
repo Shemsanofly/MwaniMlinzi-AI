@@ -3,15 +3,19 @@
  *
  *   npm run seed
  *
- * Upserts roles, permissions, seaweed species, default system settings and the Action Library
- * (existing Action Library entries are left untouched so expert edits and validations are kept).
- * Creates the first admin account if no admin exists yet:
- *   ADMIN_EMAIL (default admin@mwanimlinzi.local) and ADMIN_PASSWORD (min. 12 characters).
- *   Without ADMIN_PASSWORD a strong password is generated, printed once and saved to
- *   backend/ADMIN_CREDENTIALS.local.txt (git-ignored) — change it after the first login.
+ * Upserts roles, permissions, seaweed species, default system settings and the Action Library,
+ * then ensures one login per role so the whole system is usable right after `npm run seed`:
  *
- * No farmers, farms, observations or environmental data are created: farmers register themselves
- * (web, USSD) and all environmental data comes from live providers.
+ *   - admin@mwanimlinzi.local       — ADMIN
+ *   - officer@mwanimlinzi.local     — EXTENSION_OFFICER
+ *   - coop@mwanimlinzi.local        — COOPERATIVE_ADMIN (linked to the "Pwani Jipya" demo coop)
+ *   - farmer@mwanimlinzi.local      — FARMER
+ *
+ * ADMIN_EMAIL / ADMIN_PASSWORD override the admin's email/password (min. 12 chars). Any missing
+ * password is generated, printed once and written to backend/DEMO_CREDENTIALS.local.txt (git-ignored).
+ *
+ * No farms, observations or environmental data are created. Farmers register themselves (web, USSD)
+ * and all environmental data comes from live providers.
  */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -25,39 +29,57 @@ import { PERMISSIONS, ROLES, SPECIES } from './data/reference.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
-async function ensureAdmin(adminRole) {
-  const existing = await prisma.user.findFirst({ where: { roles: { some: { roleId: adminRole.id } } } });
-  if (existing) return null;
-  const email = (process.env.ADMIN_EMAIL || 'admin@mwanimlinzi.local').toLowerCase();
-  let password = process.env.ADMIN_PASSWORD;
+const DEMO_COOP = { code: 'PWANI_JIPYA', name: 'Pwani Jipya Cooperative', district: 'North Unguja', region: 'Unguja', description: 'Demo cooperative for the pilot — real cooperatives replace it in production.' };
+const randomPassword = () => `Mw-${crypto.randomBytes(9).toString('base64url')}7`;
+
+async function ensureCooperative() {
+  return prisma.cooperative.upsert({ where: { code: DEMO_COOP.code }, update: {}, create: DEMO_COOP });
+}
+
+/** Create a user if the email is not already taken. Returns { email, password | null } for the credentials file. */
+async function ensureUser({ email, fullName, roleId, cooperativeId = null, preferredLanguage = 'en', envVar = null }) {
+  const normalised = email.toLowerCase();
+  const existing = await prisma.user.findUnique({ where: { email: normalised } });
+  if (existing) {
+    // Make sure the account carries this role (upgrade path for older DBs).
+    const has = await prisma.userRole.findUnique({ where: { userId_roleId: { userId: existing.id, roleId } } }).catch(() => null);
+    if (!has) await prisma.userRole.create({ data: { userId: existing.id, roleId } });
+    return { email: normalised, password: null, alreadyExisted: true };
+  }
+  let password = envVar ? process.env[envVar] : null;
   const generated = !password;
-  if (generated) password = `Mw-${crypto.randomBytes(9).toString('base64url')}7`;
-  if (password.length < 12) throw new Error('ADMIN_PASSWORD must be at least 12 characters');
+  if (generated) password = randomPassword();
+  if (password.length < 12) throw new Error(`${envVar || email} password must be at least 12 characters`);
   await prisma.user.create({
     data: {
-      email, fullName: 'System Administrator', passwordHash: await bcrypt.hash(password, 12),
-      preferredLanguage: 'en', consentGiven: true, consentAt: new Date(), roles: { create: { roleId: adminRole.id } },
+      email: normalised, fullName, passwordHash: await bcrypt.hash(password, 12),
+      preferredLanguage, consentGiven: true, consentAt: new Date(),
+      cooperativeId, roles: { create: { roleId } },
     },
   });
-  if (generated) {
-    const file = path.join(here, '..', 'ADMIN_CREDENTIALS.local.txt');
-    fs.writeFileSync(file, `MwaniMlinzi AI — first admin account\nEmail: ${email}\nPassword: ${password}\nChange this password after the first login.\n`, { mode: 0o600 });
-    console.log(`[seed] created admin ${email} with a generated password: ${password}`);
-    console.log('[seed] saved to backend/ADMIN_CREDENTIALS.local.txt — change it after the first login.');
-  } else {
-    console.log(`[seed] created admin ${email} (password from ADMIN_PASSWORD)`);
+  return { email: normalised, password, alreadyExisted: false };
+}
+
+function writeCredentialsFile(entries) {
+  const lines = ['MwaniMlinzi AI — demo accounts (one per role)', '', 'Keep this file private. Change the passwords after your first login.', ''];
+  for (const e of entries) {
+    lines.push(`${e.role}`);
+    lines.push(`  Email: ${e.email}`);
+    lines.push(`  Password: ${e.password ?? '(unchanged — already existed)'}`);
+    if (e.notes) lines.push(`  ${e.notes}`);
+    lines.push('');
   }
-  return email;
+  const file = path.join(here, '..', 'DEMO_CREDENTIALS.local.txt');
+  fs.writeFileSync(file, lines.join('\n'), { mode: 0o600 });
+  return file;
 }
 
 async function main() {
   const roles = {};
   for (const r of ROLES) roles[r.name] = await prisma.role.upsert({ where: { name: r.name }, update: { description: r.description }, create: r });
-  for (const [key, roleNames] of Object.entries(PERMISSIONS)) {
-    const perm = await prisma.permission.upsert({ where: { key }, update: {}, create: { key } });
-    for (const name of roleNames) {
-      await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: roles[name].id, permissionId: perm.id } }, update: {}, create: { roleId: roles[name].id, permissionId: perm.id } });
-    }
+  for (const role of Object.values(roles)) {
+    const keys = Object.entries(PERMISSIONS).filter(([, names]) => names.includes(role.name)).map(([key]) => key);
+    await prisma.role.update({ where: { id: role.id }, data: { permissions: [...new Set([...role.permissions, ...keys])] } });
   }
   for (const s of SPECIES) await prisma.seaweedSpecies.upsert({ where: { code: s.code }, update: {}, create: s });
   await ensureDefaultSettings();
@@ -66,7 +88,23 @@ async function main() {
     const exists = await prisma.actionLibrary.findUnique({ where: { code: a.code } });
     if (!exists) { await prisma.actionLibrary.create({ data: a }); added += 1; }
   }
-  await ensureAdmin(roles.ADMIN);
+
+  const coop = await ensureCooperative();
+  const demo = [];
+  demo.push({ role: 'ADMIN', ...await ensureUser({ email: process.env.ADMIN_EMAIL || 'admin@mwanimlinzi.local', fullName: 'System Administrator', roleId: roles.ADMIN.id, preferredLanguage: 'en', envVar: 'ADMIN_PASSWORD' }) });
+  demo.push({ role: 'EXTENSION_OFFICER', ...await ensureUser({ email: 'officer@mwanimlinzi.local', fullName: 'Demo Extension Officer', roleId: roles.EXTENSION_OFFICER.id, preferredLanguage: 'en' }) });
+  demo.push({ role: 'COOPERATIVE_ADMIN', ...await ensureUser({ email: 'coop@mwanimlinzi.local', fullName: 'Demo Cooperative Lead', roleId: roles.COOPERATIVE_ADMIN.id, cooperativeId: coop.id, preferredLanguage: 'sw' }), notes: `Linked to cooperative "${coop.name}" (${coop.code}).` });
+  demo.push({ role: 'FARMER', ...await ensureUser({ email: 'farmer@mwanimlinzi.local', fullName: 'Demo Farmer', roleId: roles.FARMER.id, preferredLanguage: 'sw' }), notes: 'A FARMER needs to add a farm after first login.' });
+
+  const freshlyCreated = demo.filter((d) => !d.alreadyExisted && d.password);
+  if (freshlyCreated.length) {
+    const file = writeCredentialsFile(demo);
+    console.log(`[seed] created ${freshlyCreated.length} demo account(s); credentials saved to ${path.relative(path.join(here, '..'), file)}:`);
+    for (const d of freshlyCreated) console.log(`         ${d.role.padEnd(18)} ${d.email}  —  ${d.password}`);
+  } else {
+    console.log('[seed] demo accounts already present (no credentials file written).');
+  }
+
   console.log(`[seed] roles, permissions, species and settings ensured; ${added} new action-library entries added.`);
 }
 

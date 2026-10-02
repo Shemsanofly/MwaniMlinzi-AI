@@ -20,12 +20,14 @@ Everything in that loop is real backend logic stored in PostgreSQL — no mock U
 | Frontend | React 19, Vite, React Router, TanStack Query, Axios, Tailwind CSS, Recharts, Leaflet + OpenStreetMap |
 | Backend | Node.js (≥18.18), Express 5, JavaScript (ES modules), Prisma ORM, Zod, JWT, bcryptjs, Helmet, rate limiting, node-cron |
 | Database | PostgreSQL (managed with pgAdmin) |
-| AI | Rule-based risk engine (always on) + dependency-free JavaScript logistic-regression models (optional), Action Engine, optional LLM for explanation/translation only |
+| AI | Rule-based risk engine (always on) + optional dependency-free JavaScript logistic regression, with an optional Python LightGBM / XGBoost microservice (`ai/ml-service/`) that the Node backend prefers when it is reachable; Action Engine; optional LLM for explanation/translation only |
 | Deployment | No Docker. `npm` + PostgreSQL on Windows, Linux or macOS; PM2 for production |
+
+The database has **29 application tables (30 including Prisma migration history)**. See [the database guide](docs/DATABASE.md#schema-overview) for the consolidated schema and data-preserving migration.
 
 ## What is built
 
-- **Roles:** two roles — **Farmer** and **Admin**. The admin also does the field work (farm monitoring, risk map, report reviews, action-library validation, harvest forecasts) under *Field operations*. JWT auth, role checks and per-farm ownership scoping on every endpoint; cooperatives remain as farmer groups.
+- **Roles:** four seats — **Farmer**, **Cooperative staff**, **Extension officer** and **Admin**. Cooperative staff see only their own cooperative; extension officers see all farms; the admin runs the system. JWT auth, role checks and per-farm ownership scoping on every endpoint.
 - **Self-registration:** farmers register on the web (phone number + password, optional cooperative) or through the USSD menu, then add their farm on a map; risk is calculated straight away.
 - **Farms & records:** farm profiles with locations, planting cycles (crop age always derived from the planting date), an observation wizard with optional photo upload, harvests (expected vs actual, difference, loss %), losses, quality, drying.
 - **Environmental data:** live weather (Open-Meteo by default) and ocean data (Open-Meteo Marine by default), both free and keyless, with **LIVE → CACHED → no reading** fallback. Every record stores its `source` and provider; missing values stay empty and are never invented.
@@ -34,8 +36,14 @@ Everything in that loop is real backend logic stored in PostgreSQL — no mock U
 - **Action Engine:** recommendations come **only** from the curated, bilingual Action Library (validated by the admin with local experts). The LLM can never invent farming actions.
 - **Alerts & notifications:** high/critical heat and storm, poor growth, harvest window, risk increases, missing reports → in-app notifications, plus **real SMS through Africa's Talking** for important events only (HIGH/CRITICAL risk, harvest reminders), respecting each user's SMS preferences. Every SMS is logged with provider status (QUEUED/SENT/DELIVERED/FAILED/NOT_CONFIGURED) and delivery reports.
 - **Feedback loop:** prediction → recommendation → farmer action → outcome → automatic model-feedback label → field evaluation metrics and future training data.
-- **Dashboards:** mobile-first farmer app (English/Kiswahili), admin field operations (risk map, visit prioritisation, report reviews, alerts, harvest forecasts for 7/14/30 days with uncertainty ranges), admin console (users, action library, models, settings, audit log, jobs).
+- **Dashboards:**
+  - Mobile-first **farmer** app (English/Kiswahili) — current risk in plain words, next action, record book.
+  - **Cooperative staff** dashboard — a trimmed view of their own cooperative only: members, active farms, current risk mix, next 30 days expected harvest, active alerts, members who haven't reported recently.
+  - **Extension officer** dashboard — all farms across cooperatives, risk map, visit prioritisation, report reviews, harvest forecasts for 7/14/30 days with uncertainty ranges.
+  - **Admin** console — users, action library, models, TMA bulletin uploader, access tokens for buyer/NGO exports, impact dashboard (slide-11 targets live), settings, audit log, jobs.
+  - **Partner view** at `/partner` — a public page where a buyer, programme or NGO pastes their signed access token and sees the cooperative aggregates they are authorised to see; no login, nothing farmer-identifying.
 - **Daily farm tools:** *Today at sea* — the next daylight low tide with the best hours to work, and whether today is good for drying seaweed (Good / Caution / Bad from the live rain forecast, with approved advice to keep seaweed off the ground), on the web, USSD and — for farms at harvest when rain is likely — by SMS. Calculated every morning at 06:00 (and refreshed at 14:00) from Open-Meteo forecasts for each farm's point.
+- **Record book:** sales (kg × price, buyer, paid / not yet paid), costs by category and daily work, per planting — with income, costs, **profit**, money still owed and unsold stock, all from the farmer's own entries. On the web (*Record book*, dashboard *This season* card) and on any phone via USSD (*4 Rekodi mavuno → Mauzo / Gharama / Kazi*, *1 → 3 Faida ya msimu*).
 - **SMS & USSD (Africa's Talking):** a real USSD application with the menu *1 Hali ya shamba · 2 Tahadhari · 3 Ripoti tatizo · 4 Rekodi mavuno · 5 Msaada* (risk and action, low tide and drying, alerts, symptom reports, harvest, advice, language), consent at registration, sessions stored in PostgreSQL, and incoming SMS commands. Sandbox first; see [docs/AFRICASTALKING.md](docs/AFRICASTALKING.md). There are no web simulators.
 - **English | Kiswahili** everywhere (web, SMS, USSD). The choice is saved in the browser and in the user's profile. Farmers register and log in with their phone number (any Tanzanian format).
 - **Simple farmer dashboard:** current risk in words + icon + colour, plain-language reasons, the next action and when to do it; technical values stay under *See details / Angalia maelezo*. Works on low connectivity: the last saved information stays visible offline.
@@ -57,13 +65,19 @@ npm install
 npx prisma generate
 npx prisma migrate dev          # creates all tables
 npm run seed                    # reference data + first admin (non-destructive)
-npm run dev                     # API on http://localhost:5000
 
-# 3. Frontend (new terminal)
-cd frontend
+# 3. Frontend dependencies
+cd ../frontend
 npm install
-npm run dev                     # app on http://localhost:5173
+
+# 4. Start both servers from the project root
+cd ..
+npm run dev                     # API on :5000 and app on :5173; Ctrl+C stops both
 ```
+
+Use the project-root `npm run dev` for everyday development. Running only the frontend does not start
+the API and causes "Cannot reach the server" errors on login and other API requests. You can still run
+`npm run dev` in `backend` and `frontend` in separate terminals if you want to manage them separately.
 
 | | URL |
 |---|---|
@@ -106,6 +120,7 @@ applies the migration that removes them (and the old demo columns). For a comple
 
 | Task | Command |
 |---|---|
+| Start backend and frontend together | `npm run dev` (from the project root) |
 | Backend dev server / production | `cd backend && npm run dev` / `npm start` |
 | Backend tests (separate `<db>_test` database, test-only fixtures, no live API calls) | `cd backend && npm test` |
 | Backend lint | `cd backend && npm run lint` |
@@ -120,12 +135,24 @@ applies the migration that removes them (and the old demo columns). For a comple
 Environmental data is always live. With the defaults no key is needed:
 
 ```ini
-WEATHER_PROVIDER=                    # empty = open-meteo (free, no key) | openweathermap + WEATHER_API_KEY | none
-OCEAN_PROVIDER=                      # empty = open-meteo-marine (free, no key) | stormglass + OCEAN_API_KEY | none
+# Weather: open-meteo (free, no key) | openweathermap (needs key) | tma (reads TMA_BULLETIN_PATH)
+WEATHER_PROVIDER=
+WEATHER_API_KEY=
+TMA_BULLETIN_PATH=                   # /var/lib/mwanimlinzi/tma-bulletin.json (admin uploads from the UI)
+TMA_BULLETIN_MAX_HOURS=24
+
+# Ocean: open-meteo-marine (free, no key) | cmems / copernicus-marine (CMEMS via Open-Meteo, free) | stormglass
+OCEAN_PROVIDER=
+OCEAN_API_KEY=
+
+# Optional LightGBM / XGBoost service (see ai/ml-service/README.md)
+ML_SERVICE_URL=
+ML_SERVICE_TIMEOUT_MS=2500
+
 LLM_PROVIDER=anthropic               # or openai; optional (empty = deterministic templates)
-LLM_API_KEY=...
+LLM_API_KEY=
 AT_USERNAME=sandbox                  # Africa's Talking (SMS + USSD), see docs/AFRICASTALKING.md
-AT_API_KEY=...
+AT_API_KEY=
 AT_ENVIRONMENT=sandbox               # or production
 AT_USSD_SERVICE_CODE=*384*1234#
 AT_CALLBACK_SECRET=<long random string>
@@ -136,6 +163,22 @@ If a live provider fails, the backend uses the last live reading near the farm (
 is still computed from the farm data and farmer reports, stored with data source `UNAVAILABLE` and a lower confidence.
 SMS and USSD are never simulated: without Africa's Talking credentials every SMS attempt is logged as `NOT_CONFIGURED`.
 Details: [docs/AI.md](docs/AI.md) and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+### Giving buyers, programmes or NGOs read access
+
+Admins issue signed, revocable access tokens in **Admin → Access tokens**:
+
+- A **Forecasts** token exposes `GET /api/public/forecasts?token=…` — cooperative-level 7/14/30-day expected harvest, with low/high uncertainty bands.
+- An **Adoption** token exposes `GET /api/public/adoption?token=…` — last-90-day registered farmers, high-alert acknowledgement rate and 48h-action rate.
+- A token can be scoped to one cooperative or to all of them. Default lifetime is 90 days; revoke at any time.
+- Share the token through a secure channel. The partner opens **`/partner`**, pastes the token, and sees the view — no login, no technical setup.
+
+### Optional LightGBM / XGBoost microservice
+
+The Node backend ships with a logistic-regression baseline. For gradient-boosted models (deck slide 7), run the small
+Python service in [`ai/ml-service/`](ai/ml-service/README.md) and set `ML_SERVICE_URL` on the backend. If the service
+is unreachable or has no model for a given risk type, the backend transparently falls back to the JS baseline, which
+in turn falls back to the rule-based engine. The system is never dependent on the Python service being up.
 
 ## Documentation
 

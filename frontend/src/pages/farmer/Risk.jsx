@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ChevronDown, Clock, Info, RefreshCw } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
@@ -47,13 +48,13 @@ function SimpleRiskCard({ prediction, farmId }) {
   const { t, tx, lang } = useI18n();
   const [recorded, setRecorded] = useState(null);
   const recordAction = useRecordAction(farmId);
-  const s = riskStyle(prediction.riskLevel);
+  const s = prediction.insufficientData ? { border: 'border-slate-200', badge: 'bg-slate-50 text-slate-700' } : riskStyle(prediction.riskLevel);
   const LevelIcon = LEVEL_ICON[prediction.riskLevel] || Info;
   const TypeIcon = RISK_ICON[prediction.riskType];
   const reasons = (prediction.factors || []).filter((f) => f.direction === 'INCREASES' && f.simpleLabel).slice(0, 3);
   const rec = prediction.recommendation;
-  const item = rec?.actionItem;
-  const open = rec && ['PENDING', 'ACKNOWLEDGED'].includes(rec.status);
+  const item = !prediction.insufficientData && rec?.actionItem;
+  const open = !prediction.insufficientData && rec && ['PENDING', 'ACKNOWLEDGED'].includes(rec.status);
   const isHarvest = prediction.riskType === 'HARVEST_WINDOW';
 
   return (
@@ -62,18 +63,21 @@ function SimpleRiskCard({ prediction, farmId }) {
         {TypeIcon && <TypeIcon className="h-6 w-6 shrink-0" aria-hidden />}
         <div className="min-w-0 flex-1">
           <h2 className="font-bold leading-tight">{t(`risk.type.${prediction.riskType}`)}</h2>
-          <p className="flex items-center gap-1.5 text-sm font-semibold">
+          {!prediction.insufficientData && <p className="flex items-center gap-1.5 text-sm font-semibold">
             <LevelIcon className="h-4 w-4 shrink-0" aria-hidden />
             {isHarvest ? t(`farmer.risk.harvestLevel.${prediction.riskLevel}`) : t(`risk.levelLong.${prediction.riskLevel}`)}
-          </p>
+          </p>}
         </div>
       </div>
       <div className="space-y-3 p-4">
         {prediction.insufficientData ? (
-          <Notice tone="warning">{t('risk.insufficient')}</Notice>
+          <div className="space-y-2">
+            <Notice tone="neutral">{t('risk.insufficient')}</Notice>
+            <Link className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-ocean-800 underline underline-offset-4" to="/farmer/observations">{t('actions.recordSymptoms')}</Link>
+          </div>
         ) : reasons.length > 0 && (
           <div>
-            <p className="text-sm font-semibold text-slate-700">{t('risk.why')}</p>
+            <p className="text-sm font-semibold text-slate-700">{t(['LOW', 'MEDIUM'].includes(prediction.riskLevel) ? 'farmer.risk.watchFor' : 'risk.why')}</p>
             <ul className="mt-1 space-y-1 text-base text-slate-700">
               {reasons.map((f) => <li key={f.code} className="flex gap-2"><span aria-hidden>•</span><span>{tx(f, 'simpleLabel')}</span></li>)}
             </ul>

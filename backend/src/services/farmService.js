@@ -1,11 +1,14 @@
 import prisma from '../config/prisma.js';
+import { RecordBookService } from './recordBookService.js';
 import { addDays, cropAgeDays, daysBetween } from '../utils/dates.js';
 import { badRequest, conflict, notFound } from '../utils/errors.js';
 import { RISK_TYPES } from '../ai/constants.js';
 import { farmInclude } from './farmContextService.js';
+import { usableForecast } from './harvestForecastService.js';
 
 /** Farm DTO with derived fields: crop age (from planting date), current cycle, latest risk summary. */
 export function serializeFarm(farm, { cycle = null, latestRisks = null, lastObservation = null, forecast = null } = {}) {
+  forecast = usableForecast(forecast);
   const c = cycle || farm.plantingCycles?.find((pc) => pc.status === 'ACTIVE') || null;
   const age = c ? cropAgeDays(c.plantingDate) : null;
   return {
@@ -38,7 +41,7 @@ export function serializeFarm(farm, { cycle = null, latestRisks = null, lastObse
     cropAgeDays: age,
     latestRisks,
     lastObservation: lastObservation ? { id: lastObservation.id, observedAt: lastObservation.observedAt, cropCondition: lastObservation.cropCondition, whitening: lastObservation.whitening, breakage: lastObservation.breakage, epiphytes: lastObservation.epiphytes } : null,
-    forecast: forecast ? { expectedHarvestDate: forecast.expectedHarvestDate, riskAdjustedQuantityKg: forecast.riskAdjustedQuantityKg, lowQuantityKg: forecast.lowQuantityKg, highQuantityKg: forecast.highQuantityKg, confidence: forecast.confidence } : null,
+    forecast: forecast ? { expectedHarvestDate: forecast.expectedHarvestDate, riskAdjustedQuantityKg: forecast.riskAdjustedQuantityKg, lowQuantityKg: forecast.lowQuantityKg, highQuantityKg: forecast.highQuantityKg, confidence: null, method: forecast.method, inputs: forecast.inputs, createdAt: forecast.createdAt } : null,
   };
 }
 
@@ -111,7 +114,7 @@ export const FarmService = {
     const count = await prisma.farm.count();
     for (let n = count + 1; n < count + 1000; n += 1) {
       const code = `FARM${String(n).padStart(3, '0')}`;
-       
+
       if (!(await prisma.farm.findUnique({ where: { farmCode: code }, select: { id: true } }))) return code;
     }
     return `FARM-${Date.now()}`;
@@ -139,7 +142,7 @@ export const FarmService = {
         areaHectares: data.areaHectares ?? null,
         lineCount: data.lineCount,
         notes: data.notes || null,
-        location: { create: { latitude: data.latitude, longitude: data.longitude, locationName: data.locationName, district: data.district, region: data.region } },
+        location: { latitude: data.latitude, longitude: data.longitude, locationName: data.locationName, district: data.district, region: data.region },
       },
     });
     if (data.plantingDate) {
@@ -158,11 +161,11 @@ export const FarmService = {
     const loc = Object.fromEntries(Object.entries({ latitude, longitude, locationName, district, region }).filter(([, v]) => v !== undefined));
     let location;
     if (Object.keys(loc).length) {
-      const existing = await prisma.farmLocation.findUnique({ where: { farmId: id } });
-      if (existing) location = { update: loc };
+      const existing = (await prisma.farm.findUnique({ where: { id }, select: { location: true } }))?.location;
+      if (existing) location = { ...existing, ...loc };
       else if (loc.latitude != null && loc.longitude != null) {
         // e.g. a USSD farm registered with a typed place name gets its map point later
-        location = { create: { locationName: 'Unknown', district: 'Unknown', region: 'Unknown', ...loc } };
+        location = { locationName: 'Unknown', district: 'Unknown', region: 'Unknown', ...loc };
       } else throw badRequest('This farm has no map point yet: send latitude and longitude to set it.');
     }
     await prisma.farm.update({
@@ -179,8 +182,10 @@ export const FarmService = {
     if (data.plantingDate > new Date()) throw badRequest('Planting date cannot be in the future');
     const expected = data.expectedHarvestDate || addDays(data.plantingDate, species.typicalCycleDays);
     if (expected <= data.plantingDate) throw badRequest('Expected harvest date must be after planting date');
-    return prisma.plantingCycle.create({
+    const cycle = await prisma.plantingCycle.create({
       data: { farmId, plantingDate: data.plantingDate, expectedHarvestDate: expected, linesPlanted: data.linesPlanted, seedQuantityKg: data.seedQuantityKg ?? null, notes: data.notes || null },
     });
+    await RecordBookService.attachUnassigned(farmId, cycle.id);
+    return cycle;
   },
 };

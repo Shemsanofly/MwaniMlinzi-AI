@@ -25,6 +25,12 @@ export const ACTION_LIBRARY = [
     explanation: 'Critical heat / ice-ice risk. An extension officer should confirm the situation and advise on approved measures.', explanationSw: 'Hatari muhimu ya joto / ice-ice. Afisa ugani anapaswa kuthibitisha hali na kushauri hatua zilizoidhinishwa.' },
 
   // ── Storm / line damage ──
+  { code: 'STORM_LOW_REPORTED_DAMAGE', riskType: 'STORM_LINE_DAMAGE', minimumRiskLevel: 'LOW', maximumRiskLevel: 'LOW', urgency: 'SOON', urgencyHours: 24, priority: 5,
+    conditions: [ge('obsDamageReported', 1)],
+    action: 'Inspect the reported damage on your next safe farm visit. Repair damaged ties or lines and check the anchors.',
+    actionSw: 'Kagua uharibifu ulioripotiwa kwenye ziara ijayo salama shambani. Rekebisha vifungo au mistari iliyoharibika na kagua nanga.',
+    explanation: 'A low forecast storm score does not clear reported damage. Inspect and record whether the problem has been resolved.',
+    explanationSw: 'Alama ndogo ya utabiri wa dhoruba haiondoi uharibifu ulioripotiwa. Kagua na rekodi kama tatizo limetatuliwa.' },
   { code: 'STORM_LOW_MONITOR', riskType: 'STORM_LINE_DAMAGE', minimumRiskLevel: 'LOW', maximumRiskLevel: 'LOW', urgency: 'ROUTINE', urgencyHours: 168,
     action: 'Continue monitoring.', actionSw: 'Endelea kufuatilia.',
     explanation: 'Waves and wind are within normal range for your farm.', explanationSw: 'Mawimbi na upepo viko katika kiwango cha kawaida kwa shamba lako.' },

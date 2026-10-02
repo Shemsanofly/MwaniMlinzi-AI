@@ -1,61 +1,66 @@
 import prisma from '../config/prisma.js';
 import { addDays, daysBetween, cropAgeDays } from '../utils/dates.js';
-import { RISK_TYPES } from '../ai/constants.js';
+export const HARVEST_METHOD = 'recorded-cycle-yield-v2';
+export const MIN_HARVEST_CYCLES = 3;
+export const usableForecast = (forecast) => forecast?.method === HARVEST_METHOD ? forecast : null;
 
 const round = (v, dp = 1) => Math.round(v * 10 ** dp) / 10 ** dp;
 
 /**
- * HarvestForecastService — risk-adjusted expected harvest per farm, aggregated by
- * cooperative / district / date. All quantities are kg of DRIED seaweed.
- *
- *   expected      = lines planted × yield per line (farm history if available, else species default)
- *   riskAdjusted  = expected × (1 − expected loss fraction from current risk probabilities)
- *   range         = widened by uncertainty (less history, lower confidence ⇒ wider range)
+ * Historical harvest planning estimate from completed cycles. No species default,
+ * guessed loss deduction, inferred quality grade or invented harvest date.
+ * All quantities are kg of dried seaweed; low/high reflect recorded yield variation.
  */
-export function forecastForCycle({ farm, cycle, species, latestRisks, history }) {
-  const lines = cycle.linesPlanted || farm.lineCount || 0;
-  const yieldPerLine = history.yieldPerLine ?? species.yieldKgDryPerLine;
+export function forecastForCycle({ cycle, history }) {
+  const lines = cycle.linesPlanted;
+  if (!(lines > 0) || !Number.isInteger(history.harvestCount) || history.harvestCount < MIN_HARVEST_CYCLES || !Number.isFinite(history.yieldPerLine)
+    || !Number.isFinite(history.lowYieldPerLine) || !Number.isFinite(history.highYieldPerLine)) return null;
+  const yieldPerLine = history.yieldPerLine;
   const expected = lines * yieldPerLine;
-  const p = (rt) => latestRisks[rt]?.probability ?? 0;
-  const lossFraction = Math.min(0.85, 0.35 * p('HEAT_ICE_ICE') + 0.25 * p('STORM_LINE_DAMAGE') + 0.2 * p('POOR_GROWTH') + 0.1 * p('HARVEST_WINDOW'));
-  const riskAdjusted = expected * (1 - lossFraction);
-  const avgConfidence = RISK_TYPES.map((rt) => latestRisks[rt]?.confidence).filter((v) => v != null);
-  const riskConfidence = avgConfidence.length ? avgConfidence.reduce((a, b) => a + b, 0) / avgConfidence.length : 0.4;
-  const historyFactor = Math.min(1, (history.harvestCount || 0) / 3);
-  const confidence = round(Math.min(0.9, 0.35 + 0.3 * riskConfidence + 0.25 * historyFactor), 2);
-  const uncertainty = 0.45 - 0.3 * confidence; // 0.18 … 0.35
   const expectedDate = cycle.expectedHarvestDate;
   const overdue = daysBetween(expectedDate) > 0;
   return {
-    expectedHarvestDate: overdue ? addDays(new Date(), 3) : expectedDate,
+    expectedHarvestDate: expectedDate,
     expectedQuantityKg: round(expected),
-    riskAdjustedQuantityKg: round(riskAdjusted),
-    lowQuantityKg: round(riskAdjusted * (1 - uncertainty)),
-    highQuantityKg: round(Math.min(expected * (1 + uncertainty / 2), riskAdjusted * (1 + uncertainty))),
-    confidence,
-    expectedGrade: p('HARVEST_WINDOW') > 0.6 || p('HEAT_ICE_ICE') > 0.6 ? 'B' : 'A',
+    // Retain the legacy column name for API compatibility; no uncalibrated loss deduction.
+    riskAdjustedQuantityKg: round(expected),
+    lowQuantityKg: round(lines * history.lowYieldPerLine),
+    highQuantityKg: round(lines * history.highYieldPerLine),
+    confidence: 0, // Accuracy has not been measured; the farmer DTO exposes null.
+    expectedGrade: null,
     inputs: {
       linesPlanted: lines,
       yieldKgDryPerLine: round(yieldPerLine, 2),
-      yieldSource: history.yieldPerLine != null ? 'FARM_HISTORY' : 'SPECIES_DEFAULT',
+      yieldSource: 'FARM_HISTORY',
+      completedCycles: history.harvestCount,
+      harvestRecordIds: history.harvestRecordIds || [],
+      rangeMeaning: 'Observed minimum and maximum yield per line in completed cycles; not a statistical prediction interval.',
+      estimateKind: 'HISTORICAL_BASELINE',
       cropAgeDays: cropAgeDays(cycle.plantingDate),
-      expectedLossFraction: round(lossFraction, 3),
-      riskProbabilities: Object.fromEntries(RISK_TYPES.map((rt) => [rt, latestRisks[rt]?.probability ?? null])),
       overdue,
     },
   };
 }
 
-async function farmYieldHistory(farmId) {
+export async function farmYieldHistory(farmId) {
   const harvests = await prisma.harvestRecord.findMany({
-    where: { farmId, unit: 'KG_DRY', plantingCycle: { is: { linesPlanted: { gt: 0 } } } },
+    where: { farmId, channel: { not: 'SEED' }, plantingCycle: { is: { status: 'HARVESTED', linesPlanted: { gt: 0 } } } },
     include: { plantingCycle: { select: { linesPlanted: true } } },
     orderBy: { harvestDate: 'desc' },
-    take: 4,
   });
-  if (!harvests.length) return { yieldPerLine: null, harvestCount: 0 };
-  const perLine = harvests.map((h) => h.actualQuantity / h.plantingCycle.linesPlanted);
-  return { yieldPerLine: perLine.reduce((a, b) => a + b, 0) / perLine.length, harvestCount: harvests.length };
+  const cycles = new Map();
+  for (const h of harvests) {
+    const group = cycles.get(h.plantingCycleId) || { kg: 0, lines: h.plantingCycle.linesPlanted, ids: [], hasWet: false };
+    group.hasWet ||= h.unit !== 'KG_DRY';
+    group.kg += h.unit === 'KG_DRY' ? h.actualQuantity : 0;
+    group.ids.push(h.id);
+    cycles.set(h.plantingCycleId, group);
+  }
+  const recent = [...cycles.values()].filter((c) => !c.hasWet).slice(0, 6);
+  const perLine = recent.map((c) => c.kg / c.lines);
+  return { yieldPerLine: perLine.length ? perLine.reduce((a, b) => a + b, 0) / perLine.length : null,
+    lowYieldPerLine: perLine.length ? Math.min(...perLine) : null, highYieldPerLine: perLine.length ? Math.max(...perLine) : null,
+    harvestCount: recent.length, harvestRecordIds: recent.flatMap((c) => c.ids) };
 }
 
 export const HarvestForecastService = {
@@ -63,24 +68,26 @@ export const HarvestForecastService = {
   async generate({ farmId } = {}) {
     const cycles = await prisma.plantingCycle.findMany({
       where: { status: 'ACTIVE', ...(farmId ? { farmId } : {}), farm: { status: 'ACTIVE' } },
-      include: { farm: { include: { species: true, location: true } } },
+      include: { farm: { include: { species: true } } },
     });
     const results = [];
+    await prisma.harvestForecast.updateMany({ where: { ...(farmId ? { farmId } : {}), isCurrent: true }, data: { isCurrent: false } });
     for (const cycle of cycles) {
       const { farm } = cycle;
-      const latest = await Promise.all(RISK_TYPES.map((riskType) => prisma.riskPrediction.findFirst({ where: { farmId: farm.id, riskType, isSimulation: false }, orderBy: { createdAt: 'desc' }, select: { riskType: true, probability: true, confidence: true } })));
-      const latestRisks = Object.fromEntries(latest.filter(Boolean).map((r) => [r.riskType, r]));
       const history = await farmYieldHistory(farm.id);
-      const f = forecastForCycle({ farm, cycle, species: farm.species, latestRisks, history });
-      const [, row] = await prisma.$transaction([
-        prisma.harvestForecast.updateMany({ where: { farmId: farm.id, isCurrent: true }, data: { isCurrent: false } }),
-        prisma.harvestForecast.create({
+      const f = forecastForCycle({ cycle, history });
+      if (!f) continue;
+      const row = await prisma.$transaction(async (tx) => {
+        // Serialize simultaneous refreshes for one farm so supply is never counted twice.
+        await tx.$queryRaw`SELECT id FROM farms WHERE id = ${farm.id}::uuid FOR UPDATE`;
+        await tx.harvestForecast.updateMany({ where: { farmId: farm.id, isCurrent: true }, data: { isCurrent: false } });
+        return tx.harvestForecast.create({
           data: {
             farmId: farm.id, cooperativeId: farm.cooperativeId, plantingCycleId: cycle.id, district: farm.location?.district || 'Unknown',
-            ...f, method: 'risk-adjusted-yield-v1',
+            ...f, method: HARVEST_METHOD,
           },
-        }),
-      ]);
+        });
+      });
       results.push(row);
     }
     return results;
@@ -91,6 +98,7 @@ export const HarvestForecastService = {
     return prisma.harvestForecast.findMany({
       where: {
         isCurrent: true,
+        method: HARVEST_METHOD,
         ...where,
         ...(cooperativeId ? { cooperativeId } : {}),
         ...(district ? { district } : {}),
@@ -134,7 +142,7 @@ export const HarvestForecastService = {
       byCooperative: groupBy((f) => f.cooperative?.name || 'Independent'),
       byDistrict: groupBy((f) => f.district),
       byWeek: groupBy((f) => weekKey(f.expectedHarvestDate)).sort((a, b) => a.key.localeCompare(b.key)),
-      uncertaintyNote: 'Ranges reflect model uncertainty from current risk levels, prediction confidence and farm harvest history. Forecasts are estimates, not guarantees.',
+      uncertaintyNote: 'Estimates use recorded yields from at least three completed dry-harvest cycles. Ranges are observed historical yields, not calibrated prediction intervals. Dates are planting plans, not confirmed crop maturity.',
     };
   },
 };

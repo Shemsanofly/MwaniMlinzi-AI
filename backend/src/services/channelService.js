@@ -1,3 +1,4 @@
+import { events } from '../db/records.js';
 import prisma from '../config/prisma.js';
 import { levelRank } from '../ai/constants.js';
 import { RiskService } from './riskService.js';
@@ -149,7 +150,7 @@ export const ChannelService = {
    */
   async processInboundSms({ from, text, linkId = null }) {
     const phone = normalizeTzPhone(from);
-    await prisma.smsMessage.create({ data: { direction: 'INBOUND', phoneNumber: phone || String(from || ''), body: String(text || '').slice(0, 1000), simulated: false } });
+    await events(prisma, 'SMS').create({ data: { direction: 'INBOUND', phoneNumber: phone || String(from || ''), body: String(text || '').slice(0, 1000), simulated: false } });
     const user = await findUser(phone);
     let result;
     if (!user) result = { reply: T.sw.notRegistered, command: 'UNREGISTERED' };
@@ -159,7 +160,7 @@ export const ChannelService = {
         return { reply: T[user.preferredLanguage === 'en' ? 'en' : 'sw'].error, command: 'ERROR' };
       });
     }
-    await prisma.smsMessage.create({ data: { direction: 'OUTBOUND', phoneNumber: phone || String(from || ''), body: result.reply, command: result.command.slice(0, 20), simulated: false } });
+    await events(prisma, 'SMS').create({ data: { direction: 'OUTBOUND', phoneNumber: phone || String(from || ''), body: result.reply, command: result.command.slice(0, 20), simulated: false } });
     const send = phone
       ? await SMSService.sendRaw(phone, result.reply, { type: 'SMS_REPLY', language: user?.preferredLanguage || 'sw', linkId })
       : { status: 'FAILED', reason: 'INVALID_PHONE' };

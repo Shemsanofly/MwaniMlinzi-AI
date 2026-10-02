@@ -1,3 +1,4 @@
+import { events } from '../../src/db/records.js';
 import { api } from '../helpers.js';
 import prisma from '../../src/config/prisma.js';
 import { getSMSClient, setSMSClient } from '../../src/services/smsService.js';
@@ -48,7 +49,7 @@ describe('password reset by SMS code', () => {
     const sms = fake.to(PHONE).at(-1).message;
     expect(sms).toMatch(/^MWANIMLINZI: Namba yako ya kubadilisha nenosiri ni \d{6}\./);
     const code = codeFrom(sms);
-    const log = await prisma.notificationLog.findFirst({ where: { recipient: PHONE, messageType: 'PASSWORD_RESET' }, orderBy: { createdAt: 'desc' } });
+    const log = await events(prisma, 'DELIVERY').findFirst({ where: { recipient: PHONE, messageType: 'PASSWORD_RESET' }, orderBy: { createdAt: 'desc' } });
     expect(log.message).not.toContain(code);
     expect(log.message).toContain('******');
     const row = await prisma.passwordReset.findFirst({ where: { user: { phone: PHONE } }, orderBy: { createdAt: 'desc' } });

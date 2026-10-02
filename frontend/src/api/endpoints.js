@@ -26,6 +26,18 @@ export const metaApi = {
   publicCooperatives: () => unwrap(http.get('/cooperatives/public')),
 };
 
+export const locationApi = {
+  reverse: (latitude, longitude, language) => unwrap(http.get(`/location/reverse${qs({ latitude, longitude, language })}`)),
+};
+
+/** Record book: kind = 'sales' | 'costs' | 'work'. */
+export const recordsApi = {
+  summary: (farmId, params) => unwrap(http.get(`/farms/${farmId}/records/summary${qs(params)}`)),
+  list: (kind, farmId, params) => unwrap(http.get(`/farms/${farmId}/${kind}${qs(params)}`)),
+  create: (kind, farmId, body) => unwrap(http.post(`/farms/${farmId}/${kind}`, body)),
+  remove: (kind, farmId, recordId) => unwrap(http.delete(`/farms/${farmId}/${kind}/${recordId}`)),
+};
+
 export const farmApi = {
   list: (params) => unwrap(http.get(`/farms${qs(params)}`)),
   get: (id) => unwrap(http.get(`/farms/${id}`)),
@@ -41,6 +53,7 @@ export const farmApi = {
   losses: (id) => unwrap(http.get(`/farms/${id}/losses`)),
   addLoss: (id, body) => unwrap(http.post(`/farms/${id}/losses`, body)),
   risks: (id) => unwrap(http.get(`/farms/${id}/risks`)),
+  intelligence: (id) => unwrap(http.get(`/farms/${id}/intelligence`)),
   runRisks: (id) => unwrap(http.post(`/farms/${id}/risks/run`)),
   riskHistory: (id, params) => unwrap(http.get(`/farms/${id}/risks/history${qs(params)}`)),
   recommendations: (id, params) => unwrap(http.get(`/farms/${id}/recommendations${qs(params)}`)),
@@ -143,4 +156,19 @@ export const adminApi = {
   notificationLogs: () => unwrap(http.get('/admin/notification-logs')),
   africasTalking: () => unwrap(http.get('/admin/integrations/africastalking')),
   testSms: (phone, message) => unwrap(http.post('/admin/integrations/africastalking/test-sms', { phone, ...(message ? { message } : {}) })),
+  publicTokens: () => unwrap(http.get('/admin/public-tokens')),
+  issuePublicToken: (body) => unwrap(http.post('/admin/public-tokens', body)),
+  revokePublicToken: (id) => unwrap(http.delete(`/admin/public-tokens/${id}`)),
+  tmaBulletin: () => unwrap(http.get('/admin/tma-bulletin')),
+  saveTmaBulletin: (bulletin) => unwrap(http.put('/admin/tma-bulletin', { bulletin })),
+};
+
+export const dashboardApi = {
+  impact: (params) => unwrap(http.get(`/dashboard/impact${qs(params)}`)),
+};
+
+/** No auth header is attached — the token travels in the query string so bookmarked links Just Work. */
+export const partnerApi = {
+  forecasts: (token) => unwrap(http.get(`/public/forecasts${qs({ token })}`)),
+  adoption: (token) => unwrap(http.get(`/public/adoption${qs({ token })}`)),
 };

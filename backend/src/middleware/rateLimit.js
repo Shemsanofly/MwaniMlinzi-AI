@@ -12,6 +12,7 @@ const make = (windowMs, limit) => rateLimit({
 export const apiLimiter = make(15 * 60 * 1000, 1500);
 export const authLimiter = make(15 * 60 * 1000, 30);
 export const aiLimiter = make(60 * 1000, 30);
+export const locationLimiter = make(60 * 1000, 20);
 /** Africa's Talking callbacks: generous (all traffic comes from AT's IPs) but bounded. */
 export const integrationLimiter = rateLimit({
   windowMs: 60 * 1000,

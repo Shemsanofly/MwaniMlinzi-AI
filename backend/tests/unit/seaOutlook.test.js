@@ -53,7 +53,7 @@ describe('extractTides', () => {
 
 describe('dryingDays', () => {
   const times = hours(1);
-  const probs = (drying, other = 90) => times.map((t) => { const h = Number(t.slice(11, 13)); return h >= 7 && h < 18 ? drying : other; });
+  const probs = (drying, other = 90) => times.map((t) => { const h = Number(t.slice(11, 13)); return h > 7 && h <= 18 ? drying : other; });
   const rain = (mm) => times.map((t) => (t.endsWith('T12:00') ? mm : 0));
 
   test('GOOD when rain chance stays low and no rain in drying hours (night rain ignored)', () => {
@@ -84,6 +84,17 @@ describe('dryingDays', () => {
   });
   test('thresholds can be changed by the admin', () => {
     expect(dryingDays(times, probs(45), rain(0), { ...DEFAULT_DRYING_THRESHOLDS, badProbability: 40 })[0].verdict).toBe('BAD');
+  });
+  test('past rain does not make the remaining afternoon rainy; rain amounts cover the preceding hour', () => {
+    const morningRain = times.map((t) => Number(t.slice(11, 13)) <= 12 ? 90 : 5);
+    const morningMm = times.map((t) => Number(t.slice(11, 13)) <= 12 ? 2 : 0);
+    const [remaining] = dryingDays(times, morningRain, morningMm, undefined, { fromLocal: '2026-09-30T12:05' });
+    expect(remaining).toMatchObject({ maxRainProbability: 5, rainMm: 0, verdict: 'GOOD', windowStart: '2026-09-30T13:00', windowEnd: '2026-09-30T18:00' });
+    expect(dryingDays(times, morningRain, morningMm, undefined, { fromLocal: '2026-09-30T18:00' })).toEqual([]);
+    expect(dryingDays(times, probs(10), times.map((t) => t.endsWith('T07:00') ? 20 : 0))[0].rainMm).toBe(0);
+  });
+  test('out-of-range probabilities and negative rain amounts stay unknown', () => {
+    expect(dryingDays(times, times.map(() => 120), times.map(() => -1))[0]).toMatchObject({ maxRainProbability: null, rainMm: null, verdict: null });
   });
 });
 

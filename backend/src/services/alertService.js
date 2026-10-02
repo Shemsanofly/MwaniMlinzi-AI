@@ -16,8 +16,8 @@ const SMS_LEVEL = { en: { HIGH: 'HIGH', CRITICAL: 'CRITICAL' }, sw: { HIGH: 'HAT
 export function smsForAlert(farm, prediction, action, type) {
   if (type === 'HARVEST_WINDOW') {
     return {
-      en: `MWANIMLINZI: Seaweed on farm ${farm.farmCode} is ready for harvest.${action ? ` ${action.action}` : ''}`,
-      sw: `MWANIMLINZI: Mwani wa shamba ${farm.farmCode} uko tayari kuvunwa.${action ? ` ${action.actionSw}` : ''}`,
+      en: `MWANIMLINZI: Farm ${farm.farmCode} is near its planned harvest date. Inspect crop maturity.${action ? ` ${action.action}` : ''}`,
+      sw: `MWANIMLINZI: Shamba ${farm.farmCode} liko karibu na tarehe iliyopangwa ya mavuno. Kagua ukomavu.${action ? ` ${action.actionSw}` : ''}`,
     };
   }
   if (!['HIGH', 'CRITICAL'].includes(prediction.riskLevel)) return null;
@@ -41,8 +41,8 @@ function buildMessage(farm, prediction, action, kind) {
     return {
       title: `Harvest window — ${farm.farmCode}`,
       titleSw: `Wakati wa mavuno — ${farm.farmCode}`,
-      message: `${farm.name}: crop is at harvest stage. ${action ? action.action : ''}`.trim(),
-      messageSw: `${farm.name}: mwani umefikia hatua ya kuvunwa. ${action ? action.actionSw : ''}`.trim(),
+      message: `${farm.name}: the planned harvest date is approaching. Inspect crop maturity. ${action ? action.action : ''}`.trim(),
+      messageSw: `${farm.name}: tarehe iliyopangwa ya mavuno inakaribia. Kagua ukomavu. ${action ? action.actionSw : ''}`.trim(),
     };
   }
   if (kind === 'RISK_CHANGE') {
@@ -81,6 +81,7 @@ export const AlertService = {
   async fromPredictions({ farm, predictions, previous, actions, features, simulation = false, sendSms = true }) {
     const created = [];
     for (const p of predictions) {
+      if (p.features?.__insufficientData) continue;
       const action = actions[p.riskType] || null;
       let type = TYPE_FOR[p.riskType]?.[p.riskLevel] || null;
       if (p.riskType === 'HARVEST_WINDOW' && features.maturityRatio != null && features.maturityRatio >= 0.9) type = 'HARVEST_WINDOW';

@@ -1,3 +1,4 @@
+import { events } from '../db/records.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -19,6 +20,7 @@ import { SMSService } from '../services/smsService.js';
 import { atConfig, atPublicStatus } from '../providers/africastalking/config.js';
 import { maskPhone } from '../utils/phone.js';
 import { assertFarmAccess, isUuid } from '../services/accessService.js';
+import { PublicAccessService } from '../services/publicAccessService.js';
 
 /* ───────────── Users & roles ───────────── */
 
@@ -92,8 +94,8 @@ export async function updateUser(req, res) {
 }
 
 export async function listRoles(_req, res) {
-  const roles = await prisma.role.findMany({ where: { name: { in: ACTIVE_ROLE_NAMES } }, include: { permissions: { include: { permission: true } }, _count: { select: { users: true } } } });
-  return ok(res, { roles: roles.map((r) => ({ id: r.id, name: r.name, description: r.description, users: r._count.users, permissions: r.permissions.map((p) => p.permission.key) })) });
+  const roles = await prisma.role.findMany({ where: { name: { in: ACTIVE_ROLE_NAMES } }, include: { _count: { select: { users: true } } } });
+  return ok(res, { roles: roles.map((r) => ({ id: r.id, name: r.name, description: r.description, users: r._count.users, permissions: r.permissions })) });
 }
 
 /* ───────────── Cooperatives (admin) ───────────── */
@@ -157,9 +159,9 @@ export async function updateSetting(req, res) {
 /* ───────────── ML models ───────────── */
 
 export async function listModels(_req, res) {
-  const models = await prisma.mlModel.findMany({ orderBy: [{ riskType: 'asc' }, { trainedAt: 'desc' }], include: { metrics: { orderBy: { createdAt: 'desc' } }, _count: { select: { predictions: true, feedback: true } } } });
+  const models = await prisma.mlModel.findMany({ orderBy: [{ riskType: 'asc' }, { trainedAt: 'desc' }], include: { events: { where: { recordType: 'METRIC' }, orderBy: { createdAt: 'desc' } }, _count: { select: { predictions: true, events: { where: { recordType: 'FEEDBACK' } } } } } });
   const field = await ModelMonitoringService.fieldConfusion();
-  const feedback = await prisma.modelFeedback.groupBy({ by: ['feedbackType'], _count: { _all: true } });
+  const feedback = await events(prisma, 'FEEDBACK').groupBy({ by: ['feedbackType'], _count: { _all: true } });
   const aiMode = (await getAllSettings())['ai.mode'];
   const active = models.filter((m) => m.status === 'ACTIVE');
   return ok(res, {
@@ -167,11 +169,12 @@ export async function listModels(_req, res) {
     aiMode,
     models: models.map((m) => ({
       ...m,
+      metrics: m.events,
       predictionCount: m._count.predictions,
-      feedbackCount: m._count.feedback,
-      testMetrics: Object.fromEntries(m.metrics.filter((x) => x.dataset === 'TEST').map((x) => [x.metric, x.value])),
-      confusionMatrix: m.metrics.find((x) => x.dataset === 'TEST' && x.details?.confusionMatrix)?.details?.confusionMatrix || null,
-      fieldMetrics: Object.fromEntries(m.metrics.filter((x) => x.dataset === 'FIELD').map((x) => [x.metric, x.value])),
+      feedbackCount: m._count.events,
+      testMetrics: Object.fromEntries(m.events.filter((x) => x.dataset === 'TEST').map((x) => [x.metric, x.value])),
+      confusionMatrix: m.events.find((x) => x.dataset === 'TEST' && x.details?.confusionMatrix)?.details?.confusionMatrix || null,
+      fieldMetrics: Object.fromEntries(m.events.filter((x) => x.dataset === 'FIELD').map((x) => [x.metric, x.value])),
     })),
     ruleBaseline: { version: 'rules-v1', predictions: await prisma.riskPrediction.count({ where: { modelType: 'RULE', isSimulation: false } }) },
     fieldEvaluation: field,
@@ -204,14 +207,14 @@ export async function listAudit(req, res) {
     ...(req.query.userId && isUuid(req.query.userId) ? { userId: req.query.userId } : {}),
   };
   const [logs, total] = await Promise.all([
-    prisma.auditLog.findMany({ where, orderBy: { createdAt: 'desc' }, take, skip, include: { user: { select: { email: true, fullName: true } } } }),
-    prisma.auditLog.count({ where }),
+    events(prisma, 'AUDIT').findMany({ where, orderBy: { createdAt: 'desc' }, take, skip, include: { user: { select: { email: true, fullName: true } } } }),
+    events(prisma, 'AUDIT').count({ where }),
   ]);
   return ok(res, { logs, total, page, limit });
 }
 
 export async function listJobs(_req, res) {
-  const runs = await prisma.jobRun.findMany({ orderBy: { startedAt: 'desc' }, take: 50 });
+  const runs = await events(prisma, 'JOB').findMany({ orderBy: { startedAt: 'desc' }, take: 50 });
   return ok(res, { jobs: Object.entries(JOBS).map(([name, j]) => ({ name, schedule: j.schedule, description: j.description, lastRun: runs.find((r) => r.jobName === name) || null })), recentRuns: runs, schedulerEnabled: env.enableJobs });
 }
 
@@ -224,7 +227,7 @@ export async function runJobNow(req, res) {
 }
 
 export async function notificationLogs(req, res) {
-  const logs = await prisma.notificationLog.findMany({ orderBy: { createdAt: 'desc' }, take: Math.min(Number(req.query.limit) || 100, 300) });
+  const logs = await events(prisma, 'DELIVERY').findMany({ orderBy: { createdAt: 'desc' }, take: Math.min(Number(req.query.limit) || 100, 300) });
   return ok(res, { logs });
 }
 
@@ -238,10 +241,10 @@ export async function africasTalkingStatus(_req, res) {
   const status = atPublicStatus();
   const since = new Date(Date.now() - 7 * 24 * 3600 * 1000);
   const [byStatus, recentLogs, recentEvents, lastSend] = await Promise.all([
-    prisma.notificationLog.groupBy({ by: ['status'], where: { channel: 'SMS', createdAt: { gte: since } }, _count: { _all: true } }),
-    prisma.notificationLog.findMany({ where: { channel: 'SMS' }, orderBy: { createdAt: 'desc' }, take: 20 }),
-    prisma.integrationEvent.findMany({ where: { provider: 'AFRICASTALKING' }, orderBy: { createdAt: 'desc' }, take: 20 }),
-    prisma.notificationLog.findFirst({ where: { channel: 'SMS', provider: { startsWith: 'africastalking' }, status: { in: ['QUEUED', 'SENT', 'DELIVERED', 'FAILED'] } }, orderBy: { createdAt: 'desc' } }),
+    events(prisma, 'DELIVERY').groupBy({ by: ['status'], where: { channel: 'SMS', createdAt: { gte: since } }, _count: { _all: true } }),
+    events(prisma, 'DELIVERY').findMany({ where: { channel: 'SMS' }, orderBy: { createdAt: 'desc' }, take: 20 }),
+    events(prisma, 'INTEGRATION').findMany({ where: { provider: 'AFRICASTALKING' }, orderBy: { createdAt: 'desc' }, take: 20 }),
+    events(prisma, 'DELIVERY').findFirst({ where: { channel: 'SMS', provider: { startsWith: 'africastalking' }, status: { in: ['QUEUED', 'SENT', 'DELIVERED', 'FAILED'] } }, orderBy: { createdAt: 'desc' } }),
   ]);
   let connection = 'UNKNOWN';
   if (status.sms === 'NOT_CONFIGURED') connection = 'NOT_CONFIGURED';
@@ -332,14 +335,14 @@ export async function uploadImage(req, res) {
   const storedName = `${crypto.randomUUID()}.${EXT[file.mimetype]}`;
   await fs.mkdir(uploadRoot(), { recursive: true });
   await fs.writeFile(path.join(uploadRoot(), storedName), file.buffer, { flag: 'wx' });
-  const row = await prisma.uploadedFile.create({ data: { originalName: path.basename(file.originalname).slice(0, 200), storedName, mimeType: file.mimetype, sizeBytes: file.size, uploadedById: req.user.id } });
+  const row = await events(prisma, 'UPLOAD').create({ data: { originalName: path.basename(file.originalname).slice(0, 200), storedName, mimeType: file.mimetype, sizeBytes: file.size, uploadedById: req.user.id } });
   await audit(req, 'UPLOAD', 'UploadedFile', row.id, { sizeBytes: file.size, mimeType: file.mimetype });
   return created(res, { file: { id: row.id, mimeType: row.mimeType, sizeBytes: row.sizeBytes } }, 'Image uploaded');
 }
 
 export async function getUpload(req, res) {
   if (!isUuid(req.params.id)) throw notFound('File');
-  const file = await prisma.uploadedFile.findUnique({ where: { id: req.params.id }, include: { observations: { select: { farmId: true }, take: 1 } } });
+  const file = await events(prisma, 'UPLOAD').findUnique({ where: { id: req.params.id }, include: { observations: { select: { farmId: true }, take: 1 } } });
   if (!file) throw notFound('File');
   if (file.uploadedById !== req.user.id && !hasRole(req.user, ROLES.ADMIN)) {
     if (!file.observations[0]) throw forbidden();
@@ -350,4 +353,83 @@ export async function getUpload(req, res) {
   res.setHeader('Cache-Control', 'private, max-age=3600');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   return res.sendFile(full, (err) => { if (err && !res.headersSent) res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'File missing' } }); });
+}
+
+/* ───────────── Public access tokens (buyer/NGO exports) ───────────── */
+
+export async function listPublicTokens(_req, res) {
+  const tokens = await PublicAccessService.list();
+  return ok(res, { tokens: tokens.map((t) => ({
+    id: t.id, label: t.label, scope: t.scope, cooperative: t.cooperative, createdBy: t.createdBy?.fullName,
+    createdAt: t.createdAt, expiresAt: t.expiresAt, revokedAt: t.revokedAt,
+    lastUsedAt: t.lastUsedAt, requestCount: t.requestCount,
+  })) });
+}
+
+export async function createPublicToken(req, res) {
+  const { label, scope, cooperativeId, expiresInDays } = req.valid.body;
+  const { record, plain } = await PublicAccessService.issue({
+    label, scope, cooperativeId: cooperativeId || null, createdById: req.user.id,
+    expiresInDays: expiresInDays ?? 90,
+  });
+  await audit(req, 'ISSUE_PUBLIC_TOKEN', 'PublicAccessToken', record.id, { label, scope, cooperativeId });
+  // `plain` is returned only on creation; it is never readable again (hashed-style, revoke to replace).
+  return created(res, { token: { id: record.id, label, scope, cooperativeId, expiresAt: record.expiresAt }, plain }, 'Access token issued');
+}
+
+export async function revokePublicToken(req, res) {
+  const row = await prisma.publicAccessToken.findUnique({ where: { id: req.params.id } });
+  if (!row) throw notFound('Access token');
+  await PublicAccessService.revoke(row.id);
+  await audit(req, 'REVOKE_PUBLIC_TOKEN', 'PublicAccessToken', row.id);
+  return ok(res, { id: row.id, revokedAt: new Date() }, 'Access token revoked');
+}
+
+/* ───────────── TMA bulletin uploader ───────────── */
+
+const REGION_SHAPE = (row) => row && typeof row === 'object' && (
+  row.temperatureC != null || row.rainfallMm != null || row.windSpeedKmh != null ||
+  row.humidityPct != null || row.condition
+);
+
+export async function getTmaBulletin(_req, res) {
+  const configuredPath = env.weather?.tmaBulletinPath || process.env.TMA_BULLETIN_PATH || '';
+  const maxAgeHours = Number(process.env.TMA_BULLETIN_MAX_HOURS || 24);
+  if (!configuredPath) return ok(res, { configured: false, path: null });
+  try {
+    const stat = await fs.stat(configuredPath);
+    const text = await fs.readFile(configuredPath, 'utf8');
+    const payload = JSON.parse(text);
+    const issuedAt = payload?.issuedAt ? new Date(payload.issuedAt) : null;
+    const ageHours = issuedAt ? Math.round((Date.now() - +issuedAt) / 3600 / 1000 * 10) / 10 : null;
+    const regions = payload?.regions ? Object.keys(payload.regions) : [];
+    return ok(res, {
+      configured: true,
+      path: configuredPath,
+      modifiedAt: stat.mtime,
+      issuedAt,
+      ageHours,
+      maxAgeHours,
+      fresh: ageHours != null && ageHours <= maxAgeHours,
+      regions,
+      payload,
+    });
+  } catch (err) {
+    return ok(res, { configured: true, path: configuredPath, maxAgeHours, present: false, error: err.code || err.message });
+  }
+}
+
+export async function putTmaBulletin(req, res) {
+  const configuredPath = env.weather?.tmaBulletinPath || process.env.TMA_BULLETIN_PATH || '';
+  if (!configuredPath) throw badRequest('TMA_BULLETIN_PATH is not set in the environment');
+  const { bulletin } = req.body || {};
+  if (!bulletin || typeof bulletin !== 'object') throw badRequest('bulletin must be an object');
+  if (!bulletin.issuedAt || Number.isNaN(+new Date(bulletin.issuedAt))) throw badRequest('bulletin.issuedAt must be an ISO timestamp');
+  if (!bulletin.regions || typeof bulletin.regions !== 'object') throw badRequest('bulletin.regions must be an object keyed by region name');
+  for (const [name, row] of Object.entries(bulletin.regions)) {
+    if (!REGION_SHAPE(row)) throw badRequest(`Region "${name}" is missing readings`);
+  }
+  await fs.writeFile(configuredPath, JSON.stringify(bulletin, null, 2) + '\n', 'utf8');
+  await audit(req, 'UPDATE_TMA_BULLETIN', 'SystemSetting', 'tma-bulletin', { regions: Object.keys(bulletin.regions), issuedAt: bulletin.issuedAt });
+  return ok(res, { saved: true, path: configuredPath, regions: Object.keys(bulletin.regions) }, 'TMA bulletin saved');
 }

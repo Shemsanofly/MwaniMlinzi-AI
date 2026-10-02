@@ -1,9 +1,12 @@
+import { farmRecords, events } from '../db/records.js';
 import prisma from '../config/prisma.js';
+import crypto from 'node:crypto';
+import { RecordBookService } from './recordBookService.js';
 import { badRequest, notFound } from '../utils/errors.js';
 import { levelRank } from '../ai/constants.js';
 import { activeCycle } from './farmContextService.js';
 import { RiskService } from './riskService.js';
-import { HarvestForecastService } from './harvestForecastService.js';
+import { HarvestForecastService, HARVEST_METHOD } from './harvestForecastService.js';
 
 const round = (v, dp = 2) => (v == null ? null : Math.round(v * 10 ** dp) / 10 ** dp);
 
@@ -33,11 +36,17 @@ export const RecordService = {
   async createObservation(farmId, user, data, { channel = 'APP', runRisk = true } = {}) {
     const cycle = await activeCycle(farmId);
     if (data.imageFileId) {
-      const file = await prisma.uploadedFile.findUnique({ where: { id: data.imageFileId } });
+      const file = await events(prisma, 'UPLOAD').findUnique({ where: { id: data.imageFileId } });
       if (!file || file.uploadedById !== user.id) throw badRequest('Image not found or not uploaded by you');
     }
+    const observationId = crypto.randomUUID();
+    const diseases = [];
+    if (data.whitening || data.diseaseSymptoms) diseases.push({ diseaseType: 'ICE_ICE', severity: (data.percentAffected ?? 0) >= 30 ? 'HIGH' : 'MEDIUM' });
+    if (data.epiphytes) diseases.push({ diseaseType: 'EPIPHYTES', severity: 'MEDIUM' });
     const observation = await prisma.farmObservation.create({
       data: {
+        id: observationId,
+        diseases: diseases.map((d) => ({ ...d, id: crypto.randomUUID(), observationId, farmId, percentAffected: data.percentAffected ?? null, notes: null, createdAt: new Date().toISOString() })),
         farmId,
         plantingCycleId: cycle?.id || null,
         reporterId: user?.id || null,
@@ -45,8 +54,8 @@ export const RecordService = {
         cropCondition: data.cropCondition,
         whitening: data.whitening,
         breakage: data.breakage,
-        epiphytes: data.epiphytes,
-        diseaseSymptoms: data.diseaseSymptoms,
+        epiphytes: data.epiphytes ?? null,
+        diseaseSymptoms: data.diseaseSymptoms ?? null,
         unusualGrowth: data.unusualGrowth,
         growthCondition: data.growthCondition || (data.unusualGrowth ? 'UNUSUAL' : null),
         waterAppearance: data.waterAppearance || null,
@@ -59,22 +68,18 @@ export const RecordService = {
         imageFileId: data.imageFileId || null,
       },
     });
-    const diseases = [];
-    if (data.whitening || data.diseaseSymptoms) diseases.push({ diseaseType: 'ICE_ICE', severity: (data.percentAffected ?? 0) >= 30 ? 'HIGH' : 'MEDIUM' });
-    if (data.epiphytes) diseases.push({ diseaseType: 'EPIPHYTES', severity: 'MEDIUM' });
-    if (diseases.length) {
-      await prisma.diseaseObservation.createMany({ data: diseases.map((d) => ({ ...d, observationId: observation.id, farmId, percentAffected: data.percentAffected ?? null })) });
-    }
     // Every observation immediately re-runs the risk engine so the farmer sees updated risk + advice.
     const risk = runRisk ? await RiskService.runForFarm(farmId, { trigger: 'OBSERVATION' }) : null;
     return { observation, risk };
   },
 
-  async createHarvest(farmId, data, { channel = 'APP' } = {}) {
+  async createHarvest(farmId, data, { channel = 'APP', user = null } = {}) {
     const cycle = await activeCycle(farmId);
+    // Same rule as the record book: active cycle, else the most recent one (a 2nd batch after the cycle closed).
+    const cycleId = cycle?.id ?? (await RecordBookService.resolveCycleId(farmId));
     let estimated = data.estimatedQuantity;
     if (estimated == null) {
-      const fc = await prisma.harvestForecast.findFirst({ where: { farmId, isCurrent: true } });
+      const fc = await prisma.harvestForecast.findFirst({ where: { farmId, isCurrent: true, method: HARVEST_METHOD } });
       estimated = fc ? fc.riskAdjustedQuantityKg : null;
     }
     const metrics = harvestMetrics({ estimatedQuantity: estimated, actualQuantity: data.actualQuantity, pricePerKg: data.pricePerKg });
@@ -82,40 +87,44 @@ export const RecordService = {
       const h = await tx.harvestRecord.create({
         data: {
           farmId,
-          plantingCycleId: cycle?.id || null,
+          plantingCycleId: cycleId,
           harvestDate: data.harvestDate,
           estimatedQuantity: estimated ?? null,
           actualQuantity: data.actualQuantity,
           unit: data.unit,
           qualityGrade: data.qualityGrade || null,
+          moisturePercent: data.moisturePercent ?? null,
+          impurityPercent: data.impurityPercent ?? null,
           dryingMethod: data.dryingMethod || null,
           dryingDurationDays: data.dryingDurationDays ?? null,
+          groundContact: data.dryingMethod ? (data.groundContact ?? data.dryingMethod === 'GROUND') : null,
+          rainDuringDrying: data.dryingMethod ? (data.rainDuringDrying ?? false) : null,
           pricePerKg: data.pricePerKg ?? null,
           notes: data.notes || null,
           channel,
           ...metrics,
         },
       });
-      if (data.qualityGrade) {
-        await tx.qualityRecord.create({ data: { farmId, harvestRecordId: h.id, grade: data.qualityGrade, moisturePercent: data.moisturePercent ?? null, impurityPercent: data.impurityPercent ?? null } });
-      }
-      if (data.dryingMethod) {
-        await tx.dryingRecord.create({
-          data: { farmId, harvestRecordId: h.id, method: data.dryingMethod, startDate: data.harvestDate, durationDays: data.dryingDurationDays ?? null, groundContact: data.groundContact ?? data.dryingMethod === 'GROUND', rainDuringDrying: data.rainDuringDrying ?? false },
-        });
-      }
       if (cycle && data.closeCycle) {
         await tx.plantingCycle.update({ where: { id: cycle.id }, data: { status: 'HARVESTED' } });
         await tx.harvestForecast.updateMany({ where: { farmId, isCurrent: true }, data: { isCurrent: false } });
       }
+      // "Sold now": a price on a dried harvest records the sale in the same transaction (income comes only from sales).
+      if (data.pricePerKg > 0 && data.actualQuantity > 0 && data.unit !== 'KG_WET') {
+        h.sale = await RecordBookService.createSale(farmId, user, {
+          saleDate: data.harvestDate, quantityKg: data.actualQuantity, pricePerKg: data.pricePerKg,
+          qualityGrade: data.qualityGrade || null, paymentStatus: 'PAID', cycleId,
+        }, { channel, harvestRecordId: h.id, db: tx });
+      }
       return h;
     });
-    return prisma.harvestRecord.findUnique({ where: { id: harvest.id }, include: { quality: true, drying: true, buyer: { select: { id: true, companyName: true } } } });
+    if (harvest.sale) await RecordBookService.auditCreate('sales', harvest.sale, user);
+    return prisma.harvestRecord.findUnique({ where: { id: harvest.id }, include: { buyer: { select: { id: true, companyName: true } } } });
   },
 
   async createLoss(farmId, data) {
     const cycle = await activeCycle(farmId);
-    const loss = await prisma.lossRecord.create({
+    const loss = await farmRecords(prisma, 'LOSS').create({
       data: { farmId, plantingCycleId: cycle?.id || null, lossDate: data.lossDate, cause: data.cause, quantityKg: data.quantityKg ?? null, percentLost: data.percentLost, notes: data.notes || null },
     });
     if (cycle && data.percentLost >= 90) await prisma.plantingCycle.update({ where: { id: cycle.id }, data: { status: 'FAILED' } });
@@ -160,7 +169,7 @@ export const RecordService = {
     const lossPercent = data.lossPercent ?? { NO_LOSS: 0, TOTAL_LOSS: 100, HARVESTED: 0 }[data.outcomeType] ?? null;
     // Any recorded loss (minor/major/total) counts as the risk having materialised unless the user says otherwise.
     const riskMaterialized = data.riskMaterialized ?? (['MINOR_LOSS', 'MAJOR_LOSS', 'TOTAL_LOSS'].includes(data.outcomeType) || (lossPercent ?? 0) >= 10);
-    const outcome = await prisma.actionOutcome.create({
+    const outcome = await farmRecords(prisma, 'OUTCOME').create({
       data: {
         farmId, farmerActionId: data.farmerActionId || null, recommendationId, predictionId,
         outcomeType: data.outcomeType, lossPercent, riskMaterialized, outcomeDate: data.outcomeDate || new Date(), notes: data.notes || null,
@@ -168,9 +177,8 @@ export const RecordService = {
     });
     let feedback = null;
     if (prediction && riskMaterialized != null) {
-      const mp = await prisma.modelPrediction.findFirst({ where: { riskPredictionId: prediction.id } });
-      feedback = await prisma.modelFeedback.create({
-        data: { riskPredictionId: prediction.id, modelId: mp?.modelId || null, userId: user?.id || null, feedbackType: feedbackTypeFor(prediction.riskLevel, riskMaterialized), notes: `Auto-labelled from outcome ${outcome.id}` },
+      feedback = await events(prisma, 'FEEDBACK').create({
+        data: { riskPredictionId: prediction.id, modelId: prediction.mlModelId || null, userId: user?.id || null, feedbackType: feedbackTypeFor(prediction.riskLevel, riskMaterialized), notes: `Auto-labelled from outcome ${outcome.id}` },
       });
     }
     return { outcome, feedback };

@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { LocateFixed, Map as MapIcon } from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nProvider.jsx';
 import { useAuth } from '../../../stores/AuthContext.jsx';
-import { metaApi } from '../../../api/endpoints.js';
+import { metaApi, locationApi } from '../../../api/endpoints.js';
 import { Button, Disclosure, Field, FormError, Notice, apiErrorMessage } from '../../../components/ui/index.jsx';
 import LocationPicker from '../../../components/map/LocationPicker.jsx';
 import { isoDate } from '../../../utils/format.js';
@@ -45,15 +45,63 @@ export default function FarmForm({ farm, onSubmit, pending, error, submitLabel, 
   const [f, setF] = useState(() => fromFarm(farm));
   const [geo, setGeo] = useState({ state: 'idle', message: null });
   const [showMap, setShowMap] = useState(false);
+  const [addressLookup, setAddressLookup] = useState({ state: 'idle' });
+  const [lookupAttempt, setLookupAttempt] = useState(0);
+  const coordinateVersion = useRef(0);
+  const manualEdits = useRef({ locationName: 0, district: 0, region: 0 });
+  const previousLookup = useRef(`${f.latitude},${f.longitude},${lang},0`);
   const set = (patch) => setF((s) => ({ ...s, ...patch }));
   const speciesQ = useQuery({ queryKey: ['species'], queryFn: () => metaApi.species(), staleTime: 3600000 });
+
+  const setCoordinates = (patch) => {
+    coordinateVersion.current += 1;
+    manualEdits.current = { locationName: 0, district: 0, region: 0 };
+    setF((s) => ({ ...s, ...patch, locationName: '', district: '', region: '' }));
+    setAddressLookup({ state: 'idle' });
+  };
+  const editAddress = (field, value) => {
+    manualEdits.current[field] += 1;
+    set({ [field]: value });
+  };
+
+  useEffect(() => {
+    const signature = `${f.latitude},${f.longitude},${lang},${lookupAttempt}`;
+    if (signature === previousLookup.current) return;
+    previousLookup.current = signature;
+    const latitude = f.latitude === '' ? NaN : Number(f.latitude);
+    const longitude = f.longitude === '' ? NaN : Number(f.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return;
+    let cancelled = false;
+    const version = coordinateVersion.current;
+    const editsAtStart = { ...manualEdits.current };
+    const timer = setTimeout(async () => {
+      setAddressLookup({ state: 'loading' });
+      try {
+        const result = await locationApi.reverse(latitude, longitude, lang);
+        if (cancelled || version !== coordinateVersion.current) return;
+        if (result.status !== 'FOUND' || !result.location?.locationName) { setAddressLookup({ state: 'unavailable' }); return; }
+        setF((s) => {
+          const patch = {};
+          for (const field of ['locationName', 'district', 'region']) {
+            if (manualEdits.current[field] === editsAtStart[field]) patch[field] = result.location[field] || '';
+          }
+          return { ...s, ...patch };
+        });
+        setAddressLookup({ state: 'found' });
+      } catch {
+        if (!cancelled && version === coordinateVersion.current) setAddressLookup({ state: 'unavailable' });
+      }
+    }, 600);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [f.latitude, f.longitude, lang, lookupAttempt]);
 
   const locate = () => {
     if (!navigator.geolocation) { setGeo({ state: 'error', message: t('farmer.farm.geoUnsupported') }); return; }
     setGeo({ state: 'loading', message: null });
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        set({ latitude: pos.coords.latitude.toFixed(5), longitude: pos.coords.longitude.toFixed(5) });
+        setCoordinates({ latitude: pos.coords.latitude.toFixed(5), longitude: pos.coords.longitude.toFixed(5) });
+        setLookupAttempt((attempt) => attempt + 1);
         setGeo({ state: 'ok', message: t('farmer.farm.geoOk') });
       },
       (err) => setGeo({ state: 'error', message: err.code === 1 ? t('farmer.farm.geoDenied') : t('farmer.farm.geoFailed') }),
@@ -92,7 +140,7 @@ export default function FarmForm({ farm, onSubmit, pending, error, submitLabel, 
 
   const latNum = f.latitude === '' ? NaN : Number(f.latitude);
   const lngNum = f.longitude === '' ? NaN : Number(f.longitude);
-  const pick = (lat, lng) => { set({ latitude: lat.toFixed(5), longitude: lng.toFixed(5) }); setGeo({ state: 'idle', message: null }); };
+  const pick = (lat, lng) => { setCoordinates({ latitude: lat.toFixed(5), longitude: lng.toFixed(5) }); setLookupAttempt((attempt) => attempt + 1); setGeo({ state: 'idle', message: null }); };
 
   // Only what is needed to start: name, species, place and GPS point (+ planting date, encouraged).
   // The technical fields already have sensible defaults and sit under "More details (optional)".
@@ -117,22 +165,26 @@ export default function FarmForm({ farm, onSubmit, pending, error, submitLabel, 
 
       <fieldset className="space-y-4 rounded-xl border border-slate-200 p-3">
         <legend className="px-1 text-sm font-bold text-slate-700">{t('farmer.farm.location')}</legend>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Field label={t('farmer.farm.f.locationName')} htmlFor="ff-loc" required>
-            <input id="ff-loc" className="input" required maxLength={120} value={f.locationName} onChange={(e) => set({ locationName: e.target.value })} />
-          </Field>
-          <Field label={t('common.district')} htmlFor="ff-district" required>
-            <input id="ff-district" className="input" required maxLength={80} value={f.district} onChange={(e) => set({ district: e.target.value })} />
-          </Field>
-          <Field label={t('farmer.farm.f.region')} htmlFor="ff-region" required>
-            <input id="ff-region" className="input" required maxLength={80} value={f.region} onChange={(e) => set({ region: e.target.value })} />
-          </Field>
-        </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" icon={LocateFixed} className="min-h-11" loading={geo.state === 'loading'} onClick={locate}>{t('farmer.farm.useLocation')}</Button>
           <Button variant="ghost" icon={MapIcon} className="min-h-11" aria-expanded={showMap} onClick={() => setShowMap((v) => !v)}>{showMap ? t('farmer.farm.hideMap') : t('farmer.farm.pickOnMap')}</Button>
         </div>
         {geo.message && <Notice tone={geo.state === 'ok' ? 'success' : 'warning'}>{geo.message}</Notice>}
+        {addressLookup.state === 'loading' && <p role="status" className="text-sm text-ocean-700">{t('geocoding.loading')}</p>}
+        {addressLookup.state === 'found' && <Notice tone="success">{t('geocoding.found')}</Notice>}
+        {addressLookup.state === 'unavailable' && <Notice tone="warning">{t('geocoding.unavailable')} <Button variant="ghost" size="sm" onClick={() => setLookupAttempt((attempt) => attempt + 1)}>{t('actions.retry')}</Button></Notice>}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Field label={t('farmer.farm.f.locationName')} htmlFor="ff-loc" required>
+            <input id="ff-loc" className="input" required maxLength={120} value={f.locationName} onChange={(e) => editAddress('locationName', e.target.value)} />
+          </Field>
+          <Field label={t('common.district')} htmlFor="ff-district" required>
+            <input id="ff-district" className="input" required maxLength={80} value={f.district} onChange={(e) => editAddress('district', e.target.value)} />
+          </Field>
+          <Field label={t('farmer.farm.f.region')} htmlFor="ff-region" required>
+            <input id="ff-region" className="input" required maxLength={80} value={f.region} onChange={(e) => editAddress('region', e.target.value)} />
+          </Field>
+        </div>
+        <p className="text-xs text-slate-500">{t('geocoding.provider')} <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline">© OpenStreetMap contributors</a></p>
         {showMap && (
           <div>
             <p className="mb-2 text-sm text-slate-600">{t('farmer.farm.pickHint')}</p>
@@ -141,10 +193,10 @@ export default function FarmForm({ farm, onSubmit, pending, error, submitLabel, 
         )}
         <div className="grid grid-cols-2 gap-3">
           <Field label={t('farmer.farm.f.lat')} htmlFor="ff-lat" required>
-            <input id="ff-lat" type="number" inputMode="decimal" step="any" min={-90} max={90} className="input" required value={f.latitude} onChange={(e) => set({ latitude: e.target.value })} />
+            <input id="ff-lat" type="number" inputMode="decimal" step="any" min={-90} max={90} className="input" required value={f.latitude} onChange={(e) => setCoordinates({ latitude: e.target.value })} />
           </Field>
           <Field label={t('farmer.farm.f.lng')} htmlFor="ff-lng" required>
-            <input id="ff-lng" type="number" inputMode="decimal" step="any" min={-180} max={180} className="input" required value={f.longitude} onChange={(e) => set({ longitude: e.target.value })} />
+            <input id="ff-lng" type="number" inputMode="decimal" step="any" min={-180} max={180} className="input" required value={f.longitude} onChange={(e) => setCoordinates({ longitude: e.target.value })} />
           </Field>
         </div>
       </fieldset>

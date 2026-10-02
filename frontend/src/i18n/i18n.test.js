@@ -43,7 +43,7 @@ describe('i18n (i18next resources)', () => {
     expect(translate('sw', 'risk.level.CRITICAL')).toBe('Hatari kubwa sana');
     expect(translate('sw', 'risk.levelLong.CRITICAL')).toBe('Hatari kubwa sana');
     expect(translate('sw', 'actions.recordHarvest')).toBe('Rekodi Mavuno');
-    expect(translate('sw', 'actions.askAI')).toBe('Uliza AI');
+    expect(translate('sw', 'actions.askAI')).toBe('Uliza swali');
   });
 
   test('interpolates {var} placeholders', () => {

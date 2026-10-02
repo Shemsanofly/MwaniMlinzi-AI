@@ -1,7 +1,9 @@
+import { farmRecords, events } from '../db/records.js';
 import prisma from '../config/prisma.js';
+import { latestDiseases } from '../db/observations.js';
 import { ok } from '../utils/response.js';
 import { forbidden, notFound } from '../utils/errors.js';
-import { hasRole, ROLES } from '../middleware/auth.js';
+import { hasRole, ROLES, CROSS_COOP_STAFF } from '../middleware/auth.js';
 import { FarmService } from '../services/farmService.js';
 import { HarvestForecastService } from '../services/harvestForecastService.js';
 import { getSetting } from '../services/settingsService.js';
@@ -43,7 +45,7 @@ async function portfolio(farmWhere) {
   const [alerts, observations, losses, forecasts, actions] = await Promise.all([
     prisma.alert.findMany({ where: { farmId: { in: ids }, isSimulation: false, createdAt: { gte: since30 } }, orderBy: { createdAt: 'desc' }, include: { farm: { select: { id: true, farmCode: true, name: true } } } }),
     prisma.farmObservation.findMany({ where: { farmId: { in: ids }, observedAt: { gte: since30 } }, select: { observedAt: true, whitening: true, breakage: true, epiphytes: true, diseaseSymptoms: true, cropCondition: true } }),
-    prisma.lossRecord.findMany({ where: { farmId: { in: ids }, lossDate: { gte: addDays(new Date(), -180) } } }),
+    farmRecords(prisma, 'LOSS').findMany({ where: { farmId: { in: ids }, lossDate: { gte: addDays(new Date(), -180) } } }),
     HarvestForecastService.list({ where: { farmId: { in: ids } } }),
     prisma.farmerAction.findMany({ where: { farmId: { in: ids }, performedAt: { gte: since30 } }, select: { performedAt: true, actionTaken: true } }),
   ]);
@@ -100,8 +102,10 @@ export async function cooperativeDashboard(req, res) {
   if (!isUuid(id)) throw notFound('Cooperative');
   const coop = await prisma.cooperative.findUnique({ where: { id } });
   if (!coop) throw notFound('Cooperative');
-  const allowed = hasRole(req.user, ROLES.ADMIN);
-  if (!allowed) throw forbidden('Only admins can view cooperative operations');
+  // ADMIN and EXTENSION_OFFICER see any cooperative. COOPERATIVE_ADMIN sees only their own.
+  const crossCoop = hasRole(req.user, ...CROSS_COOP_STAFF);
+  const ownCoop = hasRole(req.user, ROLES.COOPERATIVE_ADMIN) && req.user.cooperativeId === id;
+  if (!crossCoop && !ownCoop) throw forbidden('You can only view your own cooperative');
   const members = await prisma.cooperativeMember.count({ where: { cooperativeId: id, isActive: true } });
   const data = await portfolio({ cooperativeId: id });
   // Farm performance: yield vs estimate per farm from harvest records.
@@ -115,14 +119,14 @@ export async function cooperativeDashboard(req, res) {
     if (h.lossPercent != null) { p.avgLossPercent += h.lossPercent; p.lossSamples += 1; }
   }
   const performance = Object.values(perf).map((p) => ({ ...p, totalKg: Math.round(p.totalKg), avgLossPercent: p.lossSamples ? Math.round((p.avgLossPercent / p.lossSamples) * 10) / 10 : null })).sort((a, b) => b.totalKg - a.totalKg);
-  const outcomes = await prisma.actionOutcome.findMany({ where: { farm: { cooperativeId: id } }, orderBy: { outcomeDate: 'desc' }, take: 30, include: { farm: { select: { farmCode: true } }, prediction: { select: { riskType: true, riskLevel: true } } } });
+  const outcomes = await farmRecords(prisma, 'OUTCOME').findMany({ where: { farm: { cooperativeId: id } }, orderBy: { outcomeDate: 'desc' }, take: 30, include: { farm: { select: { farmCode: true } }, prediction: { select: { riskType: true, riskLevel: true } } } });
   return ok(res, { cooperative: coop, members, ...data, cards: { ...data.cards, totalFarmers: members }, performance, outcomes });
 }
 
 export async function myCooperativeDashboard(req, res) {
   let coopId = req.user.cooperativeId;
-  // Admins without a cooperative get the first one (or ?cooperativeId=) so the view is usable.
-  if (!coopId && hasRole(req.user, ROLES.ADMIN)) {
+  // Cross-cooperative staff without a home cooperative get the first one (or ?cooperativeId=) so the view is usable.
+  if (!coopId && hasRole(req.user, ...CROSS_COOP_STAFF)) {
     coopId = isUuid(req.query.cooperativeId) ? req.query.cooperativeId : (await prisma.cooperative.findFirst({ orderBy: { name: 'asc' }, select: { id: true } }))?.id;
   }
   if (!coopId) throw forbidden('Your account is not linked to a cooperative');
@@ -132,7 +136,7 @@ export async function myCooperativeDashboard(req, res) {
 
 export async function listCooperatives(req, res) {
   let where;
-  if (hasRole(req.user, ROLES.ADMIN)) where = {};
+  if (hasRole(req.user, ...CROSS_COOP_STAFF)) where = {};
   else if (req.user.cooperativeId) where = { id: req.user.cooperativeId };
   else if (req.user.farmerId) where = { members: { some: { farmerId: req.user.farmerId } } };
   else where = { id: '00000000-0000-0000-0000-000000000000' };
@@ -143,8 +147,9 @@ export async function listCooperatives(req, res) {
 export async function cooperativeFarmers(req, res) {
   const { id } = req.params;
   if (!isUuid(id)) throw notFound('Cooperative');
-  const allowed = hasRole(req.user, ROLES.ADMIN);
-  if (!allowed) throw forbidden();
+  const crossCoop = hasRole(req.user, ...CROSS_COOP_STAFF);
+  const ownCoop = hasRole(req.user, ROLES.COOPERATIVE_ADMIN) && req.user.cooperativeId === id;
+  if (!crossCoop && !ownCoop) throw forbidden('You can only view your own cooperative');
   const members = await prisma.cooperativeMember.findMany({
     where: { cooperativeId: id },
     include: { farmer: { include: { user: { select: { fullName: true, phone: true, email: true } }, farms: { select: { id: true, farmCode: true, name: true, status: true } } } } },
@@ -157,9 +162,9 @@ export async function extensionDashboard(_req, res) {
   const data = await portfolio({});
   const [pendingObservations, diseaseObservations, pendingRecs, notes] = await Promise.all([
     prisma.farmObservation.findMany({ where: { reviewStatus: 'PENDING' }, orderBy: { observedAt: 'desc' }, take: 30, include: { farm: { select: { id: true, farmCode: true, name: true } }, reporter: { select: { fullName: true } }, image: { select: { id: true } } } }),
-    prisma.diseaseObservation.findMany({ orderBy: { createdAt: 'desc' }, take: 20, include: { farm: { select: { id: true, farmCode: true, name: true } } } }),
+    latestDiseases(prisma),
     prisma.actionRecommendation.findMany({ where: { reviewStatus: 'PENDING', isSimulation: false, status: { in: ['PENDING', 'ACKNOWLEDGED'] }, prediction: { riskLevel: { in: ['HIGH', 'CRITICAL'] } } }, orderBy: { createdAt: 'desc' }, take: 30, include: { actionLibrary: true, farm: { select: { id: true, farmCode: true, name: true } }, prediction: { select: { id: true, riskType: true, riskLevel: true, probability: true, explanation: true, explanationSw: true } } } }),
-    prisma.extensionNote.findMany({ orderBy: { createdAt: 'desc' }, take: 200, select: { farmId: true, createdAt: true } }),
+    farmRecords(prisma, 'NOTE').findMany({ orderBy: { createdAt: 'desc' }, take: 200, select: { farmId: true, createdAt: true } }),
   ]);
   const lastVisit = {};
   notes.forEach((n) => { if (!lastVisit[n.farmId]) lastVisit[n.farmId] = n.createdAt; });
@@ -196,7 +201,7 @@ export async function reviewObservation(req, res) {
   const obs = await prisma.farmObservation.findUnique({ where: { id: req.params.id } });
   if (!obs) throw notFound('Observation');
   const updated = await prisma.farmObservation.update({ where: { id: obs.id }, data: { reviewStatus: req.valid.body.status, reviewNote: req.valid.body.note || null, reviewedById: req.user.id, reviewedAt: new Date() } });
-  await prisma.auditLog.create({ data: { userId: req.user.id, action: 'REVIEW', entityType: 'FarmObservation', entityId: obs.id, details: req.valid.body, ipAddress: req.ip } });
+  await events(prisma, 'AUDIT').create({ data: { userId: req.user.id, action: 'REVIEW', entityType: 'FarmObservation', entityId: obs.id, details: req.valid.body, ipAddress: req.ip } });
   return ok(res, { observation: updated }, 'Observation reviewed');
 }
 
@@ -215,7 +220,7 @@ export async function reviewRecommendation(req, res) {
   const rec = await prisma.actionRecommendation.findUnique({ where: { id: req.params.id } });
   if (!rec) throw notFound('Recommendation');
   const updated = await prisma.actionRecommendation.update({ where: { id: rec.id }, data: { reviewStatus: req.valid.body.status, reviewNote: req.valid.body.note || null, reviewedById: req.user.id, reviewedAt: new Date() } });
-  await prisma.auditLog.create({ data: { userId: req.user.id, action: 'REVIEW', entityType: 'ActionRecommendation', entityId: rec.id, details: req.valid.body, ipAddress: req.ip } });
+  await events(prisma, 'AUDIT').create({ data: { userId: req.user.id, action: 'REVIEW', entityType: 'ActionRecommendation', entityId: rec.id, details: req.valid.body, ipAddress: req.ip } });
   return ok(res, { recommendation: updated }, 'Recommendation reviewed');
 }
 
@@ -230,14 +235,14 @@ export async function adminDashboard(_req, res) {
     prisma.riskPrediction.count({ where: { isSimulation: false, createdAt: { gte: since24 } } }),
     prisma.riskPrediction.count({ where: { isSimulation: true } }),
     prisma.alert.count({ where: { status: 'ACTIVE', isSimulation: false } }),
-    prisma.mlModel.findMany({ orderBy: { trainedAt: 'desc' }, include: { metrics: { where: { dataset: 'TEST' } } } }),
+    prisma.mlModel.findMany({ orderBy: { trainedAt: 'desc' }, include: { events: { where: { recordType: 'METRIC', dataset: 'TEST' } } } }),
     prisma.actionLibrary.count(),
     prisma.actionLibrary.count({ where: { validated: true } }),
-    prisma.jobRun.findMany({ orderBy: { startedAt: 'desc' }, take: 10 }),
+    events(prisma, 'JOB').findMany({ orderBy: { startedAt: 'desc' }, take: 10 }),
     prisma.farmObservation.count(),
     prisma.harvestRecord.count(),
-    prisma.actionOutcome.count(),
-    prisma.modelFeedback.groupBy({ by: ['feedbackType'], _count: { _all: true } }),
+    farmRecords(prisma, 'OUTCOME').count(),
+    events(prisma, 'FEEDBACK').groupBy({ by: ['feedbackType'], _count: { _all: true } }),
   ]);
   const predictionsByLevel = await prisma.riskPrediction.groupBy({ by: ['riskLevel'], where: { isSimulation: false, createdAt: { gte: addDays(new Date(), -7) } }, _count: { _all: true } });
   return ok(res, {
@@ -245,7 +250,69 @@ export async function adminDashboard(_req, res) {
     usersByRole: roles.map((r) => ({ role: r.name, users: r._count.users })),
     predictionsByLevel: predictionsByLevel.map((p) => ({ level: p.riskLevel, count: p._count._all })),
     feedback: feedback.map((f) => ({ type: f.feedbackType, count: f._count._all })),
-    models: models.map((m) => ({ id: m.id, name: m.name, version: m.version, riskType: m.riskType, status: m.status, trainedAt: m.trainedAt, syntheticData: m.syntheticData, metrics: Object.fromEntries(m.metrics.map((x) => [x.metric, x.value])) })),
+    models: models.map((m) => ({ id: m.id, name: m.name, version: m.version, riskType: m.riskType, status: m.status, trainedAt: m.trainedAt, syntheticData: m.syntheticData, metrics: Object.fromEntries(m.events.map((x) => [x.metric, x.value])) })),
     recentJobs: jobs,
+  });
+}
+
+/**
+ * GET /api/dashboard/impact — slide-11 pilot targets, computed live from the real records.
+ * COOPERATIVE_ADMIN sees their own cooperative; EXTENSION_OFFICER and ADMIN see all (or a chosen one).
+ */
+export async function impactMetrics(req, res) {
+  const days = Math.min(Math.max(Number(req.query.days) || 90, 7), 365);
+  const since = addDays(new Date(), -days);
+
+  // Resolve the cooperative scope: COOPERATIVE_ADMIN is pinned to their own; others may pass ?cooperativeId=.
+  const isCoopAdmin = hasRole(req.user, ROLES.COOPERATIVE_ADMIN) && !hasRole(req.user, ...CROSS_COOP_STAFF);
+  const requested = isUuid(req.query.cooperativeId) ? req.query.cooperativeId : null;
+  const cooperativeId = isCoopAdmin ? req.user.cooperativeId : requested;
+  const farmWhere = cooperativeId ? { cooperativeId } : {};
+
+  const [farmerCount, activeFarmCount, observations, actions, outcomes, alerts, harvests] = await Promise.all([
+    cooperativeId
+      ? prisma.farmer.count({ where: { memberships: { some: { cooperativeId, isActive: true } } } })
+      : prisma.farmer.count(),
+    prisma.farm.count({ where: { ...farmWhere, status: 'ACTIVE' } }),
+    prisma.farmObservation.count({ where: { farm: farmWhere, observedAt: { gte: since } } }),
+    prisma.farmerAction.findMany({ where: { farm: farmWhere, performedAt: { gte: since } }, select: { actionTaken: true } }),
+    farmRecords(prisma, 'OUTCOME').count({ where: { farm: farmWhere, outcomeDate: { gte: since } } }),
+    prisma.alert.findMany({
+      where: { farm: farmWhere, isSimulation: false, createdAt: { gte: since } },
+      select: { severity: true, status: true, acknowledgedAt: true, createdAt: true },
+    }),
+    prisma.harvestRecord.findMany({ where: { farm: farmWhere, harvestDate: { gte: since } }, select: { lossPercent: true, qualityGrade: true } }),
+  ]);
+
+  const highAlerts = alerts.filter((a) => ['HIGH', 'CRITICAL'].includes(a.severity));
+  const acknowledged = highAlerts.filter((a) => a.acknowledgedAt).length;
+  const within48h = highAlerts.filter((a) => a.acknowledgedAt && (a.acknowledgedAt - a.createdAt) <= 48 * 3600 * 1000).length;
+  const avgLoss = harvests.length && harvests.some((h) => h.lossPercent != null)
+    ? Math.round(harvests.filter((h) => h.lossPercent != null).reduce((s, h) => s + h.lossPercent, 0) / harvests.filter((h) => h.lossPercent != null).length * 10) / 10
+    : null;
+  const gradeA = harvests.filter((h) => h.qualityGrade === 'A').length;
+
+  const coop = cooperativeId ? await prisma.cooperative.findUnique({ where: { id: cooperativeId }, select: { id: true, code: true, name: true, district: true } }) : null;
+
+  return ok(res, {
+    cooperative: coop,
+    windowDays: days,
+    counts: {
+      farmers: farmerCount,
+      activeFarms: activeFarmCount,
+      observations,
+      actionsTaken: actions.filter((a) => a.actionTaken).length,
+      outcomes,
+      harvests: harvests.length,
+      gradeA,
+    },
+    alerts: {
+      highIssued: highAlerts.length,
+      acknowledged,
+      within48h,
+      ackRate: highAlerts.length ? Math.round((acknowledged / highAlerts.length) * 100) / 100 : null,
+      actionWithin48hRate: highAlerts.length ? Math.round((within48h / highAlerts.length) * 100) / 100 : null,
+    },
+    quality: { avgLossPercent: avgLoss },
   });
 }

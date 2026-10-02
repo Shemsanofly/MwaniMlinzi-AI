@@ -1,3 +1,4 @@
+import { farmRecords, events } from '../db/records.js';
 import prisma from '../config/prisma.js';
 import { levelRank } from '../ai/constants.js';
 
@@ -8,8 +9,8 @@ import { levelRank } from '../ai/constants.js';
  */
 export const ModelMonitoringService = {
   async fieldConfusion({ modelId = null } = {}) {
-    const outcomes = await prisma.actionOutcome.findMany({
-      where: { riskMaterialized: { not: null }, predictionId: { not: null }, ...(modelId ? { prediction: { modelPredictions: { some: { modelId } } } } : {}) },
+    const outcomes = await farmRecords(prisma, 'OUTCOME').findMany({
+      where: { riskMaterialized: { not: null }, predictionId: { not: null }, ...(modelId ? { prediction: { mlModelId: modelId } } : {}) },
       include: { prediction: { select: { riskLevel: true, riskType: true, isSimulation: true } } },
     });
     const real = outcomes.filter((o) => o.prediction && !o.prediction.isSimulation);
@@ -36,7 +37,7 @@ export const ModelMonitoringService = {
       if (!c.outcomes) continue;
       for (const metric of ['precision', 'recall', 'f1', 'accuracy']) {
         if (c[metric] == null) continue;
-        await prisma.modelMetric.create({ data: { modelId: m.id, dataset: 'FIELD', metric, value: c[metric], details: { confusionMatrix: c.confusionMatrix, outcomes: c.outcomes } } });
+        await events(prisma, 'METRIC').create({ data: { modelId: m.id, dataset: 'FIELD', metric, value: c[metric], details: { confusionMatrix: c.confusionMatrix, outcomes: c.outcomes } } });
       }
     }
     return overall;

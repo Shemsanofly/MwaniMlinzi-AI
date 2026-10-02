@@ -1,9 +1,10 @@
+import { events } from '../db/records.js';
 import prisma from '../config/prisma.js';
 
 /** Best-effort audit log; never breaks the main request. */
 export async function audit(req, action, entityType, entityId = null, details = null) {
   try {
-    await prisma.auditLog.create({
+    await events(prisma, 'AUDIT').create({
       data: {
         userId: req?.user?.id || null,
         action,

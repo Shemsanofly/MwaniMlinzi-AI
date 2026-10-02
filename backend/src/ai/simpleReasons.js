@@ -16,13 +16,13 @@ const R = {
   CALM_WARM_WATER: { up: ['The water is calm and warm', 'Maji yametulia na yana joto'] },
   LOW_SALINITY: { up: ['The water is less salty than normal', 'Chumvi ya maji iko chini kuliko kawaida'] },
   FARM_HISTORY: { up: ['This farm has had this problem before', 'Shamba hili limewahi kupata tatizo hili'] },
-  WAVE_HEIGHT: { up: ['Waves are high', 'Mawimbi ni makubwa'], down: ['Waves are low', 'Mawimbi ni madogo'] },
+  WAVE_HEIGHT: { up: ['Higher waves are forecast', 'Mawimbi makubwa zaidi yanatabiriwa'], down: ['Lower waves are forecast', 'Mawimbi madogo zaidi yanatabiriwa'] },
   WIND_SPEED: { up: ['Strong wind is expected', 'Upepo mkali unatarajiwa'], down: ['Wind is light', 'Upepo ni mdogo'] },
   CURRENT_VELOCITY: { up: ['Sea currents are strong', 'Mikondo ya bahari ina nguvu'] },
-  HEAVY_RAIN: { up: ['Heavy rain is expected', 'Mvua kubwa inatarajiwa'] },
+  HEAVY_RAIN: { up: ['Rain is forecast', 'Mvua inatabiriwa'] },
   FARM_EXPOSURE: { up: ['The farm is in an open, exposed place', 'Shamba liko sehemu iliyo wazi kwa mawimbi'], down: ['The farm is in a sheltered place', 'Shamba liko sehemu iliyokingwa'] },
-  ANCHORING: { up: ['The anchors or pegs are weak', 'Nanga au vigingi si imara'], down: ['The anchors are strong', 'Nanga ni imara'] },
-  GEAR_CONDITION: { up: ['The lines or ropes are worn', 'Kamba zimechakaa'], down: ['The lines are in good condition', 'Kamba ziko katika hali nzuri'] },
+  ANCHORING: { up: ['The recorded anchoring method may be vulnerable in rough water', 'Njia ya nanga iliyorekodiwa inaweza kuathirika na mawimbi makali'] },
+  GEAR_CONDITION: { up: ['Loose, broken or missing lines or anchors were reported', 'Mistari au nanga zilizolegea, kukatika au kukosekana zimeripotiwa'] },
   BREAKAGE_REPORTED: { up: ['Broken seaweed or lines were reported', 'Kukatika kwa mwani au kamba kumeripotiwa'] },
   SLOW_GROWTH_REPORTED: { up: ['Slow growth was reported', 'Ukuaji hafifu umeripotiwa'] },
   CROP_CONDITION: { up: ['The seaweed looks weak', 'Mwani unaonekana dhaifu'], down: ['The seaweed looks healthy', 'Mwani unaonekana na afya'] },
@@ -42,7 +42,10 @@ const R = {
 };
 
 /** @returns { en, sw } or null when no simple phrase exists for this code/direction. */
-export function simpleReason(code, direction = 'INCREASES') {
+export function simpleReason(code, direction = 'INCREASES', features = {}) {
+  if (code === 'FARM_EXPOSURE' && features.exposureScore > 0 && features.exposureScore < 1) {
+    return { en: 'Your farm is recorded as moderately exposed', sw: 'Shamba lako limerekodiwa kuwa wazi kiasi kwa mawimbi' };
+  }
   const entry = R[code]?.[direction === 'DECREASES' ? 'down' : 'up'];
   return entry ? { en: entry[0], sw: entry[1] } : null;
 }

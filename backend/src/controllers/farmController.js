@@ -1,3 +1,4 @@
+import { farmRecords } from '../db/records.js';
 import prisma from '../config/prisma.js';
 import { ok, created } from '../utils/response.js';
 import { badRequest, forbidden, notFound } from '../utils/errors.js';
@@ -8,10 +9,12 @@ import { FarmService } from '../services/farmService.js';
 import { RecordService } from '../services/recordService.js';
 import { RiskService, serializePrediction, serializeRecommendation } from '../services/riskService.js';
 import { EnvironmentService } from '../services/environmentService.js';
+import { RecordBookService } from '../services/recordBookService.js';
 import { SeaOutlookService } from '../services/seaOutlookService.js';
 import { HarvestForecastService } from '../services/harvestForecastService.js';
 import { pageParams } from '../utils/pagination.js';
 import { getSetting } from '../services/settingsService.js';
+import { FarmIntelligenceService } from '../services/farmIntelligenceService.js';
 
 const farmId = (req) => {
   if (!isUuid(req.params.id)) throw notFound('Farm');
@@ -25,7 +28,7 @@ export async function listFarms(req, res) {
       farmScope(req.user),
       status ? { status: String(status) } : {},
       cooperativeId && isUuid(cooperativeId) ? { cooperativeId } : {},
-      district ? { location: { is: { district: String(district) } } } : {},
+      district ? { location: { path: ['district'], equals: String(district) } } : {},
       search ? { OR: [{ name: { contains: String(search), mode: 'insensitive' } }, { farmCode: { contains: String(search), mode: 'insensitive' } }] } : {},
     ],
   };
@@ -101,7 +104,7 @@ export async function listObservations(req, res) {
     orderBy: { observedAt: 'desc' },
     take,
     skip,
-    include: { reporter: { select: { fullName: true } }, reviewedBy: { select: { fullName: true } }, image: { select: { id: true, mimeType: true } }, diseases: true },
+    include: { reporter: { select: { fullName: true } }, reviewedBy: { select: { fullName: true } }, image: { select: { id: true, mimeType: true } } },
   });
   return ok(res, { observations });
 }
@@ -117,22 +120,51 @@ export async function createObservation(req, res) {
 export async function listHarvests(req, res) {
   const id = farmId(req);
   await assertFarmAccess(req.user, id);
-  const harvests = await prisma.harvestRecord.findMany({ where: { farmId: id }, orderBy: { harvestDate: 'desc' }, include: { quality: true, drying: true, buyer: { select: { id: true, companyName: true } } } });
+  const harvests = await prisma.harvestRecord.findMany({ where: { farmId: id }, orderBy: { harvestDate: 'desc' }, include: { buyer: { select: { id: true, companyName: true } } } });
   return ok(res, { harvests });
 }
 
 export async function createHarvest(req, res) {
   const id = farmId(req);
   await assertFarmAccess(req.user, id, { write: true });
-  const harvest = await RecordService.createHarvest(id, req.valid.body);
+  const harvest = await RecordService.createHarvest(id, req.valid.body, { user: req.user });
   await audit(req, 'CREATE', 'HarvestRecord', harvest.id, { farmId: id, actualQuantity: harvest.actualQuantity });
   return created(res, { harvest }, 'Harvest recorded');
 }
 
+// ── Record book ──
+const CREATE = { sales: 'createSale', costs: 'createCost', work: 'createWork' };
+
+export async function recordSummary(req, res) {
+  const id = farmId(req);
+  await assertFarmAccess(req.user, id);
+  return ok(res, await RecordBookService.summary(id, { cycleId: req.query.cycleId || null }));
+}
+
+export const listRecords = (kind) => async (req, res) => {
+  const id = farmId(req);
+  await assertFarmAccess(req.user, id);
+  return ok(res, { [kind]: await RecordBookService.list(kind, id, { cycleId: req.query.cycleId || null }) });
+};
+
+export const createRecord = (kind) => async (req, res) => {
+  const id = farmId(req);
+  await assertFarmAccess(req.user, id, { write: true });
+  const row = await RecordBookService[CREATE[kind]](id, req.user, req.valid.body); // the service writes the audit log
+  return created(res, { [RecordBookService.KINDS[kind].one]: row }, 'Saved');
+};
+
+export const deleteRecord = (kind) => async (req, res) => {
+  const id = farmId(req);
+  await assertFarmAccess(req.user, id, { write: true });
+  const row = await RecordBookService.remove(kind, id, req.params.recordId, req.user);
+  return ok(res, { deleted: row.id }, 'Deleted');
+};
+
 export async function listLosses(req, res) {
   const id = farmId(req);
   await assertFarmAccess(req.user, id);
-  const losses = await prisma.lossRecord.findMany({ where: { farmId: id }, orderBy: { lossDate: 'desc' } });
+  const losses = await farmRecords(prisma, 'LOSS').findMany({ where: { farmId: id }, orderBy: { lossDate: 'desc' } });
   return ok(res, { losses });
 }
 
@@ -155,9 +187,15 @@ export async function getRisks(req, res) {
 export async function runRisks(req, res) {
   const id = farmId(req);
   await assertFarmAccess(req.user, id);
-  const result = await RiskService.runForFarm(id, { trigger: 'MANUAL' });
+  const result = await RiskService.runForFarm(id, { trigger: 'MANUAL', forceEnvironment: true });
   await audit(req, 'RUN_RISK', 'Farm', id);
   return ok(res, result, 'Risk recalculated');
+}
+
+export async function farmIntelligence(req, res) {
+  const id = farmId(req);
+  await assertFarmAccess(req.user, id);
+  return ok(res, await FarmIntelligenceService.status(id));
 }
 
 export async function riskHistory(req, res) {
@@ -214,7 +252,7 @@ export async function createAction(req, res) {
 export async function listOutcomes(req, res) {
   const id = farmId(req);
   await assertFarmAccess(req.user, id);
-  const outcomes = await prisma.actionOutcome.findMany({ where: { farmId: id }, orderBy: { outcomeDate: 'desc' }, include: { prediction: { select: { riskType: true, riskLevel: true, probability: true } }, farmerAction: true, recommendation: { include: { actionLibrary: { select: { action: true, actionSw: true } } } } } });
+  const outcomes = await farmRecords(prisma, 'OUTCOME').findMany({ where: { farmId: id }, orderBy: { outcomeDate: 'desc' }, include: { prediction: { select: { riskType: true, riskLevel: true, probability: true } }, farmerAction: true, recommendation: { include: { actionLibrary: { select: { action: true, actionSw: true } } } } } });
   return ok(res, { outcomes });
 }
 
@@ -233,9 +271,9 @@ export async function farmHistoryTimeline(req, res) {
   const [obs, harvests, losses, actions, outcomes, alerts, cycles, preds] = await Promise.all([
     prisma.farmObservation.findMany({ where: { farmId: id }, orderBy: { observedAt: 'desc' }, take: 50 }),
     prisma.harvestRecord.findMany({ where: { farmId: id }, orderBy: { harvestDate: 'desc' }, take: 20 }),
-    prisma.lossRecord.findMany({ where: { farmId: id }, orderBy: { lossDate: 'desc' }, take: 20 }),
+    farmRecords(prisma, 'LOSS').findMany({ where: { farmId: id }, orderBy: { lossDate: 'desc' }, take: 20 }),
     prisma.farmerAction.findMany({ where: { farmId: id }, orderBy: { performedAt: 'desc' }, take: 50, include: { recommendation: { select: { actionLibrary: { select: { action: true, actionSw: true } } } } } }),
-    prisma.actionOutcome.findMany({ where: { farmId: id }, orderBy: { outcomeDate: 'desc' }, take: 50 }),
+    farmRecords(prisma, 'OUTCOME').findMany({ where: { farmId: id }, orderBy: { outcomeDate: 'desc' }, take: 50 }),
     prisma.alert.findMany({ where: { farmId: id, isSimulation: false }, orderBy: { createdAt: 'desc' }, take: 30 }),
     prisma.plantingCycle.findMany({ where: { farmId: id }, orderBy: { plantingDate: 'desc' } }),
     prisma.riskPrediction.findMany({ where: { farmId: id, isSimulation: false, riskLevel: { in: ['HIGH', 'CRITICAL'] } }, orderBy: { createdAt: 'desc' }, take: 20 }),
@@ -261,14 +299,14 @@ export async function farmHistoryTimeline(req, res) {
 export async function farmOutlook(req, res) {
   const id = farmId(req);
   await assertFarmAccess(req.user, id);
-  const farm = await prisma.farm.findUnique({ where: { id }, include: { location: true } });
+  const farm = await prisma.farm.findUnique({ where: { id } });
   return ok(res, { outlook: await SeaOutlookService.currentForFarm(farm) });
 }
 
 export async function farmEnvironment(req, res) {
   const id = farmId(req);
   await assertFarmAccess(req.user, id);
-  const farm = await prisma.farm.findUnique({ where: { id }, include: { location: true } });
+  const farm = await prisma.farm.findUnique({ where: { id } });
   const current = await EnvironmentService.currentForFarm(farm);
   const history = await EnvironmentService.history(id, Math.min(Number(req.query.days) || 14, 90));
   return ok(res, { current, history, providers: EnvironmentService.providerStatus() });
@@ -284,20 +322,20 @@ export async function farmAlerts(req, res) {
 export async function listNotes(req, res) {
   const id = farmId(req);
   await assertFarmAccess(req.user, id);
-  const notes = await prisma.extensionNote.findMany({ where: { farmId: id }, orderBy: { createdAt: 'desc' }, include: { author: { select: { fullName: true } } } });
+  const notes = await farmRecords(prisma, 'NOTE').findMany({ where: { farmId: id }, orderBy: { createdAt: 'desc' }, include: { author: { select: { fullName: true } } } });
   return ok(res, { notes });
 }
 
 export async function createNote(req, res) {
   const id = farmId(req);
   await assertFarmAccess(req.user, id);
-  const note = await prisma.extensionNote.create({ data: { farmId: id, authorId: req.user.id, ...req.valid.body }, include: { author: { select: { fullName: true } } } });
+  const note = await farmRecords(prisma, 'NOTE').create({ data: { farmId: id, authorId: req.user.id, ...req.valid.body }, include: { author: { select: { fullName: true } } } });
   await audit(req, 'CREATE', 'ExtensionNote', note.id, { farmId: id });
   return created(res, { note }, 'Note added');
 }
 
 export async function latestPrediction(req, res) {
-  const p = await prisma.riskPrediction.findUnique({ where: { id: req.params.predictionId }, include: { factors: true, recommendations: { include: { actionLibrary: true } } } });
+  const p = await prisma.riskPrediction.findUnique({ where: { id: req.params.predictionId }, include: { recommendations: { include: { actionLibrary: true } } } });
   if (!p) throw notFound('Prediction');
   await assertFarmAccess(req.user, p.farmId);
   return ok(res, { prediction: serializePrediction(p) });

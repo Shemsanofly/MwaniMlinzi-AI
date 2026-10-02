@@ -1,3 +1,4 @@
+import { farmRecords } from '../db/records.js';
 import prisma from '../config/prisma.js';
 import { createLLMProvider } from '../providers/llmProvider.js';
 import { RISK_LABELS, LEVEL_LABELS } from '../ai/constants.js';
@@ -6,6 +7,7 @@ import { EnvironmentService } from './environmentService.js';
 import { farmScope } from './accessService.js';
 import { cropAgeDays, daysBetween } from '../utils/dates.js';
 import { forbidden } from '../utils/errors.js';
+import { HARVEST_METHOD } from './harvestForecastService.js';
 
 let llm = createLLMProvider();
 export const setLLMProvider = (p) => { llm = p; };
@@ -68,7 +70,25 @@ export function parseObservation(message) {
 }
 
 const pct = (p) => `${Math.round(p * 100)}%`;
-const riskLine = (p, lang) => `${RISK_LABELS[p.riskType][lang]}: ${LEVEL_LABELS[p.riskLevel][lang]} (${pct(p.probability)})`;
+const riskLine = (p, lang) => p.insufficientData
+  ? `${RISK_LABELS[p.riskType][lang]}: ${lang === 'sw' ? 'data haitoshi au zimepitwa na wakati' : 'insufficient or outdated data'}`
+  : `${RISK_LABELS[p.riskType][lang]}: ${LEVEL_LABELS[p.riskLevel][lang]} (${lang === 'sw' ? 'alama ya makadirio' : 'estimated risk score'} ${pct(p.probability)}; ${lang === 'sw' ? 'usahihi haujathibitishwa' : 'accuracy unverified'})`;
+
+const ROUTABLE_INTENTS = ['WHY_RISK', 'WHAT_TO_DO', 'HARVEST', 'ENVIRONMENT', 'HISTORY', 'RISK_STATUS', 'GREETING', 'TREATMENT', 'UNKNOWN'];
+export async function routeQuestion(message) {
+  const deterministic = detectIntent(message);
+  if (deterministic !== 'UNKNOWN' || !llm.isLive) return { intent: deterministic, intentDetectedBy: 'KEYWORDS' };
+  try {
+    const output = await llm.generate({
+      system: `Classify this English or Kiswahili farm question. Return only JSON {"intent":"..."}. Allowed intents: ${ROUTABLE_INTENTS.join(', ')}. Treatment or chemical questions must be TREATMENT. Unsupported questions must be UNKNOWN. Do not answer the question.`,
+      prompt: message, maxTokens: 80,
+      jsonSchema: { type: 'object', properties: { intent: { type: 'string', enum: ROUTABLE_INTENTS } }, required: ['intent'], additionalProperties: false },
+    });
+    const parsed = JSON.parse(output);
+    if (ROUTABLE_INTENTS.includes(parsed.intent)) return { intent: parsed.intent, intentDetectedBy: `LLM:${llm.name}` };
+  } catch (err) { console.warn('[assistant] intent routing unavailable:', err.message); }
+  return { intent: deterministic, intentDetectedBy: 'KEYWORDS' };
+}
 
 const SAFETY = {
   en: 'I can help you record the symptoms and show approved farm guidance. For treatment decisions, contact an extension officer.',
@@ -86,15 +106,15 @@ async function resolveFarm(user, farmId) {
 
 /**
  * AI Farmer Assistant. Answers ONLY from the farmer's own records, the risk engine's structured
- * factors and the Action Engine's approved recommendations. An optional LLM may rephrase the
- * answer, but never adds advice; treatment questions are always redirected to an extension officer.
+ * factors and validated recommendations. An optional LLM routes unfamiliar questions;
+ * displayed answers always use deterministic, grounded text.
  */
 export const AssistantService = {
   async chat(user, { message, farmId, language }) {
     const lang = language || detectLanguage(message);
-    const intent = detectIntent(message);
+    const { intent, intentDetectedBy } = await routeQuestion(message);
     const farm = await resolveFarm(user, farmId);
-    const base = { intent, language: lang, farm: farm ? { id: farm.id, farmCode: farm.farmCode, name: farm.name } : null };
+    const base = { intent, intentDetectedBy, language: lang, answeredAt: new Date().toISOString(), farm: farm ? { id: farm.id, farmCode: farm.farmCode, name: farm.name } : null };
 
     if (intent === 'TREATMENT') {
       return { ...base, reply: SAFETY[lang], generatedBy: 'SAFETY_POLICY', approvedAction: null, facts: {} };
@@ -106,9 +126,9 @@ export const AssistantService = {
     let risk = await RiskService.latestForFarm(farm.id);
     if (!risk.predictions.length) risk = await RiskService.runForFarm(farm.id, { trigger: 'MANUAL' });
     const preds = risk.predictions;
-    const top = [...preds].filter((p) => p.riskType !== 'HARVEST_WINDOW').sort((a, b) => b.probability - a.probability)[0];
+    const top = [...preds].filter((p) => p.riskType !== 'HARVEST_WINDOW' && !p.insufficientData).sort((a, b) => b.probability - a.probability)[0];
     const next = risk.nextAction;
-    const approvedAction = next?.recommendation?.actionItem ? { text: lang === 'sw' ? next.recommendation.actionItem.actionSw : next.recommendation.actionItem.action, riskType: next.riskType, source: next.recommendation.actionItem.source, validated: next.recommendation.actionItem.validated, recommendationId: next.recommendation.id } : null;
+    const approvedAction = next?.recommendation?.actionItem?.validated ? { text: lang === 'sw' ? next.recommendation.actionItem.actionSw : next.recommendation.actionItem.action, riskType: next.riskType, source: next.recommendation.actionItem.source, validated: next.recommendation.actionItem.validated, recommendationId: next.recommendation.id } : null;
     const cycle = await prisma.plantingCycle.findFirst({ where: { farmId: farm.id, status: 'ACTIVE' }, orderBy: { plantingDate: 'desc' } });
     const facts = { risks: preds.map((p) => ({ riskType: p.riskType, level: p.riskLevel, probability: p.probability, confidence: p.confidence })), cropAgeDays: cycle ? cropAgeDays(cycle.plantingDate) : null };
 
@@ -143,21 +163,21 @@ export const AssistantService = {
         break;
       case 'HARVEST': {
         const hw = preds.find((p) => p.riskType === 'HARVEST_WINDOW');
-        const fc = await prisma.harvestForecast.findFirst({ where: { farmId: farm.id, isCurrent: true } });
+        const fc = await prisma.harvestForecast.findFirst({ where: { farmId: farm.id, isCurrent: true, method: HARVEST_METHOD } });
         const age = facts.cropAgeDays;
         const days = cycle ? daysBetween(new Date(), cycle.expectedHarvestDate) : null;
-        const hwAction = hw?.recommendation?.actionItem;
+        const hwAction = !hw?.insufficientData && hw?.recommendation?.actionItem?.validated ? hw.recommendation.actionItem : null;
         facts.forecast = fc ? { expectedHarvestDate: fc.expectedHarvestDate, riskAdjustedQuantityKg: fc.riskAdjustedQuantityKg, lowQuantityKg: fc.lowQuantityKg, highQuantityKg: fc.highQuantityKg } : null;
         if (!cycle) { reply = lang === 'sw' ? 'Hakuna mzunguko wa upandaji unaoendelea kwa shamba hili.' : 'There is no active planting cycle for this farm.'; break; }
         reply = lang === 'sw'
-          ? `Mwani una siku ${age}. ${days > 0 ? `Mavuno yanatarajiwa baada ya siku ${days}.` : 'Umefikia muda wa kuvuna.'}${fc ? ` Makadirio: kg ${Math.round(fc.lowQuantityKg)}–${Math.round(fc.highQuantityKg)} (kavu).` : ''}${hwAction ? ` Ushauri: ${hwAction.actionSw}` : ''}`
-          : `Your crop is ${age} days old. ${days > 0 ? `Harvest is expected in ${days} days.` : 'It has reached harvest time.'}${fc ? ` Estimate: ${Math.round(fc.lowQuantityKg)}–${Math.round(fc.highQuantityKg)} kg (dried).` : ''}${hwAction ? ` Guidance: ${hwAction.action}` : ''}`;
+          ? `Mwani una siku ${age}. ${days > 0 ? `Tarehe iliyopangwa ya mavuno ni baada ya siku ${days}.` : 'Tarehe iliyopangwa ya mavuno imefika; kagua ukomavu shambani.'}${fc ? ` Makadirio kutokana na rekodi: kg ${Math.round(fc.lowQuantityKg)}–${Math.round(fc.highQuantityKg)} (kavu).` : ' Rekodi za mavuno hazitoshi kukadiria kiasi.'}${hwAction ? ` Ushauri: ${hwAction.actionSw}` : ''}`
+          : `Your crop is ${age} days old. ${days > 0 ? `The recorded harvest plan is in ${days} days.` : 'The recorded harvest date has arrived; inspect crop maturity.'}${fc ? ` Historical yield range: ${Math.round(fc.lowQuantityKg)}–${Math.round(fc.highQuantityKg)} kg (dried).` : ' Not enough recorded harvest history to estimate quantity.'}${hwAction ? ` Guidance: ${hwAction.action}` : ''}`;
         break;
       }
       case 'ENVIRONMENT': {
-        const env = await EnvironmentService.latestForFarm(farm.id);
+        const env = await EnvironmentService.currentForFarm(farm);
         if (!env) { reply = lang === 'sw' ? 'Hakuna taarifa za mazingira bado.' : 'No environmental data yet.'; break; }
-        facts.environment = { seaSurfaceTempC: env.seaSurfaceTempC, sstAnomalyC: env.sstAnomalyC, waveHeightM: env.waveHeightM, windSpeedKmh: env.windSpeedKmh, rainfallMm: env.rainfallMm, source: env.source };
+        facts.environment = { seaSurfaceTempC: env.seaSurfaceTempC, sstAnomalyC: env.sstAnomalyC, waveHeightM: env.waveHeightM, windSpeedKmh: env.windSpeedKmh, rainfallMm: env.rainfallMm, source: env.source, observedAt: env.observedAt, weatherProvider: env.weather?.provider, oceanProvider: env.ocean?.provider };
         const tag = env.source === 'CACHED' ? (lang === 'sw' ? ' (taarifa za awali)' : ' (last saved reading)') : '';
         const signed = (v) => `${v >= 0 ? '+' : ''}${v}`;
         const parts = lang === 'sw'
@@ -183,7 +203,7 @@ export const AssistantService = {
         const [obs, harvests, losses] = await Promise.all([
           prisma.farmObservation.findMany({ where: { farmId: farm.id }, orderBy: { observedAt: 'desc' }, take: 3 }),
           prisma.harvestRecord.findMany({ where: { farmId: farm.id }, orderBy: { harvestDate: 'desc' }, take: 2 }),
-          prisma.lossRecord.findMany({ where: { farmId: farm.id }, orderBy: { lossDate: 'desc' }, take: 2 }),
+          farmRecords(prisma, 'LOSS').findMany({ where: { farmId: farm.id }, orderBy: { lossDate: 'desc' }, take: 2 }),
         ]);
         facts.history = { observations: obs.length, harvests: harvests.map((h) => ({ date: h.harvestDate, kg: h.actualQuantity })), losses: losses.map((l) => ({ date: l.lossDate, cause: l.cause, percent: l.percentLost })) };
         const d = (x) => new Date(x).toISOString().slice(0, 10);
@@ -207,22 +227,6 @@ export const AssistantService = {
           : 'Sorry, I did not understand. You can ask: "Why is my risk high?", "What should I do?", "When should I harvest?", "What are sea conditions?" or "I see whitening on my seaweed".';
     }
 
-    let generatedBy = 'TEMPLATE';
-    if (llm.isLive && ['WHY_RISK', 'WHAT_TO_DO', 'HARVEST', 'ENVIRONMENT', 'RISK_STATUS'].includes(intent)) {
-      try {
-        const rephrased = await llm.generate({
-          system: 'You are the MwaniMlinzi seaweed-farm assistant for Zanzibar farmers. Rephrase the given ANSWER in simple, friendly language. '
-            + 'Use ONLY the facts in the ANSWER. Never add new farming advice, actions, treatments, chemicals, numbers or causes. '
-            + 'If the ANSWER contains an action, keep its meaning exactly. Reply in '
-            + (lang === 'sw' ? 'Kiswahili' : 'English') + ', maximum 80 words.',
-          prompt: `QUESTION: ${message}\nANSWER: ${reply}`,
-          maxTokens: 300,
-        });
-        if (rephrased) { reply = rephrased; generatedBy = `LLM:${llm.name}`; }
-      } catch (err) {
-        console.warn('[assistant] LLM unavailable, using template:', err.message);
-      }
-    }
-    return { ...base, reply, generatedBy, approvedAction: ['WHAT_TO_DO', 'RISK_STATUS', 'WHY_RISK'].includes(intent) ? approvedAction : null, observationDraft, facts };
+    return { ...base, reply, generatedBy: 'TEMPLATE', approvedAction: ['WHAT_TO_DO', 'RISK_STATUS', 'WHY_RISK'].includes(intent) ? approvedAction : null, observationDraft, facts };
   },
 };

@@ -30,7 +30,7 @@ describe('Observation wizard', () => {
     renderPage(<ObservationsPage />);
     await waitFor(() => expect(farmApi.risks).toHaveBeenCalled());
     // Wait for the previous risk to load so the result can compare against it.
-    await screen.findByText('Step 1 of 7');
+    await screen.findByText('Step 1 of 5');
     await waitFor(() => expect(farmApi.risks.mock.results[0]?.type).toBe('return'));
 
     expect(screen.getByText('How is the seaweed?')).toBeInTheDocument();
@@ -52,6 +52,7 @@ describe('Observation wizard', () => {
     await user.click(screen.getByRole('button', { name: 'Next' }));
 
     // Photo: reject a wrong file type, then accept a PNG
+    await user.click(screen.getByRole('button', { name: 'Take or choose a photo' }));
     expect(screen.getByText('Add a photo')).toBeInTheDocument();
     const input = screen.getByLabelText('Take or choose a photo', { selector: 'input' });
     fireEvent.change(input, { target: { files: [new File(['x'], 'doc.gif', { type: 'image/gif' })] } });
@@ -66,7 +67,7 @@ describe('Observation wizard', () => {
 
     await waitFor(() => expect(uploadApi.image).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(farmApi.addObservation).toHaveBeenCalledWith(FARM.id, {
-      cropCondition: 'FAIR', whitening: true, breakage: false, unusualGrowth: false, epiphytes: false, diseaseSymptoms: false,
+      cropCondition: 'FAIR', whitening: true, breakage: false, unusualGrowth: false, epiphytes: null, diseaseSymptoms: null,
       confidence: 'MEDIUM', waterAppearance: 'TURBID', imageFileId: IMAGE_ID,
     }));
 
@@ -76,6 +77,22 @@ describe('Observation wizard', () => {
     expect(screen.getByText('Heat / Ice-Ice: changed from High to Critical.')).toBeInTheDocument();
     expect(screen.getByText('CRITICAL heat risk — FARM001')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Record another' })).toBeInTheDocument();
+  });
+
+  it('lets a farmer review four answers and send without optional steps or an upload', async () => {
+    const user = userEvent.setup();
+    renderPage(<ObservationsPage />);
+    await user.click(await screen.findByRole('button', { name: 'Good' }));
+    for (let i = 0; i < 3; i += 1) await user.click(screen.getByRole('button', { name: 'No' }));
+    expect(screen.getByText('Step 5 of 5')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Check and send' })).toBeInTheDocument();
+    expect(farmApi.addObservation).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Send report' }));
+    await waitFor(() => expect(farmApi.addObservation).toHaveBeenCalledWith(FARM.id, {
+      cropCondition: 'GOOD', whitening: false, breakage: false, unusualGrowth: false,
+      epiphytes: null, diseaseSymptoms: null, confidence: 'MEDIUM',
+    }));
+    expect(uploadApi.image).not.toHaveBeenCalled();
   });
 
   it('shows past observations with review status', async () => {

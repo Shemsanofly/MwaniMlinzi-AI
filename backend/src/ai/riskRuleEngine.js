@@ -3,7 +3,7 @@ import { round, sigmoid } from './features.js';
 
 /** RiskRuleEngine: deterministic, always-available baseline model. */
 export const RiskRuleEngine = {
-  version: 'rules-v1',
+  version: 'rules-v2-real-inputs',
 
   evaluate(riskType, features) {
     const rule = RISK_RULES[riskType];

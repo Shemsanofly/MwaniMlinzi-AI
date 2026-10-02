@@ -15,3 +15,5 @@ process.env.AT_API_KEY = '';
 process.env.AT_ENVIRONMENT = 'sandbox';
 process.env.AT_USSD_SERVICE_CODE = '*384*1234#';
 process.env.AT_CALLBACK_SECRET = 'test-callback-secret';
+process.env.SARUFI_WEBHOOK_SECRET = 'test-sarufi-secret';
+process.env.SARUFI_BOT_PHONE = '+255753790797';

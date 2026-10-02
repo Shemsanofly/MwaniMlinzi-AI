@@ -11,6 +11,8 @@ const saveUser = (u) => { try { localStorage.setItem(USER_KEY, JSON.stringify(u)
 
 export const HOME_FOR_ROLE = {
   FARMER: '/farmer/dashboard',
+  COOPERATIVE_ADMIN: '/cooperative/dashboard',
+  EXTENSION_OFFICER: '/extension/dashboard',
   ADMIN: '/admin/dashboard',
 };
 

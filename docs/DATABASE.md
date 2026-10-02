@@ -67,7 +67,7 @@ Format: `postgresql://USER:PASSWORD@HOST:PORT/DATABASE`. URL-encode special char
 cd backend
 npm install
 npx prisma generate        # generates the Prisma client
-npx prisma migrate dev     # applies migrations (creates ~45 tables)
+npx prisma migrate dev     # applies migrations (creates 29 application tables + 1 Prisma migration table)
 ```
 
 For production / CI: `npx prisma migrate deploy` (`npm run prisma:deploy`).
@@ -125,21 +125,25 @@ ORDER BY f.farm_code, p.risk_type, p.created_at DESC;
 SELECT DISTINCT ON (f.farm_code) f.farm_code, e.source, w.provider AS weather_provider, o.provider AS ocean_provider,
        e.sea_surface_temp_c, e.wave_height_m, e.wind_speed_kmh, e.rainfall_mm, e.observed_at
 FROM environmental_observations e JOIN farms f ON f.id = e.farm_id
-LEFT JOIN weather_observations w ON w.id = e.weather_observation_id
-LEFT JOIN ocean_observations o ON o.id = e.ocean_observation_id
+LEFT JOIN environmental_observations w ON w.id = e.weather_observation_id
+LEFT JOIN environmental_observations o ON o.id = e.ocean_observation_id
 ORDER BY f.farm_code, e.observed_at DESC;
 
 -- Explanation factors of a prediction
-SELECT code, label, value, contribution, direction FROM risk_factors WHERE prediction_id = '<uuid>' ORDER BY contribution DESC;
+SELECT factor->>'code' AS code, factor->>'label' AS label, factor->>'value' AS value,
+       factor->>'contribution' AS contribution, factor->>'direction' AS direction
+FROM risk_predictions p CROSS JOIN LATERAL jsonb_array_elements(p.factors) factor
+WHERE p.id = '<uuid>' ORDER BY (factor->>'contribution')::numeric DESC;
 
 -- The feedback loop: prediction → recommendation → action → outcome
 SELECT f.farm_code, p.risk_type, p.risk_level, a.code AS action, fa.action_taken, o.outcome_type, o.loss_percent, o.risk_materialized
-FROM action_outcomes o
+FROM farm_records o
 JOIN farms f ON f.id = o.farm_id
 LEFT JOIN risk_predictions p ON p.id = o.prediction_id
 LEFT JOIN action_recommendations r ON r.id = o.recommendation_id
 LEFT JOIN action_library a ON a.id = r.action_library_id
 LEFT JOIN farmer_actions fa ON fa.id = o.farmer_action_id
+WHERE o.record_type = 'OUTCOME'
 ORDER BY o.created_at DESC LIMIT 20;
 
 -- Risk thresholds (editable in Admin → Settings)
@@ -152,36 +156,59 @@ You can also browse data with `npx prisma studio` (http://localhost:5555).
 
 | Area | Tables |
 |---|---|
-| Identity & access | `users`, `roles`, `permissions`, `role_permissions`, `user_roles` |
+| Identity & access | `users`, `roles`, `user_roles`, `password_resets`, `public_access_tokens` |
 | Farmers & cooperatives | `farmers`, `cooperatives`, `cooperative_members` |
-| Farms | `farms`, `farm_locations`, `seaweed_species`, `planting_cycles` |
-| Observations | `farm_observations`, `disease_observations`, `uploaded_files` |
-| Environment | `weather_observations`, `ocean_observations`, `environmental_observations` (per-farm snapshot used by the AI; `source` = LIVE/CACHED; missing values are `null`). Predictions store `data_source` = LIVE/CACHED/UNAVAILABLE/SIMULATION |
-| AI | `risk_predictions`, `risk_factors`, `action_library`, `action_recommendations` |
-| Feedback loop | `farmer_actions`, `action_outcomes`, `model_feedback` |
-| Harvest | `harvest_records`, `loss_records`, `quality_records`, `drying_records`, `harvest_forecasts` |
-| Buyers (legacy, unused by the app; `harvest_records.buyer_id` kept for older records) | `buyers`, `buyer_demand` |
-| Alerts | `alerts`, `notifications`, `notification_logs` |
-| ML lifecycle | `ml_models`, `model_predictions`, `model_metrics` |
-| Operations | `extension_notes`, `ussd_sessions`, `sms_messages`, `job_runs`, `audit_logs`, `system_settings` |
+| Farms | `farms`, `seaweed_species`, `planting_cycles` |
+| Observations | `farm_observations` |
+| Environment | `environmental_observations`, `sea_outlooks` |
+| AI & actions | `risk_predictions`, `action_library`, `action_recommendations`, `farmer_actions` |
+| Record book & field outcomes | `farm_records` |
+| Harvest | `harvest_records`, `harvest_forecasts` |
+| Buyers | `buyers`, `buyer_demand` |
+| Alerts | `alerts`, `notifications` |
+| ML lifecycle | `ml_models` |
+| Operations & event history | `event_logs`, `ussd_sessions`, `system_settings` |
 
-Key relationships:
+### Consolidation applied on 2 October 2026
 
+The migration `20261002170000_reduce_to_29_tables` reduces 47 application tables to 29 while retaining the existing IDs, timestamps, field values and foreign-key links. It copies and verifies every source row in a transaction before dropping the old tables. A failed verification rolls the transaction back.
+
+| Previous storage | Current storage |
+|---|---|
+| `permissions`, `role_permissions` | Permission keys in `roles.permissions`; original permission definitions and mappings retained in `system_settings` under `database.permissionCatalog` |
+| `farm_locations` | `farms.location` JSON, including original location IDs and water depth |
+| `disease_observations` | `farm_observations.diseases` JSON array; each disease retains its original ID and metadata |
+| `weather_observations`, `ocean_observations` | `environmental_observations` rows with `record_type` WEATHER or OCEAN; FARM rows link to those readings |
+| `sale_records`, `farm_costs`, `work_logs`, `loss_records`, `extension_notes`, `action_outcomes` | `farm_records` rows with types SALE, COST, WORK, LOSS, NOTE and OUTCOME |
+| `audit_logs`, `job_runs`, `integration_events`, `sms_messages`, `uploaded_files`, `notification_logs`, `model_metrics`, `model_feedback` | `event_logs` rows with types AUDIT, JOB, INTEGRATION, SMS, UPLOAD, DELIVERY, METRIC and FEEDBACK |
+
+Application queries use the type-scoped repositories in `backend/src/db/records.js`, including unique-ID lookups and deletions. Existing HTTP endpoints and record-book calculations are preserved. SQL CHECK constraints require the appropriate fields for each type; indexes support farm/date, event/type/date, provider-reference and model queries. Upload metadata and ML metrics remain relational rows rather than being buried in audit JSON. When an ML model is deleted, its event history is retained with a null model link.
+
+Risk factors remain in `risk_predictions.factors`; harvest quality and drying measurements remain in `harvest_records` (from the earlier consolidation).
+
+Example queries:
+
+```sql
+SELECT record_type, count(*) FROM farm_records GROUP BY record_type;
+SELECT * FROM farm_records WHERE record_type = 'SALE' ORDER BY sale_date DESC;
+SELECT * FROM event_logs WHERE record_type = 'AUDIT' ORDER BY created_at DESC LIMIT 50;
+SELECT * FROM event_logs WHERE record_type = 'DELIVERY' ORDER BY created_at DESC LIMIT 50;
+SELECT count(*) FROM information_schema.tables
+WHERE table_schema = 'public' AND table_type = 'BASE TABLE'; -- 30
 ```
-users 1─1 farmers 1─* farms 1─* planting_cycles
-farms 1─1 farm_locations
-farms 1─* farm_observations 1─* disease_observations
-farms 1─* environmental_observations *─1 weather_observations / ocean_observations
-farms 1─* risk_predictions 1─* risk_factors
-risk_predictions 1─* action_recommendations *─1 action_library
-action_recommendations 1─* farmer_actions 1─* action_outcomes ─ risk_predictions
-risk_predictions 1─* model_feedback, model_predictions *─1 ml_models 1─* model_metrics
-cooperatives 1─* cooperative_members *─1 farmers ; cooperatives 1─* farms
-buyers 1─* buyer_demand ; farms 1─* harvest_forecasts
+
+### Verification
+
+From `backend/`:
+
+```bash
+node scripts/backup-database.js             # full pg_dump backup, ignored by Git
+node scripts/verify-table-consolidation.js  # restore the backup into a temporary database, exercise backfills, migrate, verify 30 tables
+npm test                                  # isolated test database; includes record-type isolation and API tests
+npm run lint
 ```
 
-Indexes exist on `farmer_id`, `farm_id`, `cooperative_id`, `created_at`, `risk_level`, `planting_date`,
-`expected_harvest_date` and the common composite lookups (e.g. `(farm_id, risk_type, created_at)`).
+The verification script expects a backup from before this migration. It creates a uniquely named verification database and deletes only that database afterward. It requires PostgreSQL client binaries (default Windows path: PostgreSQL 18; override with PG_DUMP_PATH / PG_RESTORE_PATH). Backup files live in `backend/backups/` and include a schema snapshot and restore instructions.
 
 ## Backups
 

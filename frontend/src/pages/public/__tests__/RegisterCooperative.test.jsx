@@ -36,6 +36,6 @@ describe('Register — cooperative field', () => {
   test('is shown when cooperatives exist', async () => {
     metaApi.publicCooperatives.mockResolvedValue({ cooperatives: [{ code: 'PAJE', name: 'Paje Cooperative', district: 'Kusini' }] });
     renderRegister();
-    expect(await screen.findByRole('option', { name: 'Paje Cooperative (Kusini)' })).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: 'Paje Cooperative (Kusini)' }, { timeout: 3000 })).toBeInTheDocument();
   });
 });

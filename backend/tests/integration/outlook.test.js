@@ -1,9 +1,11 @@
 import { api, auth, login, farmByCode } from '../helpers.js';
+import { jest } from '@jest/globals';
 import prisma from '../../src/config/prisma.js';
-import { setOutlookProvider, getOutlookProvider } from '../../src/services/seaOutlookService.js';
+import { SeaOutlookService, setOutlookProvider, getOutlookProvider } from '../../src/services/seaOutlookService.js';
 import { localDate } from '../../src/ai/seaOutlook.js';
 
 afterAll(() => prisma.$disconnect());
+const TEST_NOW = new Date(`${localDate()}T08:00:00+03:00`);
 
 /** 72 local hourly times starting today 00:00 (Africa/Dar_es_Salaam). */
 function localHours() {
@@ -37,18 +39,23 @@ function fakeProvider({ fail = false } = {}) {
 
 /** Make the stored outlook (and each of its parts) `hours` old. */
 const ageStored = (farmId, hours) => {
-  const at = new Date(Date.now() - hours * 3600e3);
+  const at = new Date(TEST_NOW - hours * 3600e3);
   return prisma.seaOutlook.updateMany({ where: { farmId }, data: { fetchedAt: at, tideFetchedAt: at, rainFetchedAt: at } });
 };
 
 describe('GET /api/farms/:id/outlook — tides and drying weather', () => {
-  let farmer; let farm; let original;
+  let farmer; let farm; let original; let clock;
   beforeAll(async () => {
     original = getOutlookProvider();
+    const currentForFarm = SeaOutlookService.currentForFarm.bind(SeaOutlookService);
+    clock = jest.spyOn(SeaOutlookService, 'currentForFarm').mockImplementation((farm, options = {}) => currentForFarm(farm, { now: TEST_NOW, ...options }));
     farmer = await login('farmer');
     farm = await farmByCode(farmer, 'FARM002');
+    // Other channel tests also use FARM002; this suite must start without their cached forecast.
+    await prisma.seaOutlook.deleteMany({ where: { farmId: farm.id } });
   });
   afterEach(() => setOutlookProvider(original));
+  afterAll(() => clock.mockRestore());
 
   test('live forecast: today\'s low tides, next daylight work window, drying verdicts and approved advice', async () => {
     const provider = fakeProvider();
@@ -97,7 +104,7 @@ describe('GET /api/farms/:id/outlook — tides and drying weather', () => {
     await prisma.seaOutlook.deleteMany({ where: { farmId: farm.id } });
     setOutlookProvider(fakeProvider());
     await api().get(`/api/farms/${farm.id}/outlook`).set(auth(farmer)); // complete row
-    await prisma.seaOutlook.updateMany({ where: { farmId: farm.id }, data: { fetchedAt: new Date(Date.now() - 10 * 3600e3), tideFetchedAt: new Date(Date.now() - 10 * 3600e3), rainFetchedAt: new Date(Date.now() - 10 * 3600e3) } });
+    await ageStored(farm.id, 10);
     const full = fakeProvider();
     setOutlookProvider({ calls: [], async fetch(loc) { const r = await full.fetch(loc); return { ...r, rain: null, errors: { rain: 'HTTP 503' } }; } });
     const o = (await api().get(`/api/farms/${farm.id}/outlook`).set(auth(farmer))).body.data.outlook;
@@ -110,7 +117,7 @@ describe('GET /api/farms/:id/outlook — tides and drying weather', () => {
   test('never older than 48 h, even if the admin raised the environment cache age; nothing for today → null', async () => {
     await prisma.systemSetting.upsert({ where: { key: 'environment.maxCacheAgeHours' }, update: { value: 168 }, create: { key: 'environment.maxCacheAgeHours', value: 168 } });
     try {
-      await prisma.seaOutlook.updateMany({ where: { farmId: farm.id }, data: { fetchedAt: new Date(Date.now() - 60 * 3600e3), tideFetchedAt: null, rainFetchedAt: null } });
+      await prisma.seaOutlook.updateMany({ where: { farmId: farm.id }, data: { fetchedAt: new Date(TEST_NOW - 60 * 3600e3), tideFetchedAt: null, rainFetchedAt: null } });
       setOutlookProvider(fakeProvider({ fail: true }));
       expect((await api().get(`/api/farms/${farm.id}/outlook`).set(auth(farmer))).body.data.outlook).toBeNull();
     } finally {

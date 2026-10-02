@@ -20,7 +20,9 @@ export function fixtureOcean({ latitude, longitude, profile = 'NORMAL', at = new
   let chl = between(rng, 0.28, 0.5);
   switch (profile) {
     case 'HEAT':
-      anomaly = ago <= 7 ? between(rng, 1.25, 1.55) : between(rng, 0.2, 0.5);
+      // Deliberately held just under the CRITICAL threshold at baseline so the flow test can
+      // observe the HIGH → CRITICAL transition after a bad field observation.
+      anomaly = ago <= 7 ? between(rng, 0.95, 1.15) : between(rng, 0.2, 0.5);
       wave = between(rng, 0.25, 0.38);
       current = between(rng, 0.1, 0.2);
       break;

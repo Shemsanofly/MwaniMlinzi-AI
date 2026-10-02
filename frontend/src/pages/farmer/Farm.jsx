@@ -59,7 +59,7 @@ function CreateFarm({ ff, onDone, onCancel }) {
 
 function Row({ label, children }) {
   return (
-    <div className="flex justify-between gap-3 py-2">
+    <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 py-2 [overflow-wrap:anywhere]">
       <dt className="text-sm text-slate-500">{label}</dt>
       <dd className="text-right text-sm font-semibold text-slate-900">{children ?? '—'}</dd>
     </div>

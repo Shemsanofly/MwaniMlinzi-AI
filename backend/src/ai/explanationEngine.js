@@ -12,12 +12,12 @@ export const ExplanationEngine = {
     const lvl = LEVEL_LABELS[level][lang];
     const reasons = factors.filter((f) => f.direction === 'INCREASES').slice(0, 3).map((f) => (lang === 'sw' ? f.labelSw : f.label));
     if (lang === 'sw') {
-      const head = `${risk}: ${lvl} (${pct}%).`;
+      const head = `${risk}: ${lvl} (alama ya makadirio ${pct}/100).`;
       const why = reasons.length ? ` Sababu kuu: ${reasons.join('; ')}.` : ' Hakuna dalili kubwa za hatari kwa sasa.';
       const warn = insufficientData ? ' Tahadhari: data haitoshi kwa utabiri wa kuaminika.' : '';
       return head + why + warn;
     }
-    const head = `${risk} risk: ${LEVEL_LABELS[level].en.toUpperCase()} (${pct}%).`;
+    const head = `${risk} risk: ${LEVEL_LABELS[level].en.toUpperCase()} (estimated risk score ${pct}/100).`;
     const why = reasons.length ? ` Main reasons: ${reasons.join('; ')}.` : ' No strong risk signals at the moment.';
     const warn = insufficientData ? ' Caution: insufficient data for a reliable prediction.' : '';
     return head + why + warn;

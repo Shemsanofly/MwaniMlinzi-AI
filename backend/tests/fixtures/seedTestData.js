@@ -1,3 +1,4 @@
+import { farmRecords, events, environmentReadings } from '../../src/db/records.js';
 /**
  * TEST FIXTURE ONLY - loads deterministic data into the automated test database (<db>_test).
  * Run by tests/globalSetup.js; refuses to run unless NODE_ENV=test.
@@ -5,6 +6,7 @@
  * recommendations, alerts and forecasts are produced by the real engines.
  */
 import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 import prisma from '../../src/config/prisma.js';
 import { env } from '../../src/config/env.js';
 import { ensureDefaultSettings, clearSettingsCache } from '../../src/services/settingsService.js';
@@ -48,9 +50,9 @@ async function main() {
   // ── Roles & permissions ──
   const roleRows = {};
   for (const r of ROLES) roleRows[r.name] = await prisma.role.create({ data: r });
-  for (const [key, roles] of Object.entries(PERMISSIONS)) {
-    const perm = await prisma.permission.create({ data: { key } });
-    await prisma.rolePermission.createMany({ data: roles.map((r) => ({ roleId: roleRows[r].id, permissionId: perm.id })) });
+  for (const role of Object.values(roleRows)) {
+    const permissions = Object.entries(PERMISSIONS).filter(([, names]) => names.includes(role.name)).map(([key]) => key);
+    await prisma.role.update({ where: { id: role.id }, data: { permissions } });
   }
 
   // ── Species, action library ──
@@ -130,9 +132,9 @@ async function main() {
         lineCount: lines,
         status: 'ACTIVE',
         notes: 'Test fixture farm.',
-        location: { create: { latitude: lat, longitude: lon, locationName: `${coop.village} lagoon`, district: coop.district, region: coop.region, waterDepthM: round(between(rng, 0.5, 2.5), 1) } },
+        location: { latitude: lat, longitude: lon, locationName: `${coop.village} lagoon`, district: coop.district, region: coop.region, waterDepthM: round(between(rng, 0.5, 2.5), 1) },
       },
-      include: { location: true, species: true, farmer: { include: { user: true } } },
+      include: { species: true, farmer: { include: { user: true } } },
     });
     envProvider.setScenario(lat, lon, scenario);
     farms.push({ ...farm, scenario, age, lines, coop, owner });
@@ -153,7 +155,7 @@ async function main() {
       const cycle = await prisma.plantingCycle.create({ data: { farmId: farm.id, plantingDate: planted, expectedHarvestDate: expected, linesPlanted: farm.lines, status: failed ? 'FAILED' : 'HARVESTED' } });
       const estimate = farm.lines * farm.species.yieldKgDryPerLine * (farm.scenario === 'POOR_GROWTH' ? 0.95 : 1);
       if (lossCause) {
-        await prisma.lossRecord.create({ data: { farmId: farm.id, plantingCycleId: cycle.id, lossDate: addDays(expected, -int(3, 12)), cause: lossCause, percentLost: lossPct, quantityKg: round(estimate * lossPct / 100, 0), notes: 'Test loss record' } });
+        await farmRecords(prisma, 'LOSS').create({ data: { farmId: farm.id, plantingCycleId: cycle.id, lossDate: addDays(expected, -int(3, 12)), cause: lossCause, percentLost: lossPct, quantityKg: round(estimate * lossPct / 100, 0), notes: 'Test loss record' } });
       }
       if (!failed) {
         const growthFactor = farm.scenario === 'POOR_GROWTH' ? between(rng, 0.78, 0.86) : between(rng, 0.85, 1.08);
@@ -161,15 +163,16 @@ async function main() {
         const grade = lossPct > 25 ? 'C' : rng() < 0.7 ? 'A' : 'B';
         const dryingMethod = pick(['RACK', 'RACK', 'TARPAULIN', 'ROPE_HANGING']);
         const price = pick([800, 900, 1000, 1100, 1200]);
-        const h = await prisma.harvestRecord.create({
+        await prisma.harvestRecord.create({
           data: {
             farmId: farm.id, plantingCycleId: cycle.id, harvestDate: addDays(expected, int(0, 3)), estimatedQuantity: round(estimate, 0),
-            actualQuantity: actual, unit: 'KG_DRY', qualityGrade: grade, dryingMethod, dryingDurationDays: int(2, 5), pricePerKg: price, notes: 'Test harvest record', channel: 'SEED',
+            actualQuantity: actual, unit: 'KG_DRY', qualityGrade: grade,
+            moisturePercent: round(between(rng, 30, 38), 1), impurityPercent: round(between(rng, 1, 5), 1),
+            dryingMethod, dryingDurationDays: int(2, 5), groundContact: false, rainDuringDrying: rng() < 0.2,
+            pricePerKg: price, notes: 'Test harvest record', channel: 'SEED',
             ...harvestMetrics({ estimatedQuantity: round(estimate, 0), actualQuantity: actual, pricePerKg: price }),
           },
         });
-        await prisma.qualityRecord.create({ data: { farmId: farm.id, harvestRecordId: h.id, grade, moisturePercent: round(between(rng, 30, 38), 1), impurityPercent: round(between(rng, 1, 5), 1) } });
-        await prisma.dryingRecord.create({ data: { farmId: farm.id, harvestRecordId: h.id, method: dryingMethod, startDate: h.harvestDate, durationDays: h.dryingDurationDays, groundContact: false, rainDuringDrying: rng() < 0.2 } });
       }
 
       // Historical prediction → recommendation → action → outcome, labelled with what really happened
@@ -192,7 +195,7 @@ async function main() {
             farmId: farm.id, plantingCycleId: cycle.id, riskType: rt, probability: risk.probability, riskLevel: risk.level, confidence: risk.confidence,
             forecastHorizonHours: risk.horizonHours, modelType: 'RULE', modelVersion: risk.modelVersion, ruleProbability: risk.ruleProbability,
             features: { ...r.features, __insufficientData: false }, explanation: risk.explanation, explanationSw: risk.explanationSw, dataSource: 'LIVE', trigger: 'SEED', createdAt: at,
-            factors: { create: risk.factors.map(({ code, label, labelSw, value, contribution, direction }) => ({ code, label, labelSw, value, contribution, direction })) },
+            factors: risk.factors.map(({ code, label, labelSw, value, contribution, direction }) => ({ code, label, labelSw, value, contribution, direction })),
           },
         });
         pastPredictions += 1;
@@ -201,14 +204,14 @@ async function main() {
           const taken = rng() < 0.8;
           const fa = await prisma.farmerAction.create({ data: { farmId: farm.id, recommendationId: rec.id, userId: farm.owner.user.id, actionTaken: taken, description: action.action, performedAt: addDays(at, 1), channel: 'SEED' } });
           const materialized = (rt === 'HEAT_ICE_ICE' && lossCause === 'ICE_ICE') || (rt === 'STORM_LINE_DAMAGE' && lossCause === 'STORM');
-          const outcome = await prisma.actionOutcome.create({
+          const outcome = await farmRecords(prisma, 'OUTCOME').create({
             data: {
               farmId: farm.id, farmerActionId: fa.id, recommendationId: rec.id, predictionId: pred.id,
               outcomeType: !materialized ? 'NO_LOSS' : lossPct >= 30 ? 'MAJOR_LOSS' : 'MINOR_LOSS', lossPercent: materialized ? lossPct : 0,
               riskMaterialized: materialized, outcomeDate: addDays(at, 10), notes: 'Test outcome',
             },
           });
-          await prisma.modelFeedback.create({ data: { riskPredictionId: pred.id, userId: farm.owner.user.id, feedbackType: feedbackTypeFor(risk.level, materialized), notes: `Test outcome ${outcome.id}` } });
+          await events(prisma, 'FEEDBACK').create({ data: { riskPredictionId: pred.id, userId: farm.owner.user.id, feedbackType: feedbackTypeFor(risk.level, materialized), notes: `Test outcome ${outcome.id}` } });
         }
       }
     }
@@ -225,8 +228,8 @@ async function main() {
       const loc = { latitude: farm.location.latitude, longitude: farm.location.longitude, profile: farm.scenario, at };
       const o = fixtureOcean(loc);
       const w = fixtureWeather(loc);
-      const wRow = await prisma.weatherObservation.create({ data: { latitude: loc.latitude, longitude: loc.longitude, observedAt: at, source: 'LIVE', provider: 'test-fixture', ...pickW(w), createdAt: at } });
-      const oRow = await prisma.oceanObservation.create({ data: { latitude: loc.latitude, longitude: loc.longitude, observedAt: at, source: 'LIVE', provider: 'test-fixture', ...pickO(o), createdAt: at } });
+      const wRow = await environmentReadings(prisma, 'WEATHER').create({ data: { latitude: loc.latitude, longitude: loc.longitude, observedAt: at, source: 'LIVE', provider: 'test-fixture', ...pickW(w), createdAt: at } });
+      const oRow = await environmentReadings(prisma, 'OCEAN').create({ data: { latitude: loc.latitude, longitude: loc.longitude, observedAt: at, source: 'LIVE', provider: 'test-fixture', ...pickO(o), createdAt: at } });
       await prisma.environmentalObservation.create({
         data: {
           farmId: farm.id, observedAt: at, source: 'LIVE', weatherSource: 'LIVE', oceanSource: 'LIVE', weatherObservationId: wRow.id, oceanObservationId: oRow.id,
@@ -253,30 +256,32 @@ async function main() {
     const skipRecent = farm.scenario === 'NORMAL' && i % 4 === 1; // → missing-report alerts
     if (skipRecent) continue;
     const recent = addDays(new Date(), -(farm.scenario === 'NORMAL' ? int(2, 9) : int(1, 3)));
-    const obs = await prisma.farmObservation.create({ data: { farmId: farm.id, reporterId: farm.owner.user.id, observedAt: recent, confidence: 'MEDIUM', channel: 'SEED', ...observationFor(farm.scenario, farm) } });
-    if (obs.whitening) await prisma.diseaseObservation.create({ data: { observationId: obs.id, farmId: farm.id, diseaseType: 'ICE_ICE', severity: 'MEDIUM', percentAffected: obs.percentAffected } });
+    // Simulate a submitted observation in the isolated test database. Production SEED observations are excluded.
+    const obs = await prisma.farmObservation.create({ data: { farmId: farm.id, reporterId: farm.owner.user.id, observedAt: recent, confidence: 'MEDIUM', channel: 'APP', ...observationFor(farm.scenario, farm) } });
+    if (obs.whitening) await prisma.farmObservation.update({ where: { id: obs.id }, data: { diseases: [{ id: crypto.randomUUID(), observationId: obs.id, farmId: farm.id, diseaseType: 'ICE_ICE', severity: 'MEDIUM', percentAffected: obs.percentAffected, notes: null, createdAt: new Date().toISOString() }] } });
   }
 
   // ── Run the REAL AI pipeline for every farm: environment → risk → action → alerts ──
   console.log('[fixtures] running risk engine for 50 farms…');
-  for (const farm of farms) await RiskService.runForFarm(farm.id, { trigger: 'SEED' });
+  // Exercise the scheduled production path in this isolated test database.
+  for (const farm of farms) await RiskService.runForFarm(farm.id, { trigger: 'SCHEDULED' });
   await AlertService.checkMissingReports();
   await HarvestForecastService.generate();
 
   // ── Extension notes ──
   for (const farm of farms.filter((f) => f.scenario !== 'NORMAL').slice(0, 6)) {
-    await prisma.extensionNote.create({ data: { farmId: farm.id, authorId: admin.id, note: `Visited ${farm.farmCode}, discussed ${farm.scenario.toLowerCase().replace('_', ' ')} signs with the farmer.`, visitPriority: farm.scenario === 'NORMAL' ? 'LOW' : 'HIGH', createdAt: addDays(new Date(), -int(8, 20)) } });
+    await farmRecords(prisma, 'NOTE').create({ data: { farmId: farm.id, authorId: admin.id, note: `Visited ${farm.farmCode}, discussed ${farm.scenario.toLowerCase().replace('_', ' ')} signs with the farmer.`, visitPriority: farm.scenario === 'NORMAL' ? 'LOW' : 'HIGH', createdAt: addDays(new Date(), -int(8, 20)) } });
   }
 
-  await prisma.auditLog.create({ data: { userId: admin.id, action: 'SEED', entityType: 'System', details: { farms: farms.length, fixture: true } } });
+  await events(prisma, 'AUDIT').create({ data: { userId: admin.id, action: 'SEED', entityType: 'System', details: { farms: farms.length, fixture: true } } });
 
   // ── Summary ──
   const counts = {
     cooperatives: await prisma.cooperative.count(), farmers: await prisma.farmer.count(), farms: await prisma.farm.count(),
     plantingCycles: await prisma.plantingCycle.count(), environmentalObservations: await prisma.environmentalObservation.count(),
     observations: await prisma.farmObservation.count(), riskPredictions: await prisma.riskPrediction.count(), recommendations: await prisma.actionRecommendation.count(),
-    alerts: await prisma.alert.count(), harvests: await prisma.harvestRecord.count(), losses: await prisma.lossRecord.count(),
-    outcomes: await prisma.actionOutcome.count(), forecasts: await prisma.harvestForecast.count(), actionLibrary: await prisma.actionLibrary.count(),
+    alerts: await prisma.alert.count(), harvests: await prisma.harvestRecord.count(), losses: await farmRecords(prisma, 'LOSS').count(),
+    outcomes: await farmRecords(prisma, 'OUTCOME').count(), forecasts: await prisma.harvestForecast.count(), actionLibrary: await prisma.actionLibrary.count(),
   };
   const levels = await prisma.$queryRaw`SELECT DISTINCT ON (f.farm_code, p.risk_type) f.farm_code, p.risk_type, p.risk_level, round(p.probability::numeric, 2) AS p
     FROM risk_predictions p JOIN farms f ON f.id = p.farm_id WHERE f.farm_code IN ('FARM001','FARM002','FARM003','FARM004','FARM005') AND p.is_simulation = false

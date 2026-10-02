@@ -142,8 +142,8 @@ export const RISK_RULES = {
         code: 'HEAVY_RAIN',
         compute: (f) => (f.rainfallMm == null ? 0 : 0.03 * clamp(f.rainfallMm, 0, 50)),
         value: (f) => `${fmt(f.rainfallMm, 0)} mm`,
-        en: (f) => `Rainfall of ${fmt(f.rainfallMm, 0)} mm indicates stormy weather`,
-        sw: (f) => `Mvua ya mm ${fmt(f.rainfallMm, 0)} inaonyesha hali ya dhoruba`,
+        en: (f) => `Forecast rainfall of ${fmt(f.rainfallMm, 1)} mm contributes to the weather assessment`,
+        sw: (f) => `Utabiri wa mvua ya mm ${fmt(f.rainfallMm, 1)} unachangia tathmini ya hali ya hewa`,
       },
       {
         code: 'FARM_EXPOSURE',

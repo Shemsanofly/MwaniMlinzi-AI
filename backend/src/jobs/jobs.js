@@ -1,3 +1,4 @@
+import { events } from '../db/records.js';
 import prisma from '../config/prisma.js';
 import { EnvironmentService } from '../services/environmentService.js';
 import { RiskService } from '../services/riskService.js';
@@ -8,7 +9,7 @@ import { UssdService } from '../services/ussdService.js';
 import { SeaOutlookService } from '../services/seaOutlookService.js';
 import { DryingAlertService } from '../services/dryingAlertService.js';
 
-const activeFarms = () => prisma.farm.findMany({ where: { status: 'ACTIVE' }, include: { location: true } });
+const activeFarms = () => prisma.farm.findMany({ where: { status: 'ACTIVE' } });
 
 /** Job definitions. Each returns a JSON summary stored in `job_runs`. */
 export const JOBS = {
@@ -91,11 +92,11 @@ export async function runJob(name, trigger = 'MANUAL') {
   running.add(name);
   let row = null;
   try {
-    row = await prisma.jobRun.create({ data: { jobName: name, trigger, status: 'RUNNING' } });
+    row = await events(prisma, 'JOB').create({ data: { jobName: name, trigger, status: 'RUNNING' } });
     const summary = await job.run();
-    return await prisma.jobRun.update({ where: { id: row.id }, data: { status: 'SUCCESS', finishedAt: new Date(), summary } });
+    return await events(prisma, 'JOB').update({ where: { id: row.id }, data: { status: 'SUCCESS', finishedAt: new Date(), summary } });
   } catch (err) {
-    if (row) await prisma.jobRun.update({ where: { id: row.id }, data: { status: 'FAILED', finishedAt: new Date(), error: err.message } }).catch(() => {});
+    if (row) await events(prisma, 'JOB').update({ where: { id: row.id }, data: { status: 'FAILED', finishedAt: new Date(), error: err.message } }).catch(() => {});
     throw err;
   } finally {
     running.delete(name);

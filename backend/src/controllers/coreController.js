@@ -1,7 +1,9 @@
+import { events } from '../db/records.js';
 import prisma from '../config/prisma.js';
 import { ok } from '../utils/response.js';
-import { badRequest, notFound } from '../utils/errors.js';
+import { badRequest, forbidden, notFound } from '../utils/errors.js';
 import { audit } from '../utils/audit.js';
+import { hasRole, ROLES } from '../middleware/auth.js';
 import { assertFarmAccess, farmScope, isUuid } from '../services/accessService.js';
 import { EnvironmentService } from '../services/environmentService.js';
 import { RiskService } from '../services/riskService.js';
@@ -12,6 +14,11 @@ import { MLRiskProvider } from '../ai/mlRiskProvider.js';
 import { atConfig } from '../providers/africastalking/config.js';
 import { getSetting } from '../services/settingsService.js';
 import { addDays } from '../utils/dates.js';
+import { getGeocodingService } from '../services/geocodingService.js';
+
+export async function reverseGeocode(req, res) {
+  return ok(res, await getGeocodingService().reverse(req.valid.query));
+}
 
 /* ───────────── Environment ───────────── */
 
@@ -20,9 +27,9 @@ async function resolveFarmForEnv(req) {
   if (farmId) {
     if (!isUuid(farmId)) throw notFound('Farm');
     await assertFarmAccess(req.user, farmId);
-    return prisma.farm.findUnique({ where: { id: farmId }, include: { location: true } });
+    return prisma.farm.findUnique({ where: { id: farmId } });
   }
-  const farm = await prisma.farm.findFirst({ where: farmScope(req.user), include: { location: true }, orderBy: { farmCode: 'asc' } });
+  const farm = await prisma.farm.findFirst({ where: farmScope(req.user), orderBy: { farmCode: 'asc' } });
   if (!farm) throw badRequest('farmId is required');
   return farm;
 }
@@ -45,11 +52,14 @@ export async function environmentProviders(_req, res) {
 
 /* ───────────── Risk & simulation ───────────── */
 
-/** POST /api/risk/predict — runs the AI for a farm. With `overrides` it is a SIMULATION (stored, flagged, never shown as real). */
+/** POST /api/risk/predict — runs the AI for a farm. With `overrides` it is a SIMULATION (stored, flagged, never shown as real).
+ *  The what-if override path is admin-only; a plain prediction (no overrides) is open to any farmer or staff
+ *  with farm access. Keeps the route permissive while gating the simulated/experimental path. */
 export async function predict(req, res) {
   const { farmId, overrides } = req.valid.body;
   await assertFarmAccess(req.user, farmId);
   const hasOverrides = overrides && Object.values(overrides).some((v) => v !== undefined);
+  if (hasOverrides && !hasRole(req.user, ROLES.ADMIN)) throw forbidden('What-if simulations are admin-only');
   const baseline = hasOverrides ? await RiskService.latestForFarm(farmId) : null;
   const result = await RiskService.runForFarm(farmId, { trigger: 'MANUAL', overrides: hasOverrides ? overrides : null });
   await audit(req, hasOverrides ? 'SIMULATE_RISK' : 'RUN_RISK', 'Farm', farmId, hasOverrides ? { overrides } : null);
@@ -70,10 +80,9 @@ export async function flagPrediction(req, res) {
   if (!p) throw notFound('Prediction');
   await assertFarmAccess(req.user, p.farmId);
   const { reason, feedbackType } = req.valid.body;
-  const mp = await prisma.modelPrediction.findFirst({ where: { riskPredictionId: p.id } });
   const [updated, feedback] = await prisma.$transaction([
     prisma.riskPrediction.update({ where: { id: p.id }, data: { flagged: feedbackType !== 'CORRECT', flagReason: reason, flaggedById: req.user.id } }),
-    prisma.modelFeedback.create({ data: { riskPredictionId: p.id, modelId: mp?.modelId || null, userId: req.user.id, feedbackType, notes: reason } }),
+    events(prisma, 'FEEDBACK').create({ data: { riskPredictionId: p.id, modelId: p.mlModelId || null, userId: req.user.id, feedbackType, notes: reason } }),
   ]);
   await audit(req, 'FLAG_PREDICTION', 'RiskPrediction', p.id, { feedbackType, reason });
   return ok(res, { prediction: { id: updated.id, flagged: updated.flagged, flagReason: updated.flagReason }, feedback }, 'Feedback recorded');

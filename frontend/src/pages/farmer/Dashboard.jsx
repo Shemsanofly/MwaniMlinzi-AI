@@ -6,6 +6,7 @@ import {
   Info, RefreshCw, ShieldCheck, Sprout, Truck, Waves,
 } from 'lucide-react';
 import SeaOutlookCard from '../../components/outlook/SeaOutlookCard.jsx';
+import SeasonCard from '../../components/records/SeasonCard.jsx';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { useAuth } from '../../stores/AuthContext.jsx';
 import { useFarmerFarm } from '../../hooks/useFarmerFarm.js';
@@ -62,7 +63,7 @@ function CurrentRiskCard({ risk, onCheck, checking, checkError }) {
       <Card className="border-l-4 border-slate-300 p-4" data-testid="current-risk">
         <p className="text-sm font-semibold text-slate-500">{t('farmer.dashboard.currentRisk')}</p>
         <p className="mt-1 text-lg font-semibold text-slate-800">{risk.insufficientDataMessage?.[lang] || t('farmer.dashboard.insufficient')}</p>
-        <Link to="/farmer/observations" className="mt-2 inline-block font-semibold text-ocean-700">{t('actions.recordSymptoms')} →</Link>
+        <Link to="/farmer/observations" className="mt-2 inline-flex min-h-11 items-center font-semibold text-ocean-700">{t('actions.recordSymptoms')} →</Link>
       </Card>
     );
   }
@@ -85,7 +86,7 @@ function CurrentRiskCard({ risk, onCheck, checking, checkError }) {
         </p>
         {reasons.length > 0 && (
           <div>
-            <p className="text-sm font-semibold text-slate-700">{t('risk.why')}</p>
+            <p className="text-sm font-semibold text-slate-700">{t(['LOW', 'MEDIUM'].includes(main.riskLevel) ? 'farmer.risk.watchFor' : 'risk.why')}</p>
             <ul className="mt-1 space-y-1 text-base text-slate-700">
               {reasons.map((f) => <li key={f.code} className="flex gap-2"><span aria-hidden>•</span><span>{tx(f, 'simpleLabel')}</span></li>)}
             </ul>
@@ -123,6 +124,7 @@ function NextActionSimple({ risk, hasCycle, onRecordAction, actionLoading }) {
   return (
     <Card className="p-4" data-testid="next-action">
       <p className="text-lg font-semibold leading-snug text-slate-900">{tx(item, 'action')}</p>
+      {!item.validated && <p className="mt-2 text-sm text-amber-800">{t('intelligence.guidancePending')}</p>}
       <p className="mt-2 flex items-center gap-2 text-sm font-medium text-slate-700">
         <Clock className="h-4 w-4 text-ocean-700" aria-hidden />
         {t('farmer.dashboard.when')}: {t(`urgency.${item.urgency}`)}{next.recommendation.dueBy ? ` · ${t('farmer.dashboard.before', { date: dateTime(next.recommendation.dueBy, lang) })}` : ''}
@@ -205,6 +207,9 @@ function DashboardBody({ ff }) {
       {/* Today at sea: low-tide work window + drying weather (daily use) */}
       <SeaOutlookCard farmId={farmId} />
 
+      {/* This season: income, costs and profit from the record book */}
+      <SeasonCard farmId={farmId} />
+
       {/* Farm, crop age, expected harvest */}
       <Card className="mt-4 p-4">
         <div className="flex flex-wrap items-center gap-2">
@@ -221,14 +226,15 @@ function DashboardBody({ ff }) {
             <div className="rounded-lg bg-ocean-50 p-3">
               <p className="text-xs font-semibold text-ocean-700">{t('common.expectedHarvest')}</p>
               <p className="text-lg font-bold leading-tight text-slate-900">
-                {cycle.daysToHarvest != null && cycle.daysToHarvest <= 0 ? t('farmer.dashboard.harvestNow') : fmtDate(forecast?.expectedHarvestDate || cycle.expectedHarvestDate, lang)}
+                {fmtDate(cycle.expectedHarvestDate, lang)}
               </p>
               {forecast && <p className="text-sm text-slate-600">{t('farmer.dashboard.about', { kg: kg(forecast.riskAdjustedQuantityKg) })}</p>}
+              {cycle.daysToHarvest != null && cycle.daysToHarvest <= 0 && <p className="text-sm text-amber-800">{t('intelligence.inspectMaturity')}</p>}
             </div>
           </div>
         ) : (
           <Notice tone="info" className="mt-3" icon={CalendarClock}>
-            {t('farmer.dashboard.noCycle')} <Link to="/farmer/farm" className="font-semibold underline">{t('farmer.farm.recordPlanting')}</Link>
+            {t('farmer.dashboard.noCycle')} <Link to="/farmer/farm" className="inline-flex min-h-11 items-center font-semibold underline">{t('farmer.farm.recordPlanting')}</Link>
           </Notice>
         )}
       </Card>

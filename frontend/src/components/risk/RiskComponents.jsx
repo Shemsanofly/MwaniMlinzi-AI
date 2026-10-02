@@ -54,25 +54,30 @@ export function RiskCard({ prediction, compact = false, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
   if (!prediction) return null;
   const Icon = RISK_ICON[prediction.riskType] || ShieldAlert;
-  const style = riskStyle(prediction.riskLevel);
+  const style = prediction.insufficientData ? { border: 'border-slate-200', text: 'text-slate-600' } : riskStyle(prediction.riskLevel);
   return (
     <Card className={cx('border-l-4', style.border)}>
       <div className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Icon className={cx('h-5 w-5', style.text)} aria-hidden />
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <Icon className={cx('h-5 w-5 shrink-0', style.text)} aria-hidden />
             <h3 className="font-semibold text-slate-900">{t(`risk.type.${prediction.riskType}`)}</h3>
           </div>
-          <RiskBadge level={prediction.riskLevel} />
+          {!prediction.insufficientData && <RiskBadge level={prediction.riskLevel} />}
         </div>
-        <div className="mt-3 flex items-end justify-between gap-3">
-          <p className={cx('text-3xl font-bold', style.text)}>{pct(prediction.probability)}</p>
-          <div className="text-right text-xs text-slate-500">
-            <p>{t('risk.confidence')}: <span className="font-semibold text-slate-700">{pct(prediction.confidence)}</span></p>
-            <p>{t('risk.horizon', { hours: prediction.forecastHorizonHours })}</p>
-          </div>
-        </div>
-        <ProgressBar value={prediction.probability} level={prediction.riskLevel} className="mt-2" />
+        {!prediction.insufficientData && (
+          <>
+            <div className="mt-3 flex items-end justify-between gap-3">
+              <p className={cx('text-3xl font-bold', style.text)}>{pct(prediction.probability)}</p>
+              <div className="text-right text-xs text-slate-500">
+                <p>{t('risk.confidence')}: <span className="font-semibold text-slate-700">{pct(prediction.confidence)}</span></p>
+                <p>{t('risk.horizon', { hours: prediction.forecastHorizonHours })}</p>
+              </div>
+            </div>
+            <ProgressBar value={prediction.probability} level={prediction.riskLevel} className="mt-2" />
+            <p className="mt-2 text-xs text-slate-500">{t('intelligence.estimates')}</p>
+          </>
+        )}
         {prediction.insufficientData && <Notice tone="warning" className="mt-3">{t('risk.insufficient')}</Notice>}
         {!compact && <NoLiveDataNote predictions={[prediction]} className="mt-3" />}
         {prediction.flagged && <Badge className="mt-2 bg-amber-50 text-amber-800 ring-amber-300"><Flag className="h-3 w-3" />{t('risk.flagged')}</Badge>}

@@ -1,17 +1,24 @@
 # ai/ — model training from field outcomes
 
-The ML code used at runtime lives in `backend/src/ai/ml/` (feature vector, logistic regression, metrics). This folder holds
-the offline training script and the model files it produces. No Python is required — everything runs on Node.js.
+Two model paths ship with MwaniMlinzi; both are optional and the rule-based risk engine is always on.
 
-The rule-based risk engine is the default and is always available. ML models are optional and are trained **only on
-recorded field outcomes**; nothing is generated or invented.
+| Tier | Framework | Lives in | Required? |
+|---|---|---|---|
+| **1. Remote GBM service** | LightGBM (or XGBoost) via FastAPI | [`ai/ml-service/`](./ml-service/) | Optional — Python runtime |
+| **2. Local baseline** | Dependency-free JavaScript logistic regression | `backend/src/ai/ml/` | Zero deps — ships in Node backend |
+| **3. Baseline fallback** | Rule-based risk engine | `backend/src/rules/` | Always on |
+
+`MLRiskProvider.predict()` tries tier 1 first (deck slide 7 — "LightGBM or XGBoost"), falls through to tier 2
+when the service is unreachable or has no model for the risk type, then to tier 3. Every prediction is labelled
+with the model that actually produced it, so the UI never over-claims.
 
 ```
 ai/
+├── ml-service/              Python microservice (LightGBM/XGBoost). Optional; see ml-service/README.md
 ├── scripts/
-│   └── trainModel.js        load field outcomes → validate → preprocess → train → evaluate → save → register
+│   └── trainModel.js        load field outcomes → validate → preprocess → train → evaluate → save → register (logistic baseline)
 ├── datasets/                (unused; kept for exported datasets, git-ignored)
-└── models/                  <RISK_TYPE>_vN.json, <RISK_TYPE>_vN.metrics.json, last_training_summary.json (generated, git-ignored)
+└── models/                  <RISK_TYPE>_vN.json + .metrics.json + gbm/<RISK_TYPE>.txt (generated, git-ignored)
 ```
 
 ## Commands (from `backend/`)

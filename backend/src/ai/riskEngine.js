@@ -2,6 +2,7 @@ import { RISK_TYPES, levelFor } from './constants.js';
 import { buildFeatures, clamp, round } from './features.js';
 import { RiskRuleEngine } from './riskRuleEngine.js';
 import { ExplanationEngine } from './explanationEngine.js';
+import { validProbability } from './modelEvidence.js';
 
 /**
  * RiskEngine — hybrid AI orchestrator.
@@ -34,6 +35,7 @@ export const RiskEngine = {
 
       if (aiMode === 'HYBRID' && ml) {
         mlResult = await ml.predict(riskType, f);
+        if (mlResult && (mlResult.syntheticData !== false || !validProbability(mlResult.probability))) mlResult = null;
         if (mlResult) {
           const w = clamp(Number(blendWeight) || 0, 0, 1);
           probability = (1 - w) * rule.probability + w * mlResult.probability;

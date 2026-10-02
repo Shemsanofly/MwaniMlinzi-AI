@@ -23,7 +23,7 @@
       "HARVEST_WINDOW": "Harvest window",
       "DRYING_WEATHER": "Drying weather"
     },
-    "confidence": "Confidence",
+    "confidence": "Input completeness",
     "probability": "Probability",
     "horizon": "Next {hours} hours",
     "why": "Why?",
@@ -59,7 +59,7 @@
     "recordObservation": "Record observation",
     "recordHarvest": "Record harvest",
     "viewHistory": "View history",
-    "askAI": "Ask AI",
+    "askAI": "Ask a question",
     "save": "Save",
     "cancel": "Cancel",
     "submit": "Submit",
@@ -95,10 +95,10 @@
     "dashboard": "Dashboard",
     "farm": "My farm",
     "risk": "Risk",
-    "observations": "Observations",
+    "observations": "Reports",
     "harvest": "Harvest",
     "history": "History",
-    "assistant": "AI assistant",
+    "assistant": "Farm help",
     "farms": "Farms",
     "map": "Map",
     "forecast": "Forecast",
@@ -108,6 +108,9 @@
     "reviews": "Reviews",
     "users": "Users",
     "models": "Models",
+    "tokens": "Access tokens",
+    "impact": "Impact",
+    "tma": "TMA bulletin",
     "settings": "Settings",
     "audit": "Audit log",
     "notifications": "Notifications",
@@ -125,10 +128,13 @@
       "tools": "Tools"
     },
     "fieldOverview": "Field overview",
-    "whatIf": "What-if planner"
+    "whatIf": "What-if planner",
+    "records": "Record book"
   },
   "roles": {
     "FARMER": "Farmer",
+    "COOPERATIVE_ADMIN": "Cooperative staff",
+    "EXTENSION_OFFICER": "Extension officer",
     "ADMIN": "Admin"
   },
   "common": {
@@ -229,7 +235,7 @@
       "recalculated": "Risk recalculated.",
       "environment": "Sea and weather now",
       "alerts": "Alerts for this farm",
-      "currentRisk": "Current risk",
+      "currentRisk": "Estimated risk",
       "insufficient": "Not enough data to give reliable advice.",
       "keepChecking": "No special action needed. Keep checking your farm.",
       "when": "When",
@@ -277,7 +283,8 @@
         "MEDIUM": "Get ready to harvest soon",
         "HIGH": "Good time to harvest now",
         "CRITICAL": "Harvest as soon as possible"
-      }
+      },
+      "watchFor": "Things to watch"
     },
     "obs": {
       "title": "Report farm condition",
@@ -354,12 +361,12 @@
       "title": "Harvest and losses",
       "subtitle": "Record what you harvested or lost. This improves future forecasts.",
       "forecastTitle": "Harvest forecast",
-      "forecastSub": "System estimate for the current crop",
+      "forecastSub": "Planning estimate from recorded harvest history",
       "estimate": "Estimate",
       "expectedKg": "Expected (risk-adjusted)",
       "range": "Range: {low}–{high} kg",
       "forecastNote": "This is an estimate with uncertainty, not a promise.",
-      "noForecast": "No forecast yet. Record a planting to get one.",
+      "noForecast": "Harvest quantity is unavailable until enough harvest history is recorded.",
       "tabHarvest": "Record harvest",
       "tabLoss": "Record loss",
       "f": {
@@ -369,7 +376,7 @@
         "estimated": "Your estimate (kg)",
         "estimatedHint": "If empty, the system uses its own forecast.",
         "grade": "Quality grade",
-        "price": "Price per kg (TZS)",
+        "price": "Sold now? Price per kg (TSh)",
         "moisture": "Moisture (%)",
         "drying": "Drying method",
         "dryDays": "Drying days",
@@ -379,7 +386,8 @@
         "lossDate": "Date of loss",
         "cause": "Cause",
         "percentLost": "Percent lost (%)",
-        "quantityKg": "Quantity lost (kg)"
+        "quantityKg": "Quantity lost (kg)",
+        "priceHint": "If you sold this harvest now, the sale is added to your record book."
       },
       "noCycle": "No active planting — the harvest will be saved without a cycle.",
       "save": "Save harvest",
@@ -403,7 +411,7 @@
       "lostPct": "{n}% lost",
       "moreDetails": "Add more details (optional)",
       "saving": "Recording harvest…",
-      "savedKg": "✓ Done. A harvest of {{kg}} kg has been saved."
+      "savedKg": "✓ Done. A harvest of {kg} kg has been saved."
     },
     "history": {
       "title": "Farm history",
@@ -441,15 +449,15 @@
     },
     "assistant": {
       "title": "Farm helper",
-      "subtitle": "Ask about your farm. Answers come from your farm records and approved advice.",
+      "subtitle": "Ask a question about your farm.",
       "helperName": "MwaniMlinzi farm helper",
       "grounded": "Using records for {farm}",
-      "intro": "Ask me why your risk is high, what to do next, when to harvest, or about the sea. You can also tell me what you see on the farm.",
+      "intro": "Choose a question below, or tell us what you see on your farm.",
       "clear": "Clear chat",
       "thinking": "Checking your farm records…",
       "suggested": "Try asking",
       "q": {
-        "why": "Why is my risk high?",
+        "why": "Why this risk?",
         "todo": "What should I do?",
         "harvest": "When should I harvest?",
         "sea": "What are the sea conditions?",
@@ -459,7 +467,7 @@
       "inputLabel": "Your question",
       "placeholder": "Type your question…",
       "send": "Send",
-      "approvedAction": "Approved action",
+      "approvedAction": "Suggested action",
       "source": "Source",
       "draftTitle": "Report to record",
       "confirmRecord": "Confirm & record",
@@ -470,7 +478,8 @@
         "safety": "Safety policy",
         "llm": "Rephrased by AI ({name})"
       },
-      "footer": "The helper only uses your farm data and approved guidance. It does not give treatment or chemical advice — for that, contact your extension officer."
+      "footer": "The helper only uses your farm data and approved guidance. It does not give treatment or chemical advice — for that, contact your extension officer.",
+      "recordNote": "Answers use your saved farm reports and available forecasts. Forecasts can change."
     },
     "farm": {
       "title": "My farm",
@@ -637,6 +646,26 @@
     "regenerate": "Regenerate forecasts",
     "forecastsRegenerated": "{n} harvest forecasts regenerated from the latest risk predictions.",
     "dashboard": {
+      "title": "Cooperative dashboard",
+      "subtitle": "{code} · {district}",
+      "members": "Member farmers",
+      "activeFarms": "Active farms",
+      "highRisk": "High risk now",
+      "activeAlerts": "Active alerts",
+      "riskNow": "Risk right now",
+      "riskNowSub": "How the active farms rank by overall risk level today.",
+      "expected30": "Expected harvest, next 30 days",
+      "expected30Sub": "Risk-adjusted, with uncertainty band.",
+      "expected30Note": "Updated every morning from the risk engine and recent harvest history.",
+      "openForecast": "Open full forecast",
+      "rangeKg": "Range {low} – {high} kg",
+      "mapTitle": "Member farms",
+      "noFarmsMap": "No farm has a map point yet",
+      "alertsTitle": "Active alerts",
+      "noAlerts": "No active alerts — nice and quiet.",
+      "missingTitle": "Members who haven't reported recently",
+      "missingSub": "Visit or call to collect an observation.",
+      "noRiskYet": "No risk predictions yet — the engine runs each morning.",
       "moreAnalysis": "More analysis",
       "moreAnalysisSub": "Charts, harvest performance and outcomes"
     },
@@ -1305,6 +1334,151 @@
         "invalid": "Use numbers ≥ 0, chance ≤ 100, and caution values not above bad values."
       }
     },
+    "partner": {
+      "partnerView": "Partner view",
+      "allCoops": "All cooperatives",
+      "copyLink": "Copy link",
+      "copied": "Copied",
+      "forget": "Forget this token on this device",
+      "defaultNote": "Aggregated data from the MwaniMlinzi platform. No farmer-identifying information is shared through this link.",
+      "gate": {
+        "title": "Open your MwaniMlinzi partner view",
+        "subtitle": "Paste the access token your MwaniMlinzi contact sent you.",
+        "tokenLabel": "Access token",
+        "open": "Open view",
+        "invalidToken": "That token is invalid, revoked or has expired. Ask your contact for a new one.",
+        "unknown": "We couldn't open that view. Please try again.",
+        "help": "The token lets you see one cooperative's aggregated numbers. It never reveals individual farmers. Store it like a password."
+      },
+      "forecasts": {
+        "title": "Harvest forecasts",
+        "next7": "Next 7 days",
+        "next14": "Next 14 days",
+        "next30": "Next 30 days",
+        "range": "range {low} – {high} kg",
+        "confidence": "avg. confidence {v}%",
+        "weekly": "Weekly outlook",
+        "weeklySub": "Expected dry seaweed per cooperative week, with low/high uncertainty bands.",
+        "week": "Week",
+        "farms": "Farms",
+        "expected": "Expected",
+        "low": "Low",
+        "high": "High",
+        "empty": "No open planting cycles yet",
+        "emptyText": "There is nothing to forecast for this cooperative at the moment. Try again in a few days."
+      },
+      "adoption": {
+        "title": "Adoption & outcomes",
+        "farmers": "Farmers registered",
+        "activeFarms": "Active farms",
+        "observations": "Observations recorded",
+        "outcomes": "Outcomes recorded",
+        "alertsTitle": "Alert response (last 90 days)",
+        "alertsSub": "How farmers are responding to HIGH / CRITICAL alerts.",
+        "highIssued": "High-priority alerts issued",
+        "acknowledged": "Acknowledged",
+        "actionWithin48h": "Action within 48 h",
+        "of": "{n} of {total}"
+      }
+    },
+    "tma": {
+      "title": "TMA bulletin",
+      "subtitle": "Daily weather bulletin from the Tanzania Meteorological Authority. Used when WEATHER_PROVIDER=tma.",
+      "notConfigured": "TMA bulletins are not enabled",
+      "notConfiguredHint": "Set WEATHER_PROVIDER=tma and TMA_BULLETIN_PATH in the backend .env file to turn this on.",
+      "noFileYet": "No bulletin saved yet",
+      "pathLabel": "File path",
+      "currentTitle": "Current bulletin",
+      "fresh": "Fresh",
+      "stale": "Stale — falling back to cache",
+      "issuedAt": "Issued at",
+      "ageHours": "{h} h old",
+      "maxAge": "Max accepted age",
+      "maxAgeHint": "After this, readings fall through to CACHED or UNAVAILABLE.",
+      "regions": "Regions",
+      "editTitle": "Replace the bulletin",
+      "editSubtitle": "Paste the TMA JSON, upload a file, or start from the template. Saving writes the file atomically.",
+      "chooseFile": "Choose JSON file",
+      "useTemplate": "Use today's template",
+      "placeholder": "Paste a JSON bulletin here",
+      "pasteOrUpload": "Paste or upload a bulletin to begin.",
+      "readyToSave": "Ready — {n} regions, issued {when}",
+      "save": "Save bulletin",
+      "saved": "Saved. {n} regions are now live.",
+      "note": "This replaces the bulletin on disk immediately. The weather provider picks it up on the next scheduled job (06:00 or 14:00 Dar es Salaam time) and labels every reading with provider \"tma\".",
+      "err": {
+        "empty": "The bulletin is empty.",
+        "not-object": "The top-level value must be an object with issuedAt and regions.",
+        "bad-issued": "issuedAt must be an ISO timestamp like 2026-10-01T06:00:00Z.",
+        "no-regions": "regions must contain at least one entry.",
+        "bad-json": "That isn't valid JSON: {message}"
+      }
+    },
+    "tokens": {
+      "title": "Access tokens",
+      "subtitle": "Signed, revocable links for buyers, processors, programmes and NGOs. The token is the login.",
+      "labelField": "Label",
+      "labelPlaceholder": "e.g. North Unguja processor — forward supply",
+      "scope": "What they see",
+      "scopes": {
+        "FORECASTS": "Harvest forecasts",
+        "ADOPTION": "Adoption & outcomes"
+      },
+      "cooperative": "Cooperative",
+      "allCoops": "All cooperatives",
+      "expiry": "Expires in",
+      "days": "{n} days",
+      "issue": "Issue token",
+      "issueTitle": "Issue a token",
+      "issueSubtitle": "The plain token is shown once right after you issue it. Store it safely — it cannot be read again.",
+      "listTitle": "Issued tokens",
+      "listSubtitle": "{n} total",
+      "none": "No tokens have been issued yet",
+      "noneText": "Issue one above to give a buyer or NGO forward supply visibility.",
+      "by": "By {who}",
+      "expires": "Expires",
+      "lastUsed": "Last used",
+      "requests": "Calls",
+      "revoke": "Revoke",
+      "confirmRevoke": "Revoke the token \"{label}\"? It will stop working immediately.",
+      "revealTitle": "Token issued — copy it now",
+      "revealBody": "This is the only time you can see this token. Share it with the recipient over a secure channel; if you lose it, revoke it and issue a new one.",
+      "copy": "Copy",
+      "copied": "Copied",
+      "dismiss": "I've saved it",
+      "status": {
+        "active": "Active",
+        "revoked": "Revoked",
+        "expired": "Expired"
+      },
+      "howTitle": "How a holder uses it",
+      "howForecasts": "Forecasts: 7/14/30-day cooperative harvest totals with low/high uncertainty ranges, aggregated — no farmer-identifying data.",
+      "howAdoption": "Adoption: last 90 days of registered farmers, high-alert acknowledgement rate, action-within-48h rate and outcomes recorded."
+    },
+    "impact": {
+      "title": "Impact",
+      "subtitle": "Pre-registered pilot targets (deck slide 11), computed live from the real records in this database.",
+      "windowLabel": "Window",
+      "window": "Last {n} days",
+      "allCoops": "All cooperatives",
+      "cards": {
+        "farmers": "Farmers registered",
+        "activeFarms": "Active farms",
+        "observations": "Observations recorded",
+        "actions": "Actions taken",
+        "outcomes": "Outcomes recorded",
+        "highAlerts": "HIGH / CRITICAL alerts",
+        "acknowledged": "Acknowledged",
+        "within48h": "Action within 48 h"
+      },
+      "targets": {
+        "ack": "Target ≥ 75% acknowledged",
+        "action48h": "Target ≥ 60% action within 48 h",
+        "records": "Target ≥ 70% farmers with records"
+      },
+      "coopSelect": "Cooperative",
+      "note": "These are not promised outcomes — they are what the deployed system has actually produced so far."
+    },
     "audit": {
       "title": "Audit log",
       "subtitle": "Who did what, and when. Also message delivery logs.",
@@ -1337,7 +1511,8 @@
         "BuyerDemand": "Buyer demand",
         "HarvestForecast": "Harvest forecast",
         "UploadedFile": "Uploaded file",
-        "Assistant": "AI assistant"
+        "Assistant": "AI assistant",
+        "PublicAccessToken": "Access token"
       }
     },
     "at": {
@@ -1652,7 +1827,7 @@
       "phoneHint": "The phone number you registered with, e.g. 0777 123 456.",
       "sendCode": "Send code by SMS",
       "sending": "Sending code…",
-      "codeSent": "If {{phone}} is registered, a 6-digit code has been sent by SMS. It is valid for 15 minutes.",
+      "codeSent": "If {phone} is registered, a 6-digit code has been sent by SMS. It is valid for 15 minutes.",
       "code": "6-digit code from the SMS",
       "newPassword": "New password",
       "save": "Save new password",
@@ -1852,33 +2027,177 @@
   },
   "outlook": {
     "title": "Today at sea",
-    "subtitle": "Low tide and drying weather for your farm",
-    "lowTideAt": "Low tide {day} {time}",
+    "subtitle": "Weather and tide forecasts for your farm",
+    "lowTideAt": "Estimated low tide {day} {time}",
     "today": "today",
     "tomorrow": "tomorrow",
-    "workWindow": "Best time to work: {start}–{end}",
+    "workWindow": "Estimated low-water window: {start}–{end}",
     "noDaylightLow": "No daylight low tide in the forecast",
-    "drying": "Drying weather",
-    "rainChance": "rain chance {p}%",
+    "drying": "Remaining drying forecast today",
+    "rainChance": "peak hourly rain chance {p}%",
     "verdict": {
-      "GOOD": "Good day for drying",
-      "CAUTION": "Some rain possible",
-      "BAD": "Rain likely"
+      "GOOD": "Low forecast rain risk",
+      "CAUTION": "Rain possible in the forecast",
+      "BAD": "High forecast rain risk"
     },
     "verdictShort": {
-      "GOOD": "Good",
-      "CAUTION": "Some rain",
-      "BAD": "Rain likely"
+      "GOOD": "Low rain risk",
+      "CAUTION": "Rain possible",
+      "BAD": "High rain risk"
     },
     "noDrying": "No rain forecast available",
-    "next3": "Next 3 days",
+    "next3": "Drying forecast · 07:00–18:00",
     "source": {
-      "LIVE": "Live data",
-      "CACHED": "Last saved reading"
+      "LIVE": "Forecast",
+      "CACHED": "Saved forecast"
     },
     "updated": "Updated {when}",
     "none": "No sea forecast for this farm yet",
     "noneText": "The forecast appears once the farm has a map point and the forecast service can be reached.",
-    "noTide": "Tide forecast not available right now"
+    "noTide": "Tide forecast not available right now",
+    "refresh": "Refresh",
+    "currentTitle": "Weather now · API estimate",
+    "currentRain": "Rain indicated by the weather model",
+    "currentDry": "No rain indicated by the weather model",
+    "currentAmount": "{mm} mm over the preceding {minutes} minutes",
+    "noCurrent": "Current weather is unavailable. Forecast rain chance does not confirm rain now.",
+    "forecastWindow": "Forecast for {start}–{end}",
+    "forecastAmount": "{mm} mm forecast",
+    "dayEnded": "Today's drying hours have ended. Check the upcoming forecast below.",
+    "rainMeaning": "Rain chance is the highest hourly forecast in the drying window; rain may not occur at your farm.",
+    "details": "Sources and forecast details",
+    "weatherSource": "Weather",
+    "tideSource": "Tides"
+  },
+  "records": {
+    "title": "Record book",
+    "subtitle": "Your sales, costs and daily work — and what you earn from each planting.",
+    "fromRecords": "From your records",
+    "cycle": "Planting",
+    "allRecords": "All records",
+    "cycleLabel": "Planted {date}",
+    "current": "current",
+    "income": "Income",
+    "costs": "Costs",
+    "profit": "Profit",
+    "loss": "Loss",
+    "owed": "Owed to you",
+    "harvested": "Harvested",
+    "sold": "Sold",
+    "unsold": "Not sold yet",
+    "avgPrice": "Average price",
+    "perLine": "Profit per line",
+    "costsByCategory": "Where the money went",
+    "noCosts": "No costs recorded yet",
+    "tabs": {
+      "sales": "Sales",
+      "costs": "Costs",
+      "work": "Work"
+    },
+    "add": {
+      "sales": "Add sale",
+      "costs": "Add cost",
+      "work": "Add work"
+    },
+    "empty": {
+      "sales": "No sales recorded yet",
+      "costs": "No costs recorded yet",
+      "work": "No work recorded yet"
+    },
+    "emptyHint": "You can also record from any phone: dial the USSD code → 4 Rekodi mavuno.",
+    "paid": "Paid",
+    "pending": "Not yet paid",
+    "viaUssd": "via USSD",
+    "delete": "Delete",
+    "confirmDelete": "Yes, delete",
+    "cancel": "Cancel",
+    "f": {
+      "date": "Date",
+      "kg": "Kilograms sold (dried)",
+      "price": "Price per kg (TSh)",
+      "buyer": "Buyer",
+      "grade": "Grade",
+      "payment": "Payment",
+      "category": "Type of cost",
+      "amount": "Amount (TSh)",
+      "activity": "Activity",
+      "notes": "Notes",
+      "total": "Total: {total}"
+    },
+    "positive": "Enter a number greater than 0.",
+    "save": "Save",
+    "category": {
+      "SEEDLINGS": "Seedlings",
+      "ROPE_LINES": "Ropes / lines",
+      "STAKES": "Stakes",
+      "TYING_MATERIAL": "Tying material",
+      "LABOUR": "Labour",
+      "TRANSPORT": "Transport",
+      "DRYING_MATERIALS": "Drying materials (racks, tarpaulin)",
+      "OTHER": "Other"
+    },
+    "activity": {
+      "PLANTING": "Planting",
+      "TYING_SEEDLINGS": "Tying seedlings",
+      "CLEANING_LINES": "Cleaning lines",
+      "REPAIRING_LINES": "Repairing lines",
+      "HARVESTING": "Harvesting",
+      "DRYING": "Drying",
+      "OTHER": "Other"
+    },
+    "season": {
+      "title": "This season",
+      "open": "Open record book",
+      "none": "No sales or costs recorded yet. Keep a record to see your profit."
+    },
+    "wholeShillings": "Use whole shillings (no decimals)."
+  },
+  "geocoding": {
+    "loading": "Finding the place name for these coordinates…",
+    "found": "Place name filled from the nearest mapped place. Check the name, district and region; you can edit them.",
+    "unavailable": "Could not identify a place for these coordinates. Enter the location details manually or retry.",
+    "provider": "Coordinates are sent to OpenStreetMap / Nominatim to find the place name."
+  },
+  "intelligence": {
+    "missingInputs": "Unavailable inputs: {inputs}. These assessments use the remaining data.",
+    "inputs": {
+      "sstC": "sea temperature",
+      "sstAnomalyC": "verified local temperature baseline",
+      "cropAgeDays": "planting date",
+      "waveHeightM": "wave forecast",
+      "windSpeedKmh": "wind forecast",
+      "obsPoorCondition": "recent crop condition report",
+      "rainfallMm": "rain forecast"
+    },
+    "title": "Farm predictions and data",
+    "refresh": "Refresh farm analysis",
+    "rules": "Provisional assessment using farming rules",
+    "fieldModel": "Assessment using a model trained on recorded field outcomes",
+    "estimates": "Risk scores are estimates. Input completeness is not measured prediction accuracy.",
+    "insufficient": "Current data is insufficient for a reliable assessment. Record a farm observation and refresh.",
+    "sources": "Weather and ocean sources",
+    "CACHED": "Saved API data; check the dates below.",
+    "EXPIRED": "Saved data has expired. Refresh to request current data.",
+    "UNAVAILABLE": "No environmental data available.",
+    "weather": "Weather",
+    "ocean": "Ocean",
+    "externalForecasts": "External model forecasts, not farm sensor measurements. Wind, rain and wave inputs include forecast peaks over the next 72 hours.",
+    "records": "Your recorded farm data",
+    "recordCounts": "{observations} observations; {harvests} harvest records",
+    "harvestHistory": "{n} completed dry-harvest cycles; {min} required for a quantity estimate.",
+    "noYield": "Harvest quantity is unavailable until enough harvest history is recorded.",
+    "training": "Trained model readiness",
+    "trainingNote": "Training uses recorded field outcomes across farms. Each risk needs enough unique outcomes and at least 20 examples of each result.",
+    "trainingCount": "{n} / {min} labelled outcomes",
+    "ready": "Enough records to attempt training; validation is still required",
+    "chatConfigured": "Language model configured for question routing. Answers come from farm records.",
+    "chatRecords": "Assistant answers come from farm records. No live language model is configured.",
+    "assessed": "Assessment time",
+    "refreshed": "Analysis updated. Review source dates and availability above.",
+    "guidancePending": "This guidance is awaiting expert validation.",
+    "inspectMaturity": "Planned date has arrived. Inspect maturity before harvesting.",
+    "historicalRange": "Based on {n} completed cycles. Range shows past yield variation; accuracy is unverified.",
+    "recordAnswer": "Answers use recorded facts and labelled estimates. Past messages reflect data at the time of the answer.",
+    "riskScore": "Risk score"
   }
 }

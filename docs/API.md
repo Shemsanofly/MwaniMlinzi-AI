@@ -61,6 +61,16 @@ the farm owner and admins.
 
 ## Farms (FARMER, ADMIN)
 
+`GET /farms/:id/intelligence` returns real-data readiness, source timestamps, missing inputs and per-risk
+training counts for an accessible farm. `POST /farms/:id/risks/run` refreshes providers and recomputes risk and
+eligible harvest estimates. Rule scores and input completeness are not calibrated probability or accuracy.
+
+`GET /location/reverse?latitude=-6.267&longitude=39.534&language=en` requires FARMER or ADMIN authentication.
+It returns `status: FOUND|NOT_FOUND|UNAVAILABLE`, nullable `location` (place name, district, region, source,
+attribution and `NEAREST_MAPPED_PLACE` match type), coordinates and cache status. Missing address details
+are empty strings; provider failure never fabricates a place. Coordinates must be nonempty and within latitude
+±90 / longitude ±180. The endpoint has a separate request limit and shared provider throttling/cache.
+
 | Method | Path | Description |
 |---|---|---|
 | GET | `/farms?search&status&cooperativeId&district&riskLevel` | Farms in scope with `cropAgeDays`, `currentCycle`, `latestRisks{TYPE:{level,probability,confidence}}`, `overallRiskLevel`, `lastObservation`, `forecast`, `location` |
@@ -69,7 +79,7 @@ the farm owner and admins.
 | PATCH | `/farms/:id` | Update farm (incl. `status`) |
 | GET/POST | `/farms/:id/cycles` | Planting cycles / record planting `{ plantingDate, expectedHarvestDate?, linesPlanted, seedQuantityKg?, notes? }` (409 if a cycle is active) |
 | PATCH | `/farms/:id/cycles/:cycleId` | `{ status: ACTIVE\|HARVESTED\|FAILED }` |
-| GET/POST | `/farms/:id/observations` | Observation `{ cropCondition: GOOD\|FAIR\|POOR, whitening, breakage, epiphytes, diseaseSymptoms, unusualGrowth, growthCondition?, waterAppearance?, lineCondition?, anchorCondition?, percentAffected?, notes?, confidence, imageFileId?, observedAt? }` → `{ observation, risk }` — **the risk engine re-runs immediately** and `risk` is the full new result incl. alerts |
+| GET/POST | `/farms/:id/observations` | Observation `{ cropCondition: GOOD\|FAIR\|POOR, whitening, breakage, epiphytes?, diseaseSymptoms?, unusualGrowth, growthCondition?, waterAppearance?, lineCondition?, anchorCondition?, percentAffected?, notes?, confidence, imageFileId?, observedAt? }` → `{ observation, risk }` — **the risk engine re-runs immediately** and `risk` is the full new result incl. alerts. Unanswered `epiphytes` and `diseaseSymptoms` remain `null`; explicit `false` means the farmer reported no symptom. |
 | GET/POST | `/farms/:id/harvests` | `{ harvestDate, actualQuantity, estimatedQuantity?, unit: KG_DRY\|KG_WET, qualityGrade?, dryingMethod?, dryingDurationDays?, pricePerKg?, moisturePercent?, impurityPercent?, groundContact?, rainDuringDrying?, notes?, closeCycle=true }` → harvest with `differenceQuantity`, `lossPercent`, `totalValue` (estimate defaults to the current forecast) |
 | GET/POST | `/farms/:id/losses` | `{ lossDate, cause: ICE_ICE\|STORM\|EPIPHYTES\|GRAZING\|THEFT\|POOR_GROWTH\|OTHER, percentLost, quantityKg?, notes? }` |
 | GET | `/farms/:id/risks` | `{ predictions[], nextAction, insufficientData, insufficientDataMessage{en,sw}, modelStatus{mode,label}, calculatedAt }` (see prediction shape below) |
@@ -78,10 +88,15 @@ the farm owner and admins.
 | GET | `/farms/:id/recommendations?status` | Recommendations with action item, prediction and farmer actions |
 | PATCH | `/farms/:id/recommendations/:recId` | `{ status: ACKNOWLEDGED\|COMPLETED\|DISMISSED }` |
 | GET/POST | `/farms/:id/actions` | Farmer action `{ recommendationId?, actionTaken, description?, performedAt?, notes? }` (marks the recommendation COMPLETED/DISMISSED) |
-| GET/POST | `/farms/:id/outcomes` | Outcome `{ farmerActionId?, recommendationId?, predictionId?, outcomeType: NO_LOSS\|MINOR_LOSS\|MAJOR_LOSS\|TOTAL_LOSS\|HARVESTED, lossPercent?, riskMaterialized?, outcomeDate?, notes? }` → `{ outcome, feedback }` — links prediction → recommendation → action and auto-creates a `model_feedback` label (CORRECT / FALSE_POSITIVE / FALSE_NEGATIVE) |
+| GET/POST | `/farms/:id/outcomes` | Outcome `{ farmerActionId?, recommendationId?, predictionId?, outcomeType: NO_LOSS\|MINOR_LOSS\|MAJOR_LOSS\|TOTAL_LOSS\|HARVESTED, lossPercent?, riskMaterialized?, outcomeDate?, notes? }` → `{ outcome, feedback }` — links prediction → recommendation → action and auto-creates a `event_logs` (FEEDBACK) label (CORRECT / FALSE_POSITIVE / FALSE_NEGATIVE) |
 | GET | `/farms/:id/history` | Unified timeline `{ events[{ type, date, id, data }] }` |
 | GET | `/farms/:id/environment?days` | `{ current, history[], providers }` |
-| GET | `/farms/:id/outlook` | `{ outlook }` — `null`, or `{ fetchedAt, source: LIVE\|CACHED, providers, note{en,sw}, tides[], today{ date, lowTides[], nextWorkWindow, drying{ verdict GOOD\|CAUTION\|BAD, maxRainProbability, rainMm }, advice }, days[] }` (local Africa/Dar_es_Salaam times) |
+| GET | `/farms/:id/records/summary?cycleId` | `{ cycle, cycles[], summary }` — record book for a planting cycle (default: the active, else most recent): `harvestedKg, soldKg, unsoldKg, incomeTzs, owedTzs, costsTzs, costsByCategory, profitTzs, profitPerLine, averagePricePerKg, counts` — farmer's own entries only |
+| GET/POST | `/farms/:id/sales` | sale `{ saleDate, quantityKg, pricePerKg (TSh), buyerName?, qualityGrade?, paymentStatus PAID\|PENDING, notes?, cycleId? }` → `totalTzs` computed. A harvest recorded with a price also creates one sale. |
+| GET/POST | `/farms/:id/costs` | cost `{ costDate, category SEEDLINGS\|ROPE_LINES\|STAKES\|TYING_MATERIAL\|LABOUR\|TRANSPORT\|DRYING_MATERIALS\|OTHER, amountTzs, notes?, cycleId? }` |
+| GET/POST | `/farms/:id/work` | work `{ workDate, activity PLANTING\|TYING_SEEDLINGS\|CLEANING_LINES\|REPAIRING_LINES\|HARVESTING\|DRYING\|OTHER, notes?, cycleId? }` |
+| DELETE | `/farms/:id/sales\|costs\|work/:recordId` | the farm's farmer or an admin; audit-logged |
+| GET | `/farms/:id/outlook` | `{ outlook }` — `null`, or `{ fetchedAt, source: LIVE\|CACHED, providers, partTimes, current{ observedAt, precipitationMm, intervalMinutes, temperatureC, dataKind: MODEL_ESTIMATE }, note{en,sw}, tides[], today{ date, lowTides[], nextWorkWindow, drying{ verdict GOOD\|CAUTION\|BAD, maxRainProbability, rainMm, windowStart, windowEnd }, dryingDayEnded, advice }, days[] }`. Current weather is nullable and hidden after 30 minutes; rain chance is a peak hourly forecast, not current rain. Today uses remaining complete drying hours; after 18:00 it is removed. Local Africa/Dar_es_Salaam times. |
 | GET | `/farms/:id/alerts?includeSimulation` | Farm alerts |
 | GET/POST | `/farms/:id/notes` | Field notes `{ note, visitPriority?, visitBy? }` (POST: ADMIN) |
 | GET | `/farms/predictions/:predictionId` | One prediction with factors |
@@ -170,7 +185,7 @@ Intents: `WHY_RISK`, `WHAT_TO_DO`, `HARVEST`, `ENVIRONMENT`, `HISTORY`, `RISK_ST
 
 Called by Africa's Talking, not by the web app. They are form-urlencoded, mounted outside the normal API rate limit,
 with their own limit of 300/min. Every URL must carry `?secret=<AT_CALLBACK_SECRET>` (or the `X-Callback-Secret` header):
-a missing or wrong secret → 403, and no secret configured → 503. Each call is logged in `integration_events`.
+a missing or wrong secret → 403, and no secret configured → 503. Each call is logged in `event_logs` (INTEGRATION).
 Full setup: [AFRICASTALKING.md](AFRICASTALKING.md).
 
 | Method | Path | Body (from AT) | Response |
@@ -185,7 +200,7 @@ with an optional farm code after the command.
 ## Uploads
 
 `POST /uploads` (multipart field `image`; JPEG/PNG/WebP; ≤ `MAX_UPLOAD_MB`) → `{ file: { id, mimeType, sizeBytes } }`. The file
-type is verified by magic bytes, stored under a random name, and metadata saved in `uploaded_files`. Use the id as
+type is verified by magic bytes, stored under a random name, and metadata saved in `event_logs` (UPLOAD). Use the id as
 `imageFileId` in an observation. `GET /uploads/:id` streams the image to its uploader, admins, or users with access to the
 farm the observation belongs to.
 

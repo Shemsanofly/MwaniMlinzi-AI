@@ -24,7 +24,7 @@ export default function Notifications() {
         subtitle={t('notifications.subtitle')}
         actions={unread > 0 && <Button variant="secondary" size="sm" icon={CheckCheck} loading={readAll.isPending} onClick={() => readAll.mutate()}>{t('actions.markAllRead')}</Button>}
       />
-      <div role="tablist" aria-label={t('notifications.filter')} className="flex gap-2 overflow-x-auto">
+      <div role="tablist" aria-label={t('notifications.filter')} className="flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <button
             key={f.key}
@@ -32,7 +32,7 @@ export default function Notifications() {
             role="tab"
             aria-selected={filter === f.key}
             onClick={() => setFilter(f.key)}
-            className={cx('shrink-0 rounded-full px-4 py-2 text-sm font-semibold ring-1 ring-inset transition', filter === f.key ? 'bg-ocean-700 text-white ring-ocean-700' : 'bg-white text-slate-700 ring-slate-200 hover:bg-slate-50')}
+            className={cx('min-h-11 rounded-full px-4 py-2 text-sm font-semibold ring-1 ring-inset transition', filter === f.key ? 'bg-ocean-700 text-white ring-ocean-700' : 'bg-white text-slate-700 ring-slate-200 hover:bg-slate-50')}
           >
             {t(`notifications.filters.${f.key}`)}{f.key === 'unread' && unread > 0 ? ` (${unread})` : ''}
           </button>

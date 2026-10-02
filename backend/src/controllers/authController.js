@@ -11,7 +11,8 @@ import { SMSService } from '../services/smsService.js';
 // Used to equalise response time when the email does not exist.
 const DUMMY_HASH = bcrypt.hashSync('timing-equaliser-not-a-password', 12);
 
-const primaryRole = (roles) => ['ADMIN', 'FARMER'].find((r) => roles.includes(r)) || roles[0];
+// Order matters: more-privileged seats win so the chosen home surface fits the role's day job.
+const primaryRole = (roles) => ['ADMIN', 'EXTENSION_OFFICER', 'COOPERATIVE_ADMIN', 'FARMER'].find((r) => roles.includes(r)) || roles[0];
 const withPrimary = (u) => ({ ...u, primaryRole: primaryRole(u.roles) });
 
 export async function register(req, res) {

@@ -50,7 +50,7 @@ describe('Open-Meteo outlook provider (tides + drying rain)', () => {
     ]);
     const r = await new OpenMeteoOutlookProvider().fetch({ latitude: -6.27, longitude: 39.56 });
     expect(r.tide).toEqual({ times, levels: [-1.1, -1.2, -1.0] });
-    expect(r.rain).toEqual({ times, probability: [10, 20, 15], mm: [0, 0, 0.1] });
+    expect(r.rain).toEqual({ times, probability: [10, 20, 15], mm: [0, 0, 0.1], current: null });
     expect(r.providers).toEqual({ tide: 'open-meteo-marine', rain: 'open-meteo' });
     expect(String(global.fetch.mock.calls[0][0])).toMatch(/timezone=Africa%2FDar_es_Salaam/);
   });

@@ -2,7 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../stores/AuthContext.jsx';
 import { PageLoader, ErrorState } from '../components/ui/index.jsx';
 
-/** Requires login; if `roles` is given, one of them (ADMIN always passes). */
+/** Requires login; if `roles` is given, one of them (ADMIN always passes — superadmins see every tree). */
 export default function ProtectedRoute({ roles }) {
   const { status, user, hasRole } = useAuth();
   const location = useLocation();

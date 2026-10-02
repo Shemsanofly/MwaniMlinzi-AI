@@ -18,7 +18,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "ai:train": "node ../ai/scripts/trainModel.js"
+    "ai:train": "node ../ai/scripts/trainModel.js",
+    "at:diagnose": "node scripts/at-sms-diagnose.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

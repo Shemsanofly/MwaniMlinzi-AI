@@ -30,7 +30,7 @@ export default function LanguageSwitch({ className = '' }) {
           lang={o.code}
           onClick={() => choose(o.code)}
           aria-pressed={lang === o.code}
-          className={cx('relative z-10 rounded-[10px] px-2.5 py-1.5 text-center transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-500/40', lang === o.code ? 'text-ocean-900' : 'text-slate-500 hover:text-slate-800')}
+          className={cx('relative z-10 min-h-11 min-w-11 rounded-[10px] px-2.5 py-1.5 text-center transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-500/40', lang === o.code ? 'text-ocean-900' : 'text-slate-500 hover:text-slate-800')}
         >
           <span className="sm:hidden">{o.short}</span>
           <span className="hidden sm:inline">{o.long}</span>

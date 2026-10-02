@@ -9,6 +9,7 @@ import { useAuth } from '../../stores/AuthContext.jsx';
 import { farmApi } from '../../api/endpoints.js';
 import FarmMap from '../../components/map/FarmMap.jsx';
 import SeaOutlookCard from '../../components/outlook/SeaOutlookCard.jsx';
+import RecordBookView from '../../components/records/RecordBookView.jsx';
 import { EnvironmentSummary, NextActionCard, RiskCard, ModelStatusBadge } from '../../components/risk/RiskComponents.jsx';
 import {
   Badge, Button, Card, EmptyState, ErrorState, Field, FormError, Notice, PageHeader, PageLoader, RiskBadge, SourceBadge, Spinner, Table, cx,
@@ -256,6 +257,7 @@ function RecordsTab({ farm }) {
   ];
   return (
     <div className="space-y-4">
+      <Section title={t('records.title')} subtitle={t('records.fromRecords')}><RecordBookView farmId={farm.id} readOnly /></Section>
       <Section title={t('extension.farm.harvests')} bodyClassName="p-0 sm:p-0"><Loading q={harvests}><Table columns={hCols} rows={harvests.data?.harvests || []} empty={<div className="p-4 text-sm text-slate-500">{t('extension.farm.noHarvests')}</div>} /></Loading></Section>
       <Section title={t('extension.farm.losses')} bodyClassName="p-0 sm:p-0"><Loading q={losses}><Table columns={lCols} rows={losses.data?.losses || []} empty={<div className="p-4 text-sm text-slate-500">{t('extension.farm.noLosses')}</div>} /></Loading></Section>
       <Section title={t('coop.outcomes.title')} subtitle={t('coop.outcomes.subtitle')} bodyClassName="p-0 sm:p-0"><Loading q={outcomes}><Table columns={oCols} rows={outcomes.data?.outcomes || []} empty={<div className="p-4 text-sm text-slate-500">{t('coop.outcomes.empty')}</div>} /></Loading></Section>

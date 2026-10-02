@@ -13,7 +13,7 @@ const phone = z.string().trim().max(32)
 const password = z.string().min(8, 'Password must be at least 8 characters').max(128)
   .regex(/[A-Za-z]/, 'Password must contain a letter').regex(/[0-9]/, 'Password must contain a number');
 const optEmail = z.union([z.string().trim().toLowerCase().email().max(200), z.literal('').transform(() => null)]).optional().nullable();
-const activeRole = z.enum(['FARMER', 'ADMIN']);
+const activeRole = z.enum(['FARMER', 'COOPERATIVE_ADMIN', 'EXTENSION_OFFICER', 'ADMIN']);
 
 export const registerSchema = z.object({
   fullName: trimmed(120),
@@ -59,6 +59,12 @@ export const resetPasswordSchema = z.object({
   newPassword: password,
 });
 
+export const reverseGeocodeSchema = z.object({
+  latitude: z.string().trim().min(1).pipe(z.coerce.number().min(-90).max(90)),
+  longitude: z.string().trim().min(1).pipe(z.coerce.number().min(-180).max(180)),
+  language: z.enum(['en', 'sw']).default('en'),
+});
+
 export const farmSchema = z.object({
   name: trimmed(120),
   farmCode: z.string().trim().toUpperCase().regex(/^[A-Z0-9-]{3,20}$/).optional(),
@@ -99,8 +105,8 @@ export const observationSchema = z.object({
   cropCondition: z.enum(['GOOD', 'FAIR', 'POOR']),
   whitening: bool.default(false),
   breakage: bool.default(false),
-  epiphytes: bool.default(false),
-  diseaseSymptoms: bool.default(false),
+  epiphytes: bool.nullable().default(null),
+  diseaseSymptoms: bool.nullable().default(null),
   unusualGrowth: bool.default(false),
   growthCondition: z.enum(['NORMAL', 'SLOW', 'UNUSUAL']).optional().nullable(),
   waterAppearance: z.enum(['CLEAR', 'TURBID', 'DISCOLORED']).optional().nullable(),
@@ -125,13 +131,45 @@ export const harvestSchema = z.object({
   qualityGrade: z.enum(['A', 'B', 'C', 'REJECT']).optional().nullable(),
   dryingMethod: z.enum(['RACK', 'TARPAULIN', 'ROPE_HANGING', 'GROUND']).optional().nullable(),
   dryingDurationDays: num(0, 60).optional().nullable(),
-  pricePerKg: num(0, 1e6).optional().nullable(),
+  pricePerKg: z.coerce.number().int('Use whole shillings').min(0).max(1e6).optional().nullable(),
   notes: optText(),
   closeCycle: bool.default(true),
   moisturePercent: num(0, 100).optional().nullable(),
   impurityPercent: num(0, 100).optional().nullable(),
   groundContact: bool.optional(),
   rainDuringDrying: bool.optional(),
+}).refine((v) => !v.pricePerKg || v.actualQuantity * v.pricePerKg <= 2000000000, { message: 'The sale total is too large. Check the kilograms and the price per kg.', path: ['pricePerKg'] });
+
+// ── Record book (TZS whole shillings, kg of dried seaweed) ──
+const MAX_TOTAL_TZS = 2000000000;
+const positive = (max) => z.coerce.number().gt(0).max(max);
+const shillings = (max) => z.coerce.number().int('Use whole shillings').min(1).max(max);
+/** A record date: required (null is not 1970) and not later than today in Zanzibar (UTC+3). */
+const recordDate = z.preprocess((v) => (v === null || v === '' ? undefined : v), z.coerce.date())
+  .refine((d) => d.getTime() <= Date.now() + 3 * 3600e3 + 86400e3 - 1, 'The date cannot be in the future');
+const cycleRef = z.string().uuid().optional().nullable();
+export const saleSchema = z.object({
+  saleDate: recordDate,
+  quantityKg: positive(1e6),
+  pricePerKg: shillings(1e6),
+  buyerName: z.string().trim().max(120).optional().nullable(),
+  qualityGrade: z.enum(['A', 'B', 'C', 'REJECT']).optional().nullable(),
+  paymentStatus: z.enum(['PAID', 'PENDING']).default('PAID'),
+  notes: optText(500),
+  cycleId: cycleRef,
+}).refine((v) => v.quantityKg * v.pricePerKg <= MAX_TOTAL_TZS, { message: 'The sale total is too large. Check the kilograms and the price per kg.', path: ['pricePerKg'] });
+export const costSchema = z.object({
+  costDate: recordDate,
+  category: z.enum(['SEEDLINGS', 'ROPE_LINES', 'STAKES', 'TYING_MATERIAL', 'LABOUR', 'TRANSPORT', 'DRYING_MATERIALS', 'OTHER']),
+  amountTzs: shillings(1e8),
+  notes: optText(500),
+  cycleId: cycleRef,
+});
+export const workSchema = z.object({
+  workDate: recordDate,
+  activity: z.enum(['PLANTING', 'TYING_SEEDLINGS', 'CLEANING_LINES', 'REPAIRING_LINES', 'HARVESTING', 'DRYING', 'OTHER']),
+  notes: optText(500),
+  cycleId: cycleRef,
 });
 
 export const lossSchema = z.object({
@@ -241,6 +279,13 @@ export const adminUserUpdateSchema = z.object({
 
 export const settingUpdateSchema = z.object({ value: z.any() });
 export const modelStatusSchema = z.object({ status: z.enum(['ACTIVE', 'RETIRED', 'TRAINED']) });
+
+export const publicAccessTokenCreateSchema = z.object({
+  label: trimmed(120),
+  scope: z.enum(['FORECASTS', 'ADOPTION']),
+  cooperativeId: z.string().uuid().optional().nullable(),
+  expiresInDays: z.coerce.number().int().min(1).max(730).optional(),
+});
 
 export const forecastQuerySchema = z.object({
   cooperativeId: z.string().uuid().optional(),

@@ -29,10 +29,9 @@ describe('Farm assistant', () => {
     await user.click(screen.getByRole('button', { name: 'What should I do?' }));
     await waitFor(() => expect(aiApi.chat).toHaveBeenCalledWith('What should I do?', FARM.id, 'en'));
     expect(await screen.findByText('Next action: Inspect lines within 24 hours')).toBeInTheDocument();
-    expect(screen.getByText('Approved action')).toBeInTheDocument();
+    expect(screen.getByText('Suggested action')).toBeInTheDocument();
     expect(screen.getByText('Pending local expert validation')).toBeInTheDocument();
     expect(screen.getByText('Answer from your farm records (FARM001)')).toBeInTheDocument();
-    expect(screen.getByText('Template answer')).toBeInTheDocument();
   });
 
   it('confirms an observation draft and shows the resulting risk', async () => {

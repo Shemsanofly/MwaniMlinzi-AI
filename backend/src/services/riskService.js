@@ -7,6 +7,7 @@ import { FarmContextService } from './farmContextService.js';
 import { AlertService } from './alertService.js';
 import { getAllSettings } from './settingsService.js';
 import { simpleReason } from '../ai/simpleReasons.js';
+import { HarvestForecastService } from './harvestForecastService.js';
 
 export function serializeAction(a) {
   if (!a) return null;
@@ -43,6 +44,8 @@ export function serializeRecommendation(r) {
 }
 
 export function serializePrediction(p) {
+  const stale = Date.now() - new Date(p.createdAt).getTime() > p.forecastHorizonHours * 3600000;
+  const legacyAssessment = p.features?.__assessmentPolicy !== 'real-inputs-v2';
   return {
     id: p.id,
     farmId: p.farmId,
@@ -55,18 +58,23 @@ export function serializePrediction(p) {
     modelVersion: p.modelVersion,
     ruleProbability: p.ruleProbability,
     mlProbability: p.mlProbability,
-    explanation: p.explanation,
-    explanationSw: p.explanationSw,
+    explanation: legacyAssessment ? 'Refresh this assessment to apply current real-data checks.' : p.explanation,
+    explanationSw: legacyAssessment ? 'Sasisha tathmini hii kutumia ukaguzi wa data halisi wa sasa.' : p.explanationSw,
     dataSource: p.dataSource,
     trigger: p.trigger,
     isSimulation: p.isSimulation,
     flagged: p.flagged,
     flagReason: p.flagReason,
     features: p.features,
-    insufficientData: p.features?.__insufficientData ?? false,
+    insufficientData: !!(p.features?.__insufficientData || stale || p.flagged || p.trigger === 'SEED' || legacyAssessment),
+    legacyAssessment,
+    stale,
+    assessmentKind: p.modelType === 'RULE' ? 'RULE_ESTIMATE' : 'FIELD_MODEL_ESTIMATE',
+    scoreMeaning: 'Risk score; not a verified chance of loss. Confidence measures input completeness, not measured accuracy.',
+    missingInputs: p.features?.__missing || [],
     createdAt: p.createdAt,
-    factors: (p.factors || []).map(({ id, predictionId, ...f }) => { const s = simpleReason(f.code, f.direction); return { ...f, simpleLabel: s?.en || null, simpleLabelSw: s?.sw || null }; }).sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution)),
-    recommendation: p.recommendations?.[0] ? serializeRecommendation(p.recommendations[0]) : null,
+    factors: (legacyAssessment ? [] : p.factors || []).map((f) => { const s = simpleReason(f.code, f.direction, p.features); return { ...f, simpleLabel: s?.en || null, simpleLabelSw: s?.sw || null }; }).sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution)),
+    recommendation: !legacyAssessment && p.recommendations?.[0] ? serializeRecommendation(p.recommendations[0]) : null,
   };
 }
 
@@ -74,7 +82,7 @@ const URGENCY_RANK = { ROUTINE: 0, SOON: 1, URGENT: 2, IMMEDIATE: 3 };
 
 /** Picks the single most important next action from a set of predictions with recommendations. */
 export function pickNextAction(predictions) {
-  const withRec = predictions.filter((p) => p.recommendation?.actionItem);
+  const withRec = predictions.filter((p) => !p.insufficientData && !p.flagged && p.recommendation?.actionItem);
   if (!withRec.length) return null;
   withRec.sort((a, b) => levelRank(b.riskLevel) - levelRank(a.riskLevel)
     || URGENCY_RANK[b.recommendation.actionItem.urgency] - URGENCY_RANK[a.recommendation.actionItem.urgency]);
@@ -110,9 +118,9 @@ export const RiskService = {
    * Full AI loop for one farm: context → features → risk → explanation → action → alerts.
    * @param {object} opts { trigger, overrides (simulation), refreshEnvironment }
    */
-  async runForFarm(farmId, { trigger = 'MANUAL', overrides = null, refreshEnvironment = true } = {}) {
+  async runForFarm(farmId, { trigger = 'MANUAL', overrides = null, refreshEnvironment = true, forceEnvironment = false, sendSms = true } = {}) {
     const simulation = !!overrides;
-    const ctx = await FarmContextService.build(farmId, { refreshEnvironment, overrides });
+    const ctx = await FarmContextService.build(farmId, { refreshEnvironment, overrides, forceEnvironment });
     const settings = await getAllSettings();
     const result = await RiskEngine.calculateFarmRisk(ctx, {
       thresholds: settings['risk.thresholds'],
@@ -123,7 +131,7 @@ export const RiskService = {
     const library = await prisma.actionLibrary.findMany({ where: { enabled: true } });
     const selection = ActionEngine.selectAll(result, library, { requireValidated: !!settings['actions.requireValidated'] });
 
-    const previousRows = await Promise.all(RISK_TYPES.map((rt) => prisma.riskPrediction.findFirst({ where: { farmId, riskType: rt, isSimulation: false }, orderBy: { createdAt: 'desc' } })));
+    const previousRows = await Promise.all(RISK_TYPES.map((rt) => prisma.riskPrediction.findFirst({ where: { farmId, riskType: rt, isSimulation: false, features: { path: ['__assessmentPolicy'], equals: 'real-inputs-v2' } }, orderBy: { createdAt: 'desc' } })));
     const previous = Object.fromEntries(previousRows.filter(Boolean).map((p) => [p.riskType, p]));
 
     const dataSource = simulation ? 'SIMULATION' : (ctx.environment?.source || 'UNAVAILABLE');
@@ -145,17 +153,19 @@ export const RiskService = {
             modelVersion: r.modelVersion,
             ruleProbability: r.ruleProbability,
             mlProbability: r.mlProbability,
-            features: { ...result.features, __insufficientData: r.insufficientData, __missing: r.missing },
+            features: { ...result.features, __insufficientData: r.insufficientData, __missing: r.missing,
+              __assessmentPolicy: 'real-inputs-v2', __environmentObservedAt: ctx.environment?.observedAt?.toISOString?.() || null,
+              __providers: { weather: ctx.environment?.weather?.provider || null, ocean: ctx.environment?.ocean?.provider || null } },
             explanation: r.explanation,
             explanationSw: r.explanationSw,
             dataSource,
             trigger: simulation ? 'SIMULATION' : trigger,
             isSimulation: simulation,
-            factors: { create: r.factors.map((f) => ({ code: f.code, label: f.label, labelSw: f.labelSw, value: f.value, contribution: f.contribution, direction: f.direction })) },
+            // Factors + ML link are now inline columns on the prediction (previously in sub-tables).
+            factors: r.factors.map((f) => ({ code: f.code, label: f.label, labelSw: f.labelSw, value: f.value, contribution: f.contribution, direction: f.direction })),
+            mlModelId: r.mlModelId ?? null,
           },
-          include: { factors: true },
         });
-        if (r.mlModelId) await tx.modelPrediction.create({ data: { modelId: r.mlModelId, riskPredictionId: prediction.id, probability: r.mlProbability } });
         const action = selection.perRisk[riskType];
         const rec = action ? await persistRecommendation(tx, farmId, prediction, action, { simulation }) : null;
         out.push({ ...prediction, recommendations: rec ? [rec] : [] });
@@ -170,10 +180,11 @@ export const RiskService = {
       actions: selection.perRisk,
       features: result.features,
       simulation,
-      sendSms: trigger !== 'SEED',
+      sendSms: sendSms && trigger !== 'SEED',
     });
 
     const predictions = saved.map(serializePrediction);
+    if (!simulation) await HarvestForecastService.generate({ farmId });
     return {
       farmId,
       farmCode: ctx.farm.farmCode,
@@ -197,7 +208,6 @@ export const RiskService = {
       where: { farmId, riskType, isSimulation: false },
       orderBy: { createdAt: 'desc' },
       include: {
-        factors: true,
         recommendations: { where: { isSimulation: false }, include: { actionLibrary: true }, orderBy: { createdAt: 'desc' }, take: 1 },
       },
     })));

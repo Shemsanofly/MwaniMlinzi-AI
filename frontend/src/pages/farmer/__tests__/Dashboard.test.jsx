@@ -10,6 +10,7 @@ vi.mock('../../../api/endpoints.js', () => ({
   environmentApi: { current: vi.fn() },
   alertApi: { update: vi.fn() },
 }));
+vi.mock('../../../components/records/SeasonCard.jsx', () => ({ default: () => <div data-testid="season-card" /> }));
 vi.mock('../../../hooks/useFarmerFarm.js', () => ({ useFarmerFarm: vi.fn() }));
 vi.mock('../../../stores/AuthContext.jsx', () => ({ useAuth: () => ({ user: { fullName: 'Mwanaisha Haji' }, memberships: [] }) }));
 
@@ -43,7 +44,7 @@ describe('Farmer dashboard', () => {
     expect(await screen.findByText('No sea forecast for this farm yet')).toBeInTheDocument();
     expect(farmApi.outlook).toHaveBeenCalledWith(FARM.id);
     expect(screen.getByText('Some problems seen')).toBeInTheDocument();
-    for (const name of ['Inspect farm', 'Record symptoms', 'Record harvest', 'Ask AI']) expect(screen.getByRole('link', { name: new RegExp(name) })).toBeInTheDocument();
+    for (const name of ['Inspect farm', 'Record symptoms', 'Record harvest', 'Ask a question']) expect(screen.getByRole('link', { name: new RegExp(name) })).toBeInTheDocument();
     // Technical values are hidden until "See details" is opened.
     expect(screen.queryByTestId('risk-tile-HEAT_ICE_ICE')).toBeNull();
     expect(screen.queryByText('Rule-based baseline')).toBeNull();

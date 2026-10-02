@@ -1,3 +1,4 @@
+import { events } from '../db/records.js';
 import prisma from '../config/prisma.js';
 import { AfricasTalkingSMSClient, mapDeliveryStatus } from '../providers/africastalking/smsClient.js';
 import { normalizeTzPhone, maskPhone } from '../utils/phone.js';
@@ -68,7 +69,7 @@ export const SMSService = {
     const to = normalizeTzPhone(phone);
     if (!to) return { status: 'FAILED', reason: 'INVALID_PHONE' };
     const result = await client.send(to, smsText(message), linkId ? { linkId } : undefined);
-    const log = await prisma.notificationLog.create({
+    const log = await events(prisma, 'DELIVERY').create({
       data: {
         notificationId, channel: 'SMS', provider: client.name, recipient: to, status: result.status,
         providerRef: result.providerRef || null, providerStatus: result.providerStatus || null, messageType: type, language,
@@ -92,13 +93,13 @@ export const SMSService = {
    */
   async handleDeliveryReport({ id, status, failureReason }) {
     if (!id) return { updated: false, reason: 'MISSING_ID' };
-    const log = await prisma.notificationLog.findFirst({ where: { providerRef: String(id) } });
+    const log = await events(prisma, 'DELIVERY').findFirst({ where: { providerRef: String(id) } });
     if (!log) return { updated: false, reason: 'UNKNOWN_MESSAGE' };
     const mapped = mapDeliveryStatus(status);
     const final = ['DELIVERED', 'FAILED'];
     if (final.includes(log.status) && !final.includes(mapped)) return { updated: false, reason: 'ALREADY_FINAL', status: log.status };
     if (log.status === mapped && log.providerStatus === String(status)) return { updated: false, reason: 'DUPLICATE', status: log.status };
-    const updated = await prisma.notificationLog.update({
+    const updated = await events(prisma, 'DELIVERY').update({
       where: { id: log.id },
       data: {
         status: mapped, providerStatus: String(status),

@@ -13,6 +13,7 @@ vi.mock('../../../api/endpoints.js', () => ({
   extensionApi: { reviewObservation: vi.fn() },
   uploadApi: { imageUrl: vi.fn() },
 }));
+vi.mock('../../../components/records/RecordBookView.jsx', () => ({ default: () => <div data-testid="record-book" /> }));
 vi.mock('../../../components/map/FarmMap.jsx', () => ({ default: () => <div data-testid="map" /> }));
 
 const farm = { id: 'f1', farmCode: 'FARM001', name: 'Paje Kusini', status: 'ACTIVE', overallRiskLevel: 'HIGH', farmer: { fullName: 'Mwanaisha' }, currentCycle: null, location: null };

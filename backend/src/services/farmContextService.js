@@ -2,10 +2,10 @@ import prisma from '../config/prisma.js';
 import { cropAgeDays, daysBetween } from '../utils/dates.js';
 import { notFound } from '../utils/errors.js';
 import { computeSstPersistence, EnvironmentService } from './environmentService.js';
+import { getSetting } from './settingsService.js';
 
 export const farmInclude = {
   species: true,
-  location: true,
   cooperative: { select: { id: true, name: true, code: true } },
   farmer: { include: { user: { select: { id: true, fullName: true, phone: true, preferredLanguage: true, smsEnabled: true, notifyRiskAlerts: true, notifyHarvest: true, notifySystem: true } } } },
 };
@@ -17,7 +17,7 @@ export async function activeCycle(farmId) {
 export async function farmHistory(farmId) {
   const cycles = await prisma.plantingCycle.findMany({
     where: { farmId, status: { in: ['HARVESTED', 'FAILED'] } },
-    select: { id: true, losses: { select: { cause: true, percentLost: true } } },
+    select: { id: true, records: { where: { recordType: 'LOSS' }, select: { cause: true, percentLost: true } } },
   });
   const harvests = await prisma.harvestRecord.findMany({
     where: { farmId, estimatedQuantity: { gt: 0 } },
@@ -26,7 +26,7 @@ export async function farmHistory(farmId) {
     take: 6,
   });
   const n = cycles.length;
-  const rate = (cause) => (n ? cycles.filter((c) => c.losses.some((l) => l.cause === cause && l.percentLost >= 10)).length / n : 0);
+  const rate = (cause) => (n ? cycles.filter((c) => c.records.some((l) => l.cause === cause && l.percentLost >= 10)).length / n : 0);
   const yieldRatio = harvests.length ? harvests.reduce((s, h) => s + h.actualQuantity / h.estimatedQuantity, 0) / harvests.length : null;
   return { pastCycles: n, iceIceLossRate: rate('ICE_ICE'), stormLossRate: rate('STORM'), yieldRatio, harvestCount: harvests.length };
 }
@@ -37,19 +37,21 @@ export async function farmHistory(farmId) {
  * latest environment (refreshed via providers if stale), latest observation, history.
  */
 export const FarmContextService = {
-  async build(farmId, { refreshEnvironment = true, overrides = null } = {}) {
+  async build(farmId, { refreshEnvironment = true, overrides = null, forceEnvironment = false } = {}) {
     const farm = await prisma.farm.findUnique({ where: { id: farmId }, include: farmInclude });
     if (!farm) throw notFound('Farm');
     const cycle = await activeCycle(farmId);
-    const env = refreshEnvironment ? await EnvironmentService.currentForFarm(farm) : await EnvironmentService.latestForFarm(farmId);
+    let env = refreshEnvironment ? await EnvironmentService.currentForFarm(farm, { maxAgeHours: forceEnvironment ? 0 : 6 }) : await EnvironmentService.latestForFarm(farmId);
+    const maxCacheHours = Number(await getSetting('environment.maxCacheAgeHours')) || 48;
+    if (env && Date.now() - +new Date(env.observedAt) > maxCacheHours * 3600000) env = null;
     const persistence = await computeSstPersistence(farmId, null);
     const obs = await prisma.farmObservation.findFirst({
-      where: { farmId, observedAt: { gte: new Date(Date.now() - 14 * 86400000) } },
+      where: { farmId, channel: { not: 'SEED' }, observedAt: { gte: new Date(Date.now() - 14 * 86400000), lte: new Date() } },
       orderBy: { observedAt: 'desc' },
     });
     const history = await farmHistory(farmId);
 
-    let environment = env ? { ...env, sstTrend7d: persistence.sstTrend7d, sstAnomalyDays: env.sstAnomalyDays ?? persistence.sstAnomalyDays } : null;
+    let environment = env ? { ...env, sstTrend7d: persistence.sstTrend7d, sstAnomalyDays: env.sstAnomalyC == null ? null : (env.sstAnomalyDays ?? persistence.sstAnomalyDays) } : null;
     if (overrides) environment = applyOverrides(environment, overrides);
 
     const age = cycle ? cropAgeDays(cycle.plantingDate) : null;

@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
-  BarChart3, Bell, BookOpen, ClipboardCheck, Compass, Cpu, FlaskConical, Home, LogOut, Map, Menu,
+  BarChart3, Bell, BookOpen, ClipboardCheck, Cloud, Compass, Cpu, FlaskConical, Gauge, Home, Key, LogOut, Map, Menu,
   Settings, ShieldCheck, Sprout, UserCog, Users, X,
 } from 'lucide-react';
 import { useAuth } from '../stores/AuthContext.jsx';
@@ -11,9 +11,36 @@ import LanguageSwitch from './LanguageSwitch.jsx';
 import NotificationBell from './NotificationBell.jsx';
 import OfflineBanner from './OfflineBanner.jsx';
 import { cx } from '../components/ui/index.jsx';
+import { useDialog } from '../hooks/useDialog.js';
 
-/** Staff navigation per role, grouped so each sidebar stays short: MAIN (daily work), INSIGHTS, SYSTEM. */
+/** Staff navigation per role, grouped so each sidebar stays short: MAIN (daily work), INSIGHTS, SYSTEM.
+ *  The right sidebar is picked by role: ADMIN (superset), EXTENSION_OFFICER (cross-coop field ops),
+ *  COOPERATIVE_ADMIN (own coop only). An admin that also holds another seat still sees ADMIN. */
 export const NAV = {
+  COOPERATIVE_ADMIN: [
+    { group: 'main', items: [
+      { to: '/cooperative/dashboard', key: 'fieldOverview', icon: Home },
+      { to: '/cooperative/farms', key: 'farms', icon: Sprout },
+    ] },
+    { group: 'field', items: [
+      { to: '/cooperative/alerts', key: 'alerts', icon: Bell },
+      { to: '/cooperative/forecast', key: 'forecast', icon: BarChart3 },
+      { to: '/cooperative/impact', key: 'impact', icon: Gauge },
+    ] },
+  ],
+  EXTENSION_OFFICER: [
+    { group: 'main', items: [
+      { to: '/extension/dashboard', key: 'fieldOverview', icon: Home },
+      { to: '/extension/farms', key: 'farms', icon: Sprout },
+    ] },
+    { group: 'field', items: [
+      { to: '/extension/risk-map', key: 'riskMap', icon: Map },
+      { to: '/extension/reviews', key: 'reviews', icon: ClipboardCheck },
+      { to: '/extension/alerts', key: 'alerts', icon: Bell },
+      { to: '/extension/forecast', key: 'forecast', icon: BarChart3 },
+      { to: '/extension/impact', key: 'impact', icon: Gauge },
+    ] },
+  ],
   ADMIN: [
     { group: 'main', items: [
       { to: '/admin/dashboard', key: 'dashboard', icon: Home },
@@ -26,11 +53,14 @@ export const NAV = {
       { to: '/admin/reviews', key: 'reviews', icon: ClipboardCheck },
       { to: '/admin/alerts', key: 'alerts', icon: Bell },
       { to: '/admin/forecast', key: 'forecast', icon: BarChart3 },
+      { to: '/admin/impact', key: 'impact', icon: Gauge },
     ] },
     { group: 'system', items: [
       { to: '/admin/settings', key: 'integrations', icon: Settings },
       { to: '/admin/actions', key: 'actionLibrary', icon: BookOpen },
       { to: '/admin/models', key: 'models', icon: Cpu },
+      { to: '/admin/tma', key: 'tma', icon: Cloud },
+      { to: '/admin/tokens', key: 'tokens', icon: Key },
       { to: '/admin/audit', key: 'audit', icon: ShieldCheck },
     ] },
   ],
@@ -55,7 +85,7 @@ function NavItems({ items, onNavigate }) {
       to={to}
       onClick={onNavigate}
       className={({ isActive }) => cx(
-        'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lagoon-300/60',
+        'group relative flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lagoon-300/60',
         isActive ? 'bg-white/10 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.06)]' : 'text-ocean-200 hover:bg-white/5 hover:text-white',
       )}
     >
@@ -87,14 +117,12 @@ export default function AppLayout() {
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const roles = user?.roles || [];
-  const sections = ['ADMIN'].filter((r) => roles.includes(r));
+  // Pick exactly one NAV section — ADMIN wins if present, else first operator seat the user holds.
+  const PRIORITY = ['ADMIN', 'EXTENSION_OFFICER', 'COOPERATIVE_ADMIN'];
+  const sections = PRIORITY.filter((r) => roles.includes(r)).slice(0, 1);
   const close = () => setOpen(false);
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open]);
+  const panel = useRef(null);
+  useDialog(open, panel, close);
 
   const sidebar = (
     <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-3 pt-2" aria-label={t('a11y.mainNav')}>
@@ -130,8 +158,8 @@ export default function AppLayout() {
         </aside>
         {open && (
           <div className="fixed inset-0 z-[1200] flex lg:hidden" role="dialog" aria-modal="true" aria-label={t('a11y.mainNav')}>
-            <div className="ocean-band flex w-72 max-w-[85vw] animate-[drawer_0.35s_var(--ease-out-soft)_both] flex-col shadow-[var(--shadow-float)]">
-              <div className="flex h-16 items-center justify-between px-4"><Logo light /><button type="button" onClick={() => setOpen(false)} className="rounded-lg p-1.5 text-white transition hover:rotate-90 hover:bg-white/10" aria-label={t('a11y.closeMenu')}><X /></button></div>
+            <div ref={panel} tabIndex={-1} className="ocean-band flex w-72 max-w-[85vw] animate-[drawer_0.35s_var(--ease-out-soft)_both] flex-col shadow-[var(--shadow-float)] outline-none">
+              <div className="flex h-16 shrink-0 items-center justify-between px-4"><Logo light /><button type="button" onClick={() => setOpen(false)} className="flex h-11 w-11 items-center justify-center rounded-lg text-white transition hover:bg-white/10" aria-label={t('a11y.closeMenu')}><X /></button></div>
               {sidebar}
             </div>
             <button type="button" className="flex-1 animate-fade bg-ocean-950/50 backdrop-blur-[2px]" onClick={() => setOpen(false)} aria-label={t('a11y.closeMenu')} />
@@ -139,12 +167,12 @@ export default function AppLayout() {
         )}
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-[900] flex h-16 min-w-0 items-center gap-2 border-b border-slate-200/70 bg-sand-50/80 px-3 backdrop-blur-xl sm:gap-3 sm:px-6">
-            <button type="button" className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden" onClick={() => setOpen(true)} aria-label={t('a11y.openMenu')}><Menu /></button>
+            <button type="button" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 lg:hidden" onClick={() => setOpen(true)} aria-label={t('a11y.openMenu')}><Menu /></button>
             <div className="min-w-0 lg:hidden"><Logo compact iconOnlyOnPhone /></div>
             <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
               <LanguageSwitch />
               <NotificationBell />
-              <button type="button" onClick={async () => { navigate('/login', { replace: true }); await logout(); }} className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-900/5 hover:text-slate-900">
+              <button type="button" onClick={async () => { navigate('/login', { replace: true }); await logout(); }} className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-xl px-2.5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-900/5 hover:text-slate-900">
                 <LogOut className="h-4 w-4" aria-hidden /><span className="hidden sm:inline">{t('actions.logout')}</span>
               </button>
             </div>

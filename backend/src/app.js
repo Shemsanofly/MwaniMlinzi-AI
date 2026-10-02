@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env.js';
+import { isAllowedOrigin } from './config/cors.js';
 import api from './routes/index.js';
 import integrationRoutes from './routes/integrations.routes.js';
 import * as integrations from './controllers/integrationController.js';
@@ -17,7 +18,7 @@ export function createApp() {
   app.set('trust proxy', 1);
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(cors({
-    origin: (origin, cb) => cb(null, !origin || env.corsOrigins.includes(origin)),
+    origin: (origin, cb) => cb(null, isAllowedOrigin(origin, env)),
     credentials: false,
   }));
   app.use(express.json({ limit: '200kb' }));

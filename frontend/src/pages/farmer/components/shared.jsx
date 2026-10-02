@@ -11,9 +11,10 @@ import { timeAgo } from '../../../utils/format.js';
 export function useInvalidateFarm() {
   const qc = useQueryClient();
   return (farmId) => {
-    const keys = ['risks', 'riskHistory', 'recommendations', 'actions', 'outcomes', 'history', 'farmAlerts', 'observations', 'harvests', 'losses', 'env', 'farm', 'cycles'];
+    const keys = ['intelligence', 'outlook', 'risks', 'riskHistory', 'recommendations', 'actions', 'outcomes', 'history', 'farmAlerts', 'observations', 'harvests', 'losses', 'env', 'farm', 'cycles'];
     keys.forEach((k) => qc.invalidateQueries({ queryKey: [k, farmId] }));
     qc.invalidateQueries({ queryKey: ['farms'] });
+    qc.invalidateQueries({ queryKey: ['records'] });
     qc.invalidateQueries({ queryKey: ['alerts'] });
     qc.invalidateQueries({ queryKey: ['notifications'] });
   };

@@ -32,19 +32,17 @@
 
 ## The core loop in code
 
-1. **Farm data** — `farms`, `farm_locations`, `planting_cycles` (crop age derived from `planting_date`).
-2. **Environmental data** — `EnvironmentService.refreshForFarm` → `EnvironmentalProvider.fetch` → `weather_observations`,
-   `ocean_observations`, `environmental_observations` (with `source` LIVE/CACHED and provider), plus SST persistence/trend
+1. **Farm data** — `farms` (location included), `planting_cycles` (crop age derived from `planting_date`).
+2. **Environmental data** — `EnvironmentService.refreshForFarm` → `EnvironmentalProvider.fetch` → `environmental_observations` (WEATHER, OCEAN and FARM rows) (with `source` LIVE/CACHED and provider), plus SST persistence/trend
    from history. With no live or cached reading nothing is stored and the risk runs on farm data and reports only.
-3. **Farmer observations** — `RecordService.createObservation` (app, SMS, USSD, assistant draft) → `farm_observations`,
-   `disease_observations`, then immediately `RiskService.runForFarm(trigger: OBSERVATION)`.
+3. **Farmer observations** — `RecordService.createObservation` (app, SMS, USSD, assistant draft) → `farm_observations` (including disease entries), then immediately `RiskService.runForFarm(trigger: OBSERVATION)`.
 4. **AI risk prediction** — `FarmContextService.build` → `buildFeatures` → `RiskEngine.calculateFarmRisk`
-   (rules + optional ML, thresholds from `system_settings`) → `risk_predictions` + `risk_factors` (+ `model_predictions`).
+   (rules + optional ML, thresholds from `system_settings`) → `risk_predictions` (factors and ML model link included).
 5. **Explanation** — `ExplanationEngine` (EN/SW from factors).
 6. **Validated action** — `ActionEngine.selectAll` over `action_library` → `action_recommendations` (superseding old advice).
-7. **Alerts** — `AlertService.fromPredictions` → `alerts` → `NotificationService` → `notifications` + `notification_logs` (+ SMS).
+7. **Alerts** — `AlertService.fromPredictions` → `alerts` → `NotificationService` → `notifications` + `event_logs` (DELIVERY) (+ SMS).
 8. **Farmer response** — `farmer_actions` (recommendation marked COMPLETED/DISMISSED).
-9. **Outcome** — `action_outcomes` (+ automatic `model_feedback` label), `harvest_records`, `loss_records`.
+9. **Outcome** — `farm_records` (OUTCOME and LOSS), `event_logs` (FEEDBACK), `harvest_records`.
 10. **Future learning data** — `trainModel.js` turns stored prediction features + recorded outcomes into labelled
     training records (only once there are enough); `ModelMonitoringService` computes field precision/recall.
 

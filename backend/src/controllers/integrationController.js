@@ -1,3 +1,4 @@
+import { events } from '../db/records.js';
 import crypto from 'node:crypto';
 import { z } from 'zod';
 import { env } from '../config/env.js';
@@ -62,7 +63,7 @@ function unsignedSandboxUssdOk(req, kind) {
 
 async function logEvent(data) {
   try {
-    await prisma.integrationEvent.create({ data: { provider: 'AFRICASTALKING', ...data } });
+    await events(prisma, 'INTEGRATION').create({ data: { provider: 'AFRICASTALKING', ...data } });
   } catch (err) {
     console.warn('[integrations] could not log event:', err.message);
   }
@@ -130,7 +131,7 @@ export async function smsInbound(req, res) {
   }
   const msg = parsed.data;
   if (msg.id) {
-    const seen = await prisma.integrationEvent.findFirst({ where: { kind: 'SMS_INBOUND', reference: msg.id, status: 'OK' } });
+    const seen = await events(prisma, 'INTEGRATION').findFirst({ where: { kind: 'SMS_INBOUND', reference: msg.id, status: 'OK' } });
     if (seen) {
       await logEvent({ kind: 'SMS_INBOUND', reference: msg.id, phoneNumber: maskPhone(msg.from), status: 'DUPLICATE' });
       return res.status(200).type('text/plain').send('DUPLICATE');

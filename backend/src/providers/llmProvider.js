@@ -3,8 +3,8 @@ import { fetchJson } from './http.js';
 
 /**
  * LLMProvider interface: { name, isLive, generate({ system, prompt, maxTokens }) → string }
- * The LLM is only used to rephrase/translate facts and approved recommendations produced
- * by the backend. It never decides farming actions. If no key is configured (or a call fails),
+ * The LLM classifies questions into supported intents. It never writes displayed farm facts
+ * or decides farming actions. If no key is configured (or a call fails),
  * callers fall back to deterministic templates.
  */
 export class TemplateLLMProvider {
@@ -32,12 +32,13 @@ export class OpenAILLMProvider {
   name = 'openai';
   isLive = true;
   constructor(apiKey, model) { this.apiKey = apiKey; this.model = model || 'gpt-4o-mini'; }
-  async generate({ system, prompt, maxTokens = 400 }) {
+  async generate({ system, prompt, maxTokens = 400, jsonSchema }) {
     const d = await fetchJson('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       timeoutMs: 20000,
       headers: { 'content-type': 'application/json', authorization: `Bearer ${this.apiKey}` },
-      body: JSON.stringify({ model: this.model, max_tokens: maxTokens, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }] }),
+      body: JSON.stringify({ model: this.model, max_tokens: maxTokens, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }],
+        ...(jsonSchema ? { response_format: { type: 'json_schema', json_schema: { name: 'farm_intent', strict: true, schema: jsonSchema } } } : {}) }),
     });
     return d.choices?.[0]?.message?.content?.trim() || null;
   }

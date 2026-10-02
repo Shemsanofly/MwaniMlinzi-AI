@@ -23,14 +23,14 @@ All code lives in `backend/src/ai`, `backend/src/rules`, `backend/src/providers`
 | `RiskEngine` | `ai/riskEngine.js` | Orchestrates rules + ML, thresholds, confidence, explanations |
 | `ExplanationEngine` | `ai/explanationEngine.js` | English + Kiswahili text built only from structured factors |
 | `ActionEngine` | `ai/actionEngine.js` | The only component that chooses farmer actions — from the Action Library |
-| `LLMProvider` | `providers/llmProvider.js` | Optional rephrasing/translation; deterministic templates otherwise |
+| `LLMProvider` | `providers/llmProvider.js` | Optional question classification; answers always use grounded templates |
 | `RiskService` | `services/riskService.js` | Persists predictions, factors, recommendations, model predictions; triggers alerts |
 
 ## 1. Risk types and inputs
 
 | Risk | Horizon | Main inputs |
 |---|---|---|
-| **HEAT_ICE_ICE** | 72 h | SST, SST anomaly vs. monthly climatology, days of elevated SST (>0.5 °C), 7-day SST trend, crop age, species heat sensitivity, whitening / disease symptoms / % affected, calm warm water, low salinity, farm's history of ice-ice losses |
+| **HEAT_ICE_ICE** | 72 h | SST, verified SST anomaly when available (otherwise null), 7-day SST trend, crop age, species heat sensitivity, whitening / disease symptoms / % affected, calm warm water, low salinity, farm's history of ice-ice losses |
 | **STORM_LINE_DAMAGE** | 72 h | Wave height, wind speed, current velocity, heavy rain, farm exposure, anchoring method, loose/broken gear, reported breakage, history of storm losses |
 | **POOR_GROWTH** | 7 days | Slow/unusual growth, crop condition, epiphytes, SST outside optimal range, low salinity, low chlorophyll (nutrients), turbid water, past yield vs. expected, very young crop |
 | **HARVEST_WINDOW** | 72 h | Maturity (crop age / cycle length), over-maturity, rain and humidity (drying), strong wind, and the current heat and storm probabilities (cost of waiting) |
@@ -63,7 +63,7 @@ the day's live readings.
 
 ## 2. Explainability
 
-Every prediction stores its factors in `risk_factors` (`code`, `label`, `label_sw`, `value`, `contribution`, `direction`)
+Every prediction stores its factors in `risk_predictions.factors` (`code`, `label`, `label_sw`, `value`, `contribution`, `direction`)
 and the full feature vector in `risk_predictions.features`. The UI's **"Why?"** section, the dashboard reasons, the
 assistant and SMS/USSD replies all read these stored factors. An LLM never creates or edits factors.
 
@@ -72,7 +72,7 @@ assistant and SMS/USSD replies all read these stored factors. An LLM never creat
 - `ai.mode` setting: `RULE_ONLY` or `HYBRID` (default). In HYBRID mode, if an **ACTIVE** model exists for a risk type,
   `probability = (1 − w)·rule + w·ml` with `w = ai.mlBlendWeight` (default 0.4). Otherwise the rule baseline is used.
 - Predictions record `model_type` (`RULE`/`HYBRID`), `model_version`, `rule_probability` and `ml_probability`; ML outputs are
-  also stored in `model_predictions`.
+  also stored in `risk_predictions.ml_model_id`.
 - The UI shows **"Rule-based baseline"** or **"Hybrid: rule baseline + ML model vN"**.
 - If the model file is missing/corrupt the provider logs a warning and the rule engine is used — no fabricated output.
 
@@ -91,11 +91,11 @@ npm run ai:train -- --activate           # …and activates them
 ```
 
 Training data = stored risk predictions (their input feature vectors) labelled by what farmers later recorded as the
-outcome (`action_outcomes.risk_materialized`). Simulations are excluded. Nothing is generated.
+outcome (`farm_records.risk_materialized` (OUTCOME)). Simulations, seeded predictions, flagged predictions and insufficient-data features are excluded. Repeated reports for one prediction count once; contradictory labels are excluded. Nothing is generated.
 
 Steps performed by `ai/scripts/trainModel.js`: **load field outcomes → validate → preprocess (impute + standardise) →
 train → evaluate on a stratified 20% hold-out → save model JSON (`ai/models/<RISK>_vN.json`) → save metrics
-(`<RISK>_vN.metrics.json`) → register the version in `ml_models` + `model_metrics`**.
+(`<RISK>_vN.metrics.json`) → register the version in `ml_models` + `event_logs` (METRIC)**.
 A risk type is skipped when it has fewer than `ai.minTrainingRecords` (default 300) valid records or fewer than 20
 examples of either class; the rule engine stays in use for it. On a new installation every risk type is skipped until
 enough outcomes have been recorded.
@@ -128,9 +128,10 @@ unvalidated; the admin validates each entry in **Admin → Action library** afte
 
 Configured with `LLM_PROVIDER=anthropic|openai`, `LLM_API_KEY`, `LLM_MODEL` (defaults: `claude-sonnet-5` / `gpt-4o-mini`).
 
-- The assistant first builds a deterministic answer from stored factors, approved actions and farm records. The LLM may
-  only **rephrase/translate** that answer (system prompt forbids new advice, treatments, numbers or causes). The approved
-  action is returned separately as structured data and shown verbatim.
+- Known questions use deterministic intent matching. An optional LLM classifies unfamiliar questions into a restricted
+  intent list. OpenAI uses a strict JSON-schema response; the server validates the enum for every provider.
+  Generated prose never becomes a displayed farm fact. Answers use farm records and structured risk factors;
+  only validated guidance is returned as `approvedAction`.
 - Treatment questions ("What medicine should I use?", "Nitumie dawa gani?") never reach the LLM: the safety policy answers
   *"I can help you record the symptoms and show approved farm guidance. For treatment decisions, contact an extension officer."*
 - Natural language like *"I see whitening on 20% of my lines"* is parsed into a structured observation **draft** the farmer
@@ -151,8 +152,10 @@ Configured with `LLM_PROVIDER=anthropic|openai`, `LLM_API_KEY`, `LLM_MODEL` (def
 provider is down, the available block is stored and the other stays `null`. Each record stores `source` and `provider`;
 the per-farm snapshot is labelled CACHED if either part came from the cache. Values a provider does not supply stay
 `null` — Open-Meteo Marine has no salinity or chlorophyll, so those factors are skipped. Live values use the worst case
-over the 72 h forecast where available. SST anomaly for live SST is computed against an approximate Zanzibar monthly
-climatology (`providers/climatology.js`) — replace it with a proper per-cell climatology for production.
+over the 72 h forecast where available. Provider timestamps are retained. Cached inputs keep their original timestamps
+and expired inputs are unavailable. These are external model forecasts, not on-farm sensor measurements.
+Production providers return SST anomaly as null because no verified local climatology is configured.
+The approximate monthly array is retained only for isolated test fixtures.
 
 Data sources used on predictions: `LIVE`, `CACHED`, `UNAVAILABLE` (no reading; farm data and reports only) and
 `SIMULATION` (what-if runs).
@@ -165,22 +168,62 @@ Farmers work off-bottom farms at low tide and dry the harvest in the sun, so the
 - **Tides** — Open-Meteo Marine hourly `sea_level_height_msl` (3 days, local Africa/Dar_es_Salaam time). Low/high tides are
   the local minima/maxima of the hourly series. The **work window** of a low tide is the run of hours whose level stays within
   25 % of the tide range above the low (range measured to the lower of the neighbouring highs). Only low tides between 06:00
-  and 18:30 are suggested for work. It is a model forecast at hourly resolution, labelled *"may differ by about 30 minutes —
-  check the shore"*.
+  and 18:30 are suggested for work. The low-water window is an estimate from hourly sea levels, not a measured safe-access
+  window. No fixed 30-minute accuracy is claimed; farmers should check local guidance and shore conditions.
 - **Drying weather** — Open-Meteo hourly rain probability and amount during drying hours (07:00–18:00). Per day:
   **BAD** above 60 % chance or 5 mm, **CAUTION** from 30 % or 1 mm, otherwise **GOOD** (setting `drying.thresholds`, starter
   values awaiting local validation). No data → no verdict (never "GOOD" by default).
+  The displayed probability is the **highest hourly probability in that window**, not the probability of rain now or over
+  the whole day. Hourly precipitation covers the preceding hour, so 08:00–18:00 values cover 07:00–18:00 drying.
+  Stored hourly values recompute today's verdict from complete future drying hours. After 18:00, today's verdict and advice
+  disappear, and only upcoming days remain. A rainy morning cannot make the afternoon look rainy once those hours have passed.
+- **Weather now** — the same weather API supplies `current.precipitation`, temperature, time and interval. These are labelled
+  as **API model estimates**, never station observations. Missing current precipitation or time stays unavailable. Current
+  data older than 30 minutes is hidden. See [Open-Meteo weather documentation](https://open-meteo.com/en/docs).
 - **Advice** — the Action Library entries `DRY_LOW_OK`, `DRY_MEDIUM_CAUTION`, `DRY_HIGH_DELAY` (category *Drying weather*),
   validated and edited like every other action. This targets ground drying (deck slide 2: ~40 % of farmers dry on the ground).
-- **Fallback** — live → the last stored outlook ≤ `environment.maxCacheAgeHours` (labelled *Last saved reading*) → none
+- **Fallback** — refresh every 15 minutes → the last stored outlook ≤ `environment.maxCacheAgeHours`, capped at 48 hours
+  (labelled *Saved API forecast*) → none
   ("No sea forecast for this farm yet"). A farm without a map point has no outlook.
+  Each part retains its own age; an expired rain part is not refreshed by a successful tide request. Requested coordinates
+  are stored with the hourly forecast, and forecasts for an earlier farm location are not reused.
+  The existing `sea_outlooks.drying` JSON stores hourly series, current weather and provenance; no table was added.
+
+Simple storm explanations distinguish recorded exposure, anchoring method and reported equipment condition. An anchoring
+method does not prove weak anchors. `STORM_LOW_REPORTED_DAMAGE` prompts a safe inspection when damage is reported, even if
+the forecast storm score is low. Demo (`SEED`) and future-dated observations are excluded from real farm assessments.
+For an existing deployment, run `node scripts/install-damage-inspection-action.js` from `backend` to install this one
+new action without reseeding records or overwriting expert edits. It remains awaiting expert validation.
 
 ## 7. Harvest forecasting
 
-`HarvestForecastService`: `expected = lines × yield per line` (farm history if available, else species default) →
-`riskAdjusted = expected × (1 − expected loss)` where expected loss = 0.35·P(heat) + 0.25·P(storm) + 0.2·P(poor growth) +
-0.1·P(harvest window) (capped) → low/high range widened by uncertainty (lower confidence and less history ⇒ wider).
-Aggregated by farm, cooperative, district, week and 7/14/30-day horizons. Quantities are kg of dried seaweed.
+`HarvestForecastService` requires at least three completed cycles with recorded dry harvests and known planted lines.
+Batches are summed per cycle; cycles containing wet harvests are excluded rather than converted using an assumed ratio.
+The estimate is current planted lines × average recorded dry yield per line from the latest six eligible cycles.
+Low/high use the observed minimum/maximum yield per line, not an invented confidence interval.
+No species-default quantities, guessed loss deductions or quality grades are emitted. Planned dates are retained,
+including overdue dates; the interface asks farmers to inspect maturity. Measured accuracy is unavailable.
+Legacy forecast rows remain stored for audit but are excluded from current farmer DTOs and forecast lists.
+The compatibility column `riskAdjustedQuantityKg` holds the historical baseline estimate, with method `recorded-cycle-yield-v2`.
+
+## Farmer data status and coordinates
+
+`GET /api/farms/:id/intelligence` enforces farm access and reports source timestamps, missing inputs, recorded
+observations/harvests, harvest-history eligibility and training readiness per risk. The farmer refresh button uses
+`POST /api/farms/:id/risks/run` to request fresh provider data and update risk and harvest estimates.
+Rule scores are provisional estimates; input completeness is not measured prediction accuracy. Predictions made
+before the `real-inputs-v2` checks require a refresh before they can drive current advice.
+
+`GET /api/location/reverse?latitude=…&longitude=…&language=en|sw` looks up the nearest mapped place through Nominatim.
+The farm form fills place, district and region for device GPS, typed coordinates and map picks; corrections remain editable.
+Missing address fields remain blank. Requests are authenticated, validated, cached for 24 hours and serialised at
+one request per 1.1 seconds per backend instance. `GEOCODING_URL` supports another Nominatim-compatible service or `none`.
+Use a dedicated service for multiple backend instances or substantial traffic.
+
+References: [Open-Meteo marine forecasts](https://open-meteo.com/en/docs/marine-weather-api),
+[OpenAI structured outputs](https://developers.openai.com/api/docs/guides/structured-outputs),
+[Nominatim reverse geocoding](https://nominatim.org/release-docs/latest/api/Reverse/),
+[Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/).
 
 ## 8. Simulation (What-if planner)
 
@@ -200,4 +243,4 @@ SMS is sent, nothing is sent to farmers, and real "current risk" views ignore si
 | `missing-reports` | daily 06:00 | MISSING_REPORT alerts |
 | `model-monitoring` | daily 02:00 | field metrics from outcomes |
 
-Admins can run any job with **Run now** (Admin dashboard). Each run is logged in `job_runs`. Disable the scheduler with `ENABLE_JOBS=false`.
+Admins can run any job with **Run now** (Admin dashboard). Each run is logged in `event_logs` (JOB). Disable the scheduler with `ENABLE_JOBS=false`.

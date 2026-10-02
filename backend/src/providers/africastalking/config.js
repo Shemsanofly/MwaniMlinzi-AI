@@ -2,11 +2,14 @@ import { env } from '../../config/env.js';
 
 /** Africa's Talking configuration + status (never exposes the API key). */
 export function atConfig(cfg = env.africastalking) {
-  const smsConfigured = Boolean(cfg.username && cfg.apiKey);
+  const smsDevCapture = Boolean(cfg.smsDevCapture && cfg.environment === 'sandbox' && !env.isProduction);
+  // With dev-capture on, "configured" is true even without real credentials — the client never calls AT.
+  const smsConfigured = smsDevCapture || Boolean(cfg.username && cfg.apiKey);
   const unsignedSandboxUssdAllowed = Boolean(cfg.allowUnsignedSandboxUssd && cfg.environment === 'sandbox' && !env.isProduction);
   return {
     ...cfg,
     smsConfigured,
+    smsDevCapture,
     unsignedSandboxUssdAllowed,
     ussdConfigured: Boolean(cfg.callbackSecret || unsignedSandboxUssdAllowed),
     host: cfg.environment === 'production' ? 'https://api.africastalking.com' : 'https://api.sandbox.africastalking.com',

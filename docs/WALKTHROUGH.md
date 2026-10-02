@@ -45,6 +45,9 @@ The backend must be able to reach `api.open-meteo.com` and `marine-api.open-mete
    configured and the farmer allows SMS, an SMS is sent; otherwise the attempt is logged as `NOT_CONFIGURED`.
 6. **Act** — on the dashboard press **I did this** on the next action. It is stored as a farmer action linked to the
    recommendation.
+6b. **Record book** — *More → Record book*: add a sale (e.g. 120 kg at TSh 1,000/kg, not yet paid), a cost (seedlings
+   TSh 30,000) and today's work. The summary shows income, costs, profit and what is still owed — only from what was
+   entered. The same entries can be made on USSD under *4 Rekodi mavuno*, and *1 → 3 Faida ya msimu* reads the profit.
 7. **Record what happened** — *Record what happened* (e.g. minor loss, 5 %). It is stored and labelled as feedback on
    the prediction. On the Harvest page, record a harvest: the difference and loss % against the forecast are computed.
 8. **Ask the AI assistant** — "Why is my risk high?", "What should I do?", "What medicine should I use?" (safety
@@ -65,5 +68,5 @@ The backend must be able to reach `api.open-meteo.com` and `marine-api.open-mete
     (farm status: risk + action), `2` (report symptoms), `3` (record harvest), `5` (language), or send `HATARI` by SMS.
     A number that is not registered yet can register itself through the USSD menu.
 13. **pgAdmin** — open `mwanimlinzi` → `environmental_observations` (the live reading with `source` and provider),
-    `risk_predictions`, `risk_factors`, `action_recommendations`, `farmer_actions`, `action_outcomes`, `model_feedback`
+    `risk_predictions`, `action_recommendations`, `farmer_actions`, `farm_records` (OUTCOME), `event_logs` (FEEDBACK)
     to see the stored loop (queries in [DATABASE.md](DATABASE.md)).

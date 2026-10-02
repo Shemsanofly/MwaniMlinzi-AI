@@ -1,3 +1,4 @@
+import { events } from '../../src/db/records.js';
 import { login, farmByCode } from '../helpers.js';
 import prisma from '../../src/config/prisma.js';
 import { setOutlookProvider, getOutlookProvider } from '../../src/services/seaOutlookService.js';
@@ -9,6 +10,7 @@ import { FakeSMSClient } from '../fakes/smsClient.js';
 
 afterAll(() => prisma.$disconnect());
 
+const TEST_NOW = new Date(`${localDate()}T06:20:00+03:00`);
 const PHONE = '+255777000001'; // fixture farmer owning FARM002 (1 day before expected harvest)
 
 function localHours() {
@@ -32,7 +34,7 @@ describe('drying-weather warnings (morning job)', () => {
   let originalProvider; let originalSms; let sms; let farm; let quiet;
   const dryingAlerts = (farmId) => prisma.alert.count({ where: { farmId, type: 'DRYING_WEATHER' } });
   // The fixture farmer owns FARM001 too (it qualifies once another test records a harvest there): count FARM002's only.
-  const dryingSms = () => prisma.notificationLog.findMany({ where: { messageType: 'DRYING_WARNING', recipient: PHONE, message: { contains: 'FARM002' } } });
+  const dryingSms = () => events(prisma, 'DELIVERY').findMany({ where: { messageType: 'DRYING_WARNING', recipient: PHONE, message: { contains: 'FARM002' } } });
 
   beforeAll(async () => {
     originalProvider = getOutlookProvider();
@@ -46,13 +48,13 @@ describe('drying-weather warnings (morning job)', () => {
   beforeEach(async () => {
     await prisma.seaOutlook.deleteMany({});
     await prisma.alert.deleteMany({ where: { type: 'DRYING_WEATHER' } });
-    await prisma.notificationLog.deleteMany({ where: { messageType: 'DRYING_WARNING' } });
+    await events(prisma, 'DELIVERY').deleteMany({ where: { messageType: 'DRYING_WARNING' } });
   });
   afterAll(() => { setOutlookProvider(originalProvider); setSMSClient(originalSms); });
 
   test('rain tomorrow on a farm about to harvest → one alert with approved advice and one SMS; repeat runs do not repeat it', async () => {
     setOutlookProvider(rainProvider([10, 80, 10]));
-    const first = await DryingAlertService.run();
+    const first = await DryingAlertService.run({ now: TEST_NOW });
     expect(first.alerts).toBeGreaterThanOrEqual(1);
     const alert = await prisma.alert.findFirst({ where: { farmId: farm.id, type: 'DRYING_WEATHER' } });
     expect(alert).toMatchObject({ severity: 'HIGH', isSimulation: false });
@@ -65,7 +67,7 @@ describe('drying-weather warnings (morning job)', () => {
     expect(logs[0].message).not.toMatch(/Mvua inatarajiwa.*Mvua inatarajiwa/);
     expect(logs[0].message.length).toBeLessThanOrEqual(160); // one SMS segment
 
-    await DryingAlertService.run();
+    await DryingAlertService.run({ now: TEST_NOW });
     expect(await dryingAlerts(farm.id)).toBe(1);
     expect(await dryingSms()).toHaveLength(1);
   });
@@ -73,19 +75,19 @@ describe('drying-weather warnings (morning job)', () => {
   test('drying warnings from earlier days are resolved automatically (they are about a day that has passed)', async () => {
     const old = await prisma.alert.create({ data: { farmId: farm.id, type: 'DRYING_WEATHER', severity: 'HIGH', title: 'old', titleSw: 'old', message: 'old', messageSw: 'old', createdAt: new Date(Date.now() - 2 * 86400e3) } });
     setOutlookProvider(rainProvider([10, 10, 10]));
-    await DryingAlertService.run();
+    await DryingAlertService.run({ now: TEST_NOW });
     expect((await prisma.alert.findUnique({ where: { id: old.id } })).status).toBe('RESOLVED');
   });
 
   test('farms far from harvest get no drying warning', async () => {
     setOutlookProvider(rainProvider([80, 80, 80]));
-    await DryingAlertService.run();
+    await DryingAlertService.run({ now: TEST_NOW });
     expect(await dryingAlerts(quiet.id)).toBe(0);
   });
 
   test('dry forecast → no warning', async () => {
     setOutlookProvider(rainProvider([10, 20, 45]));
-    await DryingAlertService.run();
+    await DryingAlertService.run({ now: TEST_NOW });
     expect(await dryingAlerts(farm.id)).toBe(0);
   });
 
@@ -93,7 +95,7 @@ describe('drying-weather warnings (morning job)', () => {
     await prisma.user.update({ where: { phone: PHONE }, data: { notifyHarvest: false } });
     try {
       setOutlookProvider(rainProvider([80, 10, 10]));
-      await DryingAlertService.run();
+      await DryingAlertService.run({ now: TEST_NOW });
       expect((await prisma.alert.findFirst({ where: { farmId: farm.id, type: 'DRYING_WEATHER' } })).messageSw).toMatch(/leo/);
       expect(await dryingSms()).toHaveLength(0);
     } finally {

@@ -5,9 +5,15 @@ import { forbidden, unauthorized } from '../utils/errors.js';
 
 export const ROLES = Object.freeze({
   FARMER: 'FARMER',
+  COOPERATIVE_ADMIN: 'COOPERATIVE_ADMIN',
+  EXTENSION_OFFICER: 'EXTENSION_OFFICER',
   ADMIN: 'ADMIN',
 });
 export const ACTIVE_ROLE_NAMES = Object.freeze(Object.values(ROLES));
+// Any staff seat (not a farmer). COOPERATIVE_ADMIN is scoped to a single cooperative;
+// EXTENSION_OFFICER and ADMIN can see all farms.
+export const STAFF_ROLES = Object.freeze([ROLES.COOPERATIVE_ADMIN, ROLES.EXTENSION_OFFICER, ROLES.ADMIN]);
+export const CROSS_COOP_STAFF = Object.freeze([ROLES.EXTENSION_OFFICER, ROLES.ADMIN]);
 
 export const signToken = (user) => jwt.sign({ sub: user.id }, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
 

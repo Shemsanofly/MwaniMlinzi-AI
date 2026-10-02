@@ -1,3 +1,4 @@
+import { events } from '../../src/db/records.js';
 import { api, auth, login, farmByCode } from '../helpers.js';
 import prisma from '../../src/config/prisma.js';
 import { getEnvironmentalProvider, setEnvironmentalProvider } from '../../src/services/environmentService.js';
@@ -29,9 +30,11 @@ describe('end-to-end risk → action → outcome flow', () => {
   test('environment is labelled with its source', async () => {
     const res = await api().get(`/api/environment/current?farmId=${farm.id}`).set(auth(farmer));
     expect(res.status).toBe(200);
-    expect(res.body.data.current.source).toBe('LIVE');
+    expect(res.body.data.current.source).toBe('CACHED');
     expect(res.body.data).not.toHaveProperty('demoMode');
-    expect(res.body.data.current.sstAnomalyC).toBeGreaterThan(1);
+    // The HEAT fixture is deliberately below the critical threshold (0.95–1.15 °C).
+    expect(res.body.data.current.sstAnomalyC).toBeGreaterThanOrEqual(0.95);
+    expect(res.body.data.current.sstAnomalyC).toBeLessThanOrEqual(1.15);
   });
 
   test('risk has probability, level, confidence, factors and an approved recommendation', async () => {
@@ -50,6 +53,8 @@ describe('end-to-end risk → action → outcome flow', () => {
     const res = await api().post(`/api/farms/${farm.id}/observations`).set(auth(farmer))
       .send({ cropCondition: 'POOR', whitening: true, diseaseSymptoms: true, percentAffected: 30, breakage: false });
     expect(res.status).toBe(201);
+    expect(res.body.data.observation.epiphytes).toBeNull();
+    expect((await prisma.farmObservation.findUnique({ where: { id: res.body.data.observation.id } })).epiphytes).toBeNull();
     const heat = res.body.data.risk.predictions.find((p) => p.riskType === 'HEAT_ICE_ICE');
     expect(heat.probability).toBeGreaterThan(before.probability);
     expect(heat.riskLevel).toBe('CRITICAL');
@@ -61,7 +66,7 @@ describe('end-to-end risk → action → outcome flow', () => {
     const notifications = await api().get('/api/notifications').set(auth(farmer));
     expect(notifications.body.data.notifications.some((n) => n.alertId)).toBe(true);
     // A CRITICAL alert triggers a real SMS attempt; without Africa's Talking credentials it is honestly logged as NOT_CONFIGURED.
-    const smsLog = await prisma.notificationLog.findFirst({ where: { channel: 'SMS', messageType: 'RISK_ALERT' }, orderBy: { createdAt: 'desc' } });
+    const smsLog = await events(prisma, 'DELIVERY').findFirst({ where: { channel: 'SMS', messageType: 'RISK_ALERT' }, orderBy: { createdAt: 'desc' } });
     expect(smsLog.status).toBe('NOT_CONFIGURED');
     expect(smsLog.message).toMatch(/^MWANIMLINZI: .*FARM001.*HATARI KUBWA SANA. Hatua: /);
   });
@@ -89,8 +94,7 @@ describe('end-to-end risk → action → outcome flow', () => {
     const res = await api().post(`/api/farms/${farm.id}/harvests`).set(auth(farmer))
       .send({ harvestDate: new Date().toISOString().slice(0, 10), estimatedQuantity: 200, actualQuantity: 170, qualityGrade: 'B', dryingMethod: 'RACK', pricePerKg: 1000, closeCycle: false });
     expect(res.status).toBe(201);
-    expect(res.body.data.harvest).toMatchObject({ differenceQuantity: -30, lossPercent: 15, totalValue: 170000 });
-    expect(res.body.data.harvest.quality).toHaveLength(1);
+    expect(res.body.data.harvest).toMatchObject({ differenceQuantity: -30, lossPercent: 15, totalValue: 170000, qualityGrade: 'B', dryingMethod: 'RACK' });
   });
 
   test('history timeline contains the full loop', async () => {

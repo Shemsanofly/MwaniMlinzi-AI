@@ -77,13 +77,13 @@ describe('RiskEngine (rule baseline)', () => {
   });
 
   test('HYBRID mode blends an ML probability when a model is available, otherwise stays RULE', async () => {
-    const fakeMl = { predict: async (rt) => (rt === 'HEAT_ICE_ICE' ? { probability: 0.9, modelId: 'm1', version: 'v1', syntheticData: true } : null) };
+    const fakeMl = { predict: async (rt) => (rt === 'HEAT_ICE_ICE' ? { probability: 0.9, modelId: 'm1', version: 'v1', syntheticData: false } : null) };
     const r = await RiskEngine.calculateFarmRisk(baseCtx(), { aiMode: 'HYBRID', blendWeight: 0.5, ml: fakeMl });
     const heat = r.risks.HEAT_ICE_ICE;
     expect(heat.modelType).toBe('HYBRID');
     expect(heat.probability).toBeCloseTo(0.5 * heat.ruleProbability + 0.45, 3);
     expect(r.risks.STORM_LINE_DAMAGE.modelType).toBe('RULE');
-    expect(r.modelStatus.label).toMatch(/synthetic/);
+    expect(r.modelStatus.label).not.toMatch(/synthetic/);
     const ruleOnly = await RiskEngine.calculateFarmRisk(baseCtx(), { aiMode: 'RULE_ONLY', ml: fakeMl });
     expect(ruleOnly.risks.HEAT_ICE_ICE.modelType).toBe('RULE');
   });

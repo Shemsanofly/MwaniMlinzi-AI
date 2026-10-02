@@ -36,7 +36,13 @@ export class EnvironmentalProvider {
     else {
       try {
         const data = await live.fetch(loc);
-        return { ...data, source: 'LIVE', provider: live.name };
+        if (data && 'observedAt' in data && (data.observedAt == null || !Number.isFinite(+new Date(data.observedAt)))) {
+          throw new Error('Provider timestamp is unavailable');
+        }
+        if (data && Object.values(data).some((value) => typeof value === 'number' && Number.isFinite(value))) {
+          return { ...data, source: 'LIVE', provider: live.name };
+        }
+        errors.push(`${live.name}: no environmental values available`);
       } catch (err) {
         errors.push(`${live.name}: ${err.message}`);
       }
