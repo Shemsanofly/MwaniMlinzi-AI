@@ -1,4 +1,7 @@
 import { api, auth, login } from '../helpers.js';
+import prisma from '../../src/server/config/prisma.js';
+
+afterAll(() => prisma.$disconnect());
 
 describe('Express-equivalent fallbacks', () => {
   test('unknown /api path without a token → 401 (global authenticate ran first)', async () => {
@@ -24,5 +27,22 @@ describe('Express-equivalent fallbacks', () => {
     const docs = await api().get('/api/docs');
     expect(docs.status).toBe(200);
     expect(docs.text).toContain('swagger-ui');
+  });
+  test('docs assets are served with the right content types', async () => {
+    for (const name of ['swagger-ui-bundle.js', 'swagger-initializer.js']) {
+      const res = await api().get(`/api/docs/${name}`);
+      expect(res.status).toBe(200);
+      expect(res.type).toMatch(/javascript/);
+      expect(res.text.length).toBeGreaterThan(0);
+    }
+    const css = await api().get('/api/docs/swagger-ui.css');
+    expect(css.status).toBe(200);
+    expect(css.type).toBe('text/css');
+  });
+  test('bare /api/admin for a farmer → 403', async () => {
+    expect((await api().get('/api/admin').set(auth(await login('farmer')))).status).toBe(403);
+  });
+  test('wrong method on an integration path without a token → 401', async () => {
+    expect((await api().get('/api/integrations/africastalking/ussd')).status).toBe(401);
   });
 });

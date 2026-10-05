@@ -177,10 +177,15 @@ export function matchRoute(pathname) {
 }
 
 /**
- * Express fell through to `api.use(authenticate)` (and `adm.use(authorize('ADMIN'))` under /admin)
- * before its 404 handler, so unknown paths answer 401/403 first. Integration paths fell through too.
+ * Express fell through to `api.use(authenticate)` (and `adm.use(authorize('ADMIN'))` for `/api/admin` and below)
+ * before its 404 handler, so unknown paths answer 401/403 first. Integration paths passed the integration
+ * limiter first, then fell through to the API limiter and authenticate as well.
  */
-const fallbackSteps = (path) => [...AUTH, ...(path.startsWith('/api/admin/') ? [authorize('ADMIN')] : [])];
+const fallbackSteps = (path) => [
+  ...(path.startsWith('/api/integrations/') ? [limiters.integration] : []),
+  ...AUTH,
+  ...(/^\/api\/admin(\/|$)/.test(path) ? [authorize('ADMIN')] : []),
+];
 export async function notFoundHandler(request) {
   const path = new URL(request.url).pathname;
   return defineRoute(fallbackSteps(path), (req) => notFoundResponse(req))(request, {});
