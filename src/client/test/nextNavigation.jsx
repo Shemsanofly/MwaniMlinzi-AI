@@ -15,6 +15,12 @@ export function __reset() {
   try { window.history.replaceState(null, '', '/'); } catch { /* no window */ }
 }
 let delay = 0;
+/** Simulate Next re-replacing the current entry later (server patch, lazy segment): custom keys are dropped. */
+export function __nextReplaceCurrent() {
+  window.history.replaceState({ __NA: true }, '', window.location.href);
+  loc = { ...loc };
+  emit();
+}
 /** Make push/replace complete asynchronously, like a Next transition. */
 export function __setDelay(ms) { delay = ms; }
 const sync = () => { loc = { pathname: window.location.pathname, search: window.location.search }; emit(); };
@@ -22,8 +28,8 @@ if (typeof window !== 'undefined') window.addEventListener('popstate', sync);
 const go = (kind, href) => {
   const run = () => {
     const u = new URL(href, 'http://localhost');
-    // Next pushes its own state object; entries start without app state.
-    window.history[kind](kind === 'pushState' ? { __NA: true } : { ...(window.history.state || {}) }, '', u.pathname + u.search + u.hash);
+    // Like real Next: a fresh state object without any custom keys, for push and replace alike.
+    window.history[kind]({ __NA: true }, '', u.pathname + u.search + u.hash);
     __setLocation(href);
   };
   if (delay) setTimeout(run, delay); else run();

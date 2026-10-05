@@ -9,16 +9,27 @@ import { useParams as useNextParams, usePathname, useRouter, useSearchParams as 
  * `saveNavState` parks it in sessionStorage as "pending" for the target path; once that path renders,
  * useLocation moves it into window.history.state.__navState (after Next has pushed its own entry) and
  * clears the pending slot. A navigation without state therefore yields `state: null`, and Back/Forward
- * restore whatever the earlier entry carried. Next's own history writes keep unknown keys when they
- * spread the current state, but a Next-initiated replaceState that builds a fresh object would drop it
- * (the state then reads as null, never as another entry's state).
+ * restore whatever the earlier entry carried.
+ *
+ * Next rewrites the current entry with a fresh state object (replaceState({__NA, tree})) on ordinary
+ * navigations and again on later router-state changes, which drops our key. So the last resolved state is
+ * also remembered in memory (`current`) together with a navigation epoch; while no navigation of ours
+ * (saveNavState/navigate/Link/setSearchParams/popstate) happened since, a dropped key is served from
+ * `current` and re-attached to the entry. Limit: if Next rewrites the entry and nothing re-renders a
+ * useLocation consumer before the user leaves, the entry stays without state until the next render.
  */
 const STATE_KEY = 'mwanimlinzi.navState';
 const ENTRY_KEY = '__navState';
 const pathOf = (to) => String(typeof to === 'object' ? to.pathname || '' : to).split(/[?#]/)[0] || '/';
 const hrefOf = (to) => (typeof to === 'object' ? `${to.pathname || ''}${to.search || ''}${to.hash || ''}` : to);
 
+let epoch = 0;
+let current = null; // { pathname, state, epoch } for the entry most recently resolved by useLocation
+const bump = () => { epoch += 1; current = null; };
+if (typeof window !== 'undefined') window.addEventListener('popstate', bump);
+
 export function saveNavState(to, state) {
+  bump();
   try {
     if (state === undefined || state === null) sessionStorage.removeItem(STATE_KEY);
     else sessionStorage.setItem(STATE_KEY, JSON.stringify({ path: pathOf(to), state }));
@@ -42,6 +53,7 @@ function writeEntryState(state) {
 }
 /** Forget every pending and current-entry navigation state (used on explicit logout). */
 export function clearNavState() {
+  bump();
   try { sessionStorage.removeItem(STATE_KEY); } catch { /* storage unavailable */ }
   if (typeof window !== 'undefined' && entryState() !== null) writeEntryState(null);
 }
@@ -61,15 +73,19 @@ export function useLocation() {
   const qs = sp ? sp.toString() : '';
   const hash = typeof window !== 'undefined' ? window.location.hash : '';
   const pending = typeof window !== 'undefined' ? readPending(pathname) : null;
-  const state = pending ? pending.state : entryState();
+  let state = pending ? pending.state : entryState();
+  if (state === null && current && current.pathname === pathname && current.epoch === epoch) state = current.state;
   const key = JSON.stringify(state);
-  // Attach pending state to the (by now pushed) history entry, never during render.
+  // Attach state to the (by now pushed) history entry, never during render. Runs every render so an entry
+  // that Next rewrote without our key gets it back.
   useEffect(() => {
     const p = readPending(pathname);
-    if (!p) return;
-    writeEntryState(p.state);
-    try { sessionStorage.removeItem(STATE_KEY); } catch { /* storage unavailable */ }
-  }, [pathname, qs, key]);
+    const resolved = p ? p.state : (entryState() ?? (current && current.pathname === pathname && current.epoch === epoch ? current.state : null));
+    if (resolved === null) return;
+    current = { pathname, state: resolved, epoch };
+    if (p) { try { sessionStorage.removeItem(STATE_KEY); } catch { /* storage unavailable */ } }
+    if (p || entryState() === null) writeEntryState(resolved);
+  });
   return useMemo(() => ({ pathname, search: qs ? `?${qs}` : '', hash, state }), [pathname, qs, hash, key]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
@@ -84,6 +100,7 @@ export function useSearchParams() {
   const qs = sp ? sp.toString() : '';
   const params = useMemo(() => new URLSearchParams(qs), [qs]);
   const setParams = useCallback((next, { replace = false } = {}) => {
+    bump();
     const value = typeof next === 'function' ? next(new URLSearchParams(qs)) : next;
     const search = new URLSearchParams(value).toString();
     const href = search ? `${pathname}?${search}` : pathname;

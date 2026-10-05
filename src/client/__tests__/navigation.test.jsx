@@ -1,5 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { act } from '@testing-library/react';
+import { __nextReplaceCurrent } from '../test/nextNavigation.jsx';
 import { MemoryRouter, Routes, Route, Link, NavLink, Navigate, useLocation, useNavigate, useParams, useSearchParams } from '../test/router.jsx';
 
 function Where() { const l = useLocation(); return <p data-testid="where">{l.pathname}{l.search}|{JSON.stringify(l.state)}</p>; }
@@ -78,4 +80,25 @@ test('state belongs to the history entry: Back restores it, a stateless Link yie
   window.history.back();
   await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/login|{"from":"/farmer/risk"}'));
   expect(window.history.state.__navState).toEqual({ from: '/farmer/risk' }); // lives on the entry itself
+});
+
+test('state survives Next re-replacing the current entry; later stateless navigation is still null', async () => {
+  render(
+    <MemoryRouter initialEntries={['/start']}>
+      <Navigate to="/login" replace state={{ from: '/farmer/risk' }} />
+      <Link to="/register">Reg</Link>
+      <Where />
+    </MemoryRouter>,
+  );
+  await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/login|{"from":"/farmer/risk"}'));
+  act(() => { __nextReplaceCurrent(); });
+  expect(window.history.state.__navState).toEqual({ from: '/farmer/risk' }); // re-attached
+  expect(screen.getByTestId('where')).toHaveTextContent('/login|{"from":"/farmer/risk"}');
+  act(() => { __nextReplaceCurrent(); });
+  await userEvent.click(screen.getByText('Reg'));
+  expect(screen.getByTestId('where')).toHaveTextContent('/register|null');
+  act(() => { __nextReplaceCurrent(); });
+  expect(screen.getByTestId('where')).toHaveTextContent('/register|null');
+  window.history.back();
+  await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/login|{"from":"/farmer/risk"}'));
 });
