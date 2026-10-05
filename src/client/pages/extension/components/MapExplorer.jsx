@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../../../navigation.jsx';
 import { useQuery } from '@tanstack/react-query';
 import { MapPin } from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nProvider.jsx';

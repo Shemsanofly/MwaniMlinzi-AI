@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from '../../../test/router.jsx';
 import { render } from '@testing-library/react';
 import { I18nProvider } from '../../../i18n/I18nProvider.jsx';
 

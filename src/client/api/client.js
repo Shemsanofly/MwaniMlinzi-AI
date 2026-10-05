@@ -17,7 +17,7 @@ export class ApiError extends Error {
 }
 
 export const http = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || '/api',
   timeout: 30000,
 });
 

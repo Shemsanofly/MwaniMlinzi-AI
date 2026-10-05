@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../../navigation.jsx';
 import { ArrowDownRight, ArrowUpRight, BrainCircuit, ChevronDown, ChevronUp, CloudLightning, CloudOff, Flag, Leaf, ShieldAlert, ShieldCheck, Sprout, Thermometer, Waves } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { Badge, Card, Notice, ProgressBar, RiskBadge, SourceBadge, cx } from '../ui/index.jsx';

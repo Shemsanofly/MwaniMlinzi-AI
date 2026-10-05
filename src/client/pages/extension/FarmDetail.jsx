@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from '../../navigation.jsx';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Bell, CalendarDays, ClipboardList, Flag, History, Info, ListChecks, MapPin, MessageSquarePlus, RefreshCw, ShieldAlert, ShieldCheck, StickyNote, Thermometer, Waves, Wind,

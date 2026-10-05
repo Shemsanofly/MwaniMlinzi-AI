@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '../../navigation.jsx';
 import {
   BookCheck, BrainCircuit, CheckCircle2, CloudSun, Database, Globe, Languages, MessageSquare, RefreshCcw, Smartphone, Sprout, Target,
 } from 'lucide-react';

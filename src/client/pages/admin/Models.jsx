@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '../../navigation.jsx';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Archive, BrainCircuit, CheckCircle2, Cpu, MessageSquareWarning, Pause, Scale, Settings as SettingsIcon, Terminal } from 'lucide-react';
 import { adminApi } from '../../api/endpoints.js';

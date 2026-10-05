@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '../../navigation.jsx';
 import { Compass } from 'lucide-react';
 import { useAuth } from '../../stores/AuthContext.jsx';
 import { useI18n } from '../../i18n/I18nProvider.jsx';

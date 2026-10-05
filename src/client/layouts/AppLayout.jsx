@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from '../navigation.jsx';
 import {
   BarChart3, Bell, BookOpen, ClipboardCheck, Cloud, Compass, Cpu, FlaskConical, Gauge, Home, Key, LogOut, Map, Menu,
   Settings, ShieldCheck, Sprout, UserCog, Users, X,
@@ -85,7 +85,7 @@ function NavGroup({ title, children }) {
 }
 
 /** Staff layout (admin): sidebar on desktop, drawer on mobile. */
-export default function AppLayout() {
+export default function AppLayout({ children }) {
   const { user, logout } = useAuth();
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -156,7 +156,7 @@ export default function AppLayout() {
               </div>
             </div>
           </header>
-          <main key={pathname} className="app-content safe-page mx-auto max-w-7xl flex-1 animate-rise py-6 sm:py-8"><Outlet /></main>
+          <main key={pathname} className="app-content safe-page mx-auto max-w-7xl flex-1 animate-rise py-6 sm:py-8">{children}</main>
         </div>
       </div>
     </div>

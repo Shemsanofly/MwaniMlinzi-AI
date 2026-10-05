@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '../../navigation.jsx';
 import {
   Activity, ArrowRight, ArrowUpRight, BookCheck, Clock, Database, Eye, Languages, LineChart, MessageSquare, ScanSearch, ShieldCheck, Smartphone, Sprout, Users,
 } from 'lucide-react';

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '../../../navigation.jsx';
 import { AlertTriangle, BarChart3, Bell, ClipboardX, Package, Tractor, Users } from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nProvider.jsx';
 import { Card, EmptyState, RiskBadge, StatCard, Table } from '../../../components/ui/index.jsx';

@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { I18nProvider } from '../../i18n/I18nProvider.jsx';
 import { RiskBadge, SourceBadge, ErrorState, FormError, PasswordInput } from './index.jsx';
 import { NextActionCard } from '../risk/RiskComponents.jsx';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from '../../test/router.jsx';
 
 const wrap = (ui) => render(<MemoryRouter><I18nProvider>{ui}</I18nProvider></MemoryRouter>);
 

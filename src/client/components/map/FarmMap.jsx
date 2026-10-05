@@ -1,6 +1,6 @@
 import { CircleMarker, MapContainer, Popup, Tooltip } from 'react-leaflet';
 import BaseMapTiles from './BaseMapTiles.jsx';
-import { Link } from 'react-router-dom';
+import { Link } from '../../navigation.jsx';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { riskStyle } from '../../utils/risk.js';
 import { date, kg } from '../../utils/format.js';

@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../navigation.jsx';
 
 /** The mark: a seaweed frond rising out of a wave, inside a rounded tile. Inline so it inherits no extra request. */
 export function LogoMark({ className = 'h-8 w-8' }) {

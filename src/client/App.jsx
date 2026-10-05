@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from './navigation.jsx';
 import PublicLayout from './layouts/PublicLayout.jsx';
 import AppLayout from './layouts/AppLayout.jsx';
 import FarmerLayout from './layouts/FarmerLayout.jsx';

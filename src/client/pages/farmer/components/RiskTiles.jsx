@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '../../../navigation.jsx';
 import { ArrowDown, ArrowUp, ShieldAlert } from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nProvider.jsx';
 import { RISK_ICON } from '../../../components/risk/RiskComponents.jsx';

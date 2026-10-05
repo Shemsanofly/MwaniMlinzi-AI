@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../../navigation.jsx';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   AlertOctagon, AlertTriangle, BellRing, Bot, BrainCircuit, CalendarClock, ChevronDown, ClipboardList, Clock, Eye,

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from '../../navigation.jsx';
 import { AlertTriangle, BadgeCheck, BarChart3, Calendar, Copy, Handshake, Key, Lock, RefreshCw, Users } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { Badge, Button, Card, CardHeader, EmptyState, Notice } from '../../components/ui/index.jsx';
@@ -7,7 +7,7 @@ import { num, pct } from '../../utils/format.js';
 
 const STORAGE_KEY = 'mwanimlinzi.partner.token';
 // Use the same base URL as the authenticated client (VITE_API_URL in prod, dev proxy locally).
-const API = import.meta.env.VITE_API_URL || '/api';
+const API = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 async function callPublic(path, token) {
   const res = await fetch(`${API}${path}?token=${encodeURIComponent(token)}`, {

@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from '../../test/router.jsx';
 import AppLayout from '../AppLayout.jsx';
 import FarmerLayout from '../FarmerLayout.jsx';
 import { Table } from '../../components/ui/index.jsx';

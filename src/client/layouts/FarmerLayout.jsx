@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from '../navigation.jsx';
 import { Activity, Bell, Bot, ClipboardList, History, Home, LogOut, MoreHorizontal, NotebookPen, Settings, Sprout, Truck, X } from 'lucide-react';
 import { useAuth } from '../stores/AuthContext.jsx';
 import { useI18n } from '../i18n/I18nProvider.jsx';
@@ -76,7 +76,7 @@ function MoreSheet({ open, onClose }) {
 }
 
 /** Mobile-first farmer shell: slim top bar (logo + language) and a five-item bottom navigation. */
-export default function FarmerLayout() {
+export default function FarmerLayout({ children }) {
   const { t } = useI18n();
   const { unread } = useNotifications();
   const [more, setMore] = useState(false);
@@ -93,7 +93,7 @@ export default function FarmerLayout() {
           <div className="ml-auto shrink-0"><LanguageSwitch /></div>
         </div>
       </header>
-      <main key={pathname} className="app-content safe-page mx-auto max-w-5xl flex-1 animate-rise pb-[calc(8rem+env(safe-area-inset-bottom))] pt-5 sm:pt-7"><Outlet /></main>
+      <main key={pathname} className="app-content safe-page mx-auto max-w-5xl flex-1 animate-rise pb-[calc(8rem+env(safe-area-inset-bottom))] pt-5 sm:pt-7">{children}</main>
       <nav className="fixed inset-x-0 bottom-0 z-[900] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2" aria-label={t('a11y.farmerNav')}>
         <div className="mx-auto grid max-w-md grid-cols-5 rounded-[1.75rem] border border-white/60 bg-white/90 px-1 shadow-[0_12px_40px_-12px_rgb(5_31_41/0.35)] ring-1 ring-slate-900/5 backdrop-blur-xl">
           {TABS.map(({ to, key, icon, badge }) => (

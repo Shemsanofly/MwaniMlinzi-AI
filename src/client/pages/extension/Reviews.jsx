@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from '../../navigation.jsx';
 import { useQuery } from '@tanstack/react-query';
 import { ClipboardCheck, ClipboardList } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';

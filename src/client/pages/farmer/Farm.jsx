@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from '../../navigation.jsx';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarPlus, CheckCircle2, MapPin, Pencil, Plus, Sprout } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';

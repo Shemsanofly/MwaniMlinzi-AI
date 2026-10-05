@@ -1,9 +1,9 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from '../navigation.jsx';
 import { useAuth } from '../stores/AuthContext.jsx';
 import { PageLoader, ErrorState } from '../components/ui/index.jsx';
 
 /** Requires login; if `roles` is given, one of them (ADMIN always passes — superadmins see every tree). */
-export default function ProtectedRoute({ roles }) {
+export default function ProtectedRoute({ roles, children }) {
   const { status, user, hasRole } = useAuth();
   const location = useLocation();
   if (status === 'loading') return <PageLoader />;
@@ -11,5 +11,5 @@ export default function ProtectedRoute({ roles }) {
   if (roles && !hasRole(...roles, 'ADMIN')) {
     return <div className="p-6"><ErrorState error={{ status: 403 }} /></div>;
   }
-  return user ? <Outlet /> : <PageLoader />;
+  return user ? children : <PageLoader />;
 }

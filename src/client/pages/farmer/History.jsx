@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from '../../navigation.jsx';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Activity, BellRing, CheckCircle2, ClipboardList, Flag, Hand, Sprout, Target, TrendingDown, Truck } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';

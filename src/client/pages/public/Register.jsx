@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from '../../navigation.jsx';
 import { useQuery } from '@tanstack/react-query';
 import { ShieldCheck, UserPlus } from 'lucide-react';
 import { metaApi } from '../../api/endpoints.js';

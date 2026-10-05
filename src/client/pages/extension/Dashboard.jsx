@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from '../../navigation.jsx';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, Bell, ClipboardCheck, ClipboardList, Map as MapIcon, Microscope, Navigation, RefreshCw } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';

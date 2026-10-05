@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation } from '../navigation.jsx';
 import { MessageSquare, Phone, Smartphone } from 'lucide-react';
 import { useAuth } from '../stores/AuthContext.jsx';
 import { useI18n } from '../i18n/I18nProvider.jsx';
@@ -8,7 +8,7 @@ import LanguageSwitch from './LanguageSwitch.jsx';
 import OfflineBanner from './OfflineBanner.jsx';
 import { cx } from '../components/ui/index.jsx';
 
-export default function PublicLayout() {
+export default function PublicLayout({ children }) {
   const { t } = useI18n();
   const { isAuthenticated, homePath } = useAuth();
   const { pathname } = useLocation();
@@ -48,7 +48,7 @@ export default function PublicLayout() {
           <NavLink to="/how-it-works" className={link}>{t('nav.howItWorks')}</NavLink>
         </nav>
       </header>
-      <main className="app-content flex-1"><Outlet /></main>
+      <main className="app-content flex-1">{children}</main>
       <footer className="ocean-band text-ocean-200">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 pb-8 pt-14 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
           <div>

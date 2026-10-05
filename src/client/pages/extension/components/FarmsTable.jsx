@@ -1,5 +1,5 @@
 import { useDeferredValue, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '../../../navigation.jsx';
 import { useQuery } from '@tanstack/react-query';
 import { Search, Tractor } from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nProvider.jsx';

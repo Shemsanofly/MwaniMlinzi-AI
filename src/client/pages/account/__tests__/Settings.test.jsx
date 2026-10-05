@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from '../../../test/router.jsx';
 import { I18nProvider } from '../../../i18n/I18nProvider.jsx';
 import { authApi } from '../../../api/endpoints.js';
 import AccountSettings from '../Settings.jsx';
