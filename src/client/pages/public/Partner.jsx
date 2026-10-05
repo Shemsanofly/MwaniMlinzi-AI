@@ -6,7 +6,7 @@ import { Badge, Button, Card, CardHeader, EmptyState, Notice } from '../../compo
 import { num, pct } from '../../utils/format.js';
 
 const STORAGE_KEY = 'mwanimlinzi.partner.token';
-// Use the same base URL as the authenticated client (VITE_API_URL in prod, dev proxy locally).
+// Use the same base URL as the authenticated client (NEXT_PUBLIC_API_URL, default /api on the same origin).
 const API = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 async function callPublic(path, token) {

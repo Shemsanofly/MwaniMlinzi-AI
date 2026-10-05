@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, Link, NavLink, Navigate, useLocation, useNavigate, useParams, useSearchParams } from '../test/router.jsx';
 
@@ -49,13 +49,33 @@ test('Navigate with state, useParams via Routes, useSearchParams setter', async 
 });
 
 test('Navigate redirects on mount; object entries carry state', () => {
+  function Old() { const l = useLocation(); return <p data-testid="old">{JSON.stringify(l.state)}</p>; }
+  const seen = [];
+  function Spy() { const l = useLocation(); seen.push(l.pathname + JSON.stringify(l.state)); return null; }
   render(
     <MemoryRouter initialEntries={[{ pathname: '/old', state: { identifier: 'a@b.c' } }]}>
       <Routes>
-        <Route path="/old" element={<Navigate to="/new" replace state={{ keep: 1 }} />} />
+        <Route path="/old" element={<><Spy /><Old /><Navigate to="/new" replace state={{ keep: 1 }} /></>} />
         <Route path="/new" element={<Where />} />
       </Routes>
     </MemoryRouter>,
   );
+  expect(seen[0]).toBe('/old{"identifier":"a@b.c"}');
   expect(screen.getByTestId('where')).toHaveTextContent('/new|{"keep":1}');
+});
+
+test('state belongs to the history entry: Back restores it, a stateless Link yields null', async () => {
+  render(
+    <MemoryRouter initialEntries={['/start']}>
+      <Navigate to="/login" replace state={{ from: '/farmer/risk' }} />
+      <Link to="/register">Reg</Link>
+      <Where />
+    </MemoryRouter>,
+  );
+  await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/login|{"from":"/farmer/risk"}'));
+  await userEvent.click(screen.getByText('Reg'));
+  expect(screen.getByTestId('where')).toHaveTextContent('/register|null');
+  window.history.back();
+  await waitFor(() => expect(screen.getByTestId('where')).toHaveTextContent('/login|{"from":"/farmer/risk"}'));
+  expect(window.history.state.__navState).toEqual({ from: '/farmer/risk' }); // lives on the entry itself
 });

@@ -10,6 +10,7 @@ export function MemoryRouter({ initialEntries = ['/'], children }) {
     const entry = initialEntries[initialEntries.length - 1];
     const href = typeof entry === 'object' ? `${entry.pathname || '/'}${entry.search || ''}` : entry;
     if (typeof entry === 'object' && entry.state !== undefined) saveNavState(href, entry.state);
+    window.history.replaceState(null, '', href);
     __setLocation(href);
     return null;
   });

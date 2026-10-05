@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { authApi } from '../api/endpoints.js';
 import { setUnauthorizedHandler, tokenStore } from '../api/client.js';
 import { useI18n } from '../i18n/I18nProvider.jsx';
+import { clearNavState } from '../navigation.jsx';
 
 const AuthContext = createContext(null);
 const USER_KEY = 'mwanimlinzi.user';
@@ -17,6 +18,7 @@ export const HOME_FOR_ROLE = {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [extra, setExtra] = useState({ cooperative: null, memberships: [] });
+  const [loggedOut, setLoggedOut] = useState(false);
   const [status, setStatus] = useState(tokenStore.get() ? 'loading' : 'anonymous');
   const queryClient = useQueryClient();
   const { setLang } = useI18n();
@@ -61,6 +63,7 @@ export function AuthProvider({ children }) {
     // or restore the previous account's cached profile and memberships.
     queryClient.clear();
     try { localStorage.removeItem('mwanimlinzi.cache'); } catch { /* storage unavailable */ }
+    setLoggedOut(false);
     tokenStore.set(data.token);
     saveUser({ user: data.user, cooperative: null, memberships: [] });
     setUser(data.user);
@@ -79,13 +82,18 @@ export function AuthProvider({ children }) {
   }, [acceptSession]);
 
   const logout = useCallback(async () => {
+    // Explicit logout: nothing may remember where the previous user was (ProtectedRoute checks this flag).
+    setLoggedOut(true);
+    clearNavState();
     try { await authApi.logout(); } catch { /* token may already be invalid */ }
     clear();
+    clearNavState();
   }, [clear]);
 
   const value = useMemo(() => ({
     user,
     status,
+    loggedOut,
     cooperative: extra.cooperative,
     memberships: extra.memberships,
     isAuthenticated: status === 'authenticated',
@@ -95,7 +103,7 @@ export function AuthProvider({ children }) {
     register,
     logout,
     refresh: loadMe,
-  }), [user, status, extra, login, register, logout, loadMe]);
+  }), [user, status, loggedOut, extra, login, register, logout, loadMe]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
