@@ -14,6 +14,8 @@ const routes = [
   R('patch', '/auth/me', 'Auth', 'Update profile, language and SMS preferences'),
   R('post', '/auth/change-password', 'Auth', 'Change password (current password required)', 'any authenticated user', { currentPassword: '…', newPassword: '…' }),
   R('post', '/auth/logout', 'Auth', 'Logout (client discards token; audited)'),
+  R('post', '/auth/forgot-password', 'Auth', 'Send a six-digit reset code to the registered email', 'public', { email: 'farmer@example.org' }),
+  R('post', '/auth/reset-password', 'Auth', 'Reset password with the emailed one-time code', 'public', { email: 'farmer@example.org', code: '123456', newPassword: '<new password>' }),
   R('get', '/farms', 'Farms', 'List farms in scope (own / all)', 'FARMER, ADMIN'),
   R('post', '/farms', 'Farms', 'Create farm (+ optional first planting cycle)', 'FARMER, ADMIN'),
   R('get', '/farms/{id}', 'Farms', 'Farm detail with crop age, cycle, latest risks, forecast'),

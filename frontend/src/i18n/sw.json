@@ -85,7 +85,7 @@
     "acknowledge": "Nimeona",
     "resolve": "Imetatuliwa",
     "markAllRead": "Weka zote zimesomwa",
-    "contactExtension": "Wasiliana na afisa ugani",
+    "contactExtension": "Wasiliana na msimamizi",
     "didIt": "Nimefanya hatua hii",
     "couldNot": "Sikuweza kufanya",
     "ok": "Sawa",
@@ -133,8 +133,6 @@
   },
   "roles": {
     "FARMER": "Mkulima",
-    "COOPERATIVE_ADMIN": "Mfanyakazi wa ushirika",
-    "EXTENSION_OFFICER": "Afisa ugani",
     "ADMIN": "Msimamizi"
   },
   "common": {
@@ -190,6 +188,8 @@
       "UPLOAD_ERROR": "Faili haikupakiwa. Tafadhali jaribu tena.",
       "PAYLOAD_TOO_LARGE": "Faili au taarifa ni kubwa mno.",
       "NOT_CONFIGURED": "Huduma hii bado haijawekwa.",
+      "EMAIL_NOT_CONFIGURED": "Huduma ya kurejesha nenosiri kwa barua pepe haipatikani. Wasiliana na msimamizi.",
+      "EMAIL_SEND_FAILED": "Hatukuweza kutuma barua pepe ya kurejesha nenosiri. Jaribu tena baadaye.",
       "PROVIDER_ERROR": "Huduma ya nje haikujibu. Tafadhali jaribu tena baadaye.",
       "WRONG_PASSWORD": "Nenosiri la sasa si sahihi.",
       "INVALID_CODE": "Namba si sahihi au muda wake umekwisha. Omba namba mpya."
@@ -306,7 +306,7 @@
         "breakage": "Matawi, kamba au mistari iliyokatika.",
         "unusualGrowth": "Ukuaji wa polepole sana, laini au wa ajabu.",
         "details": "Si lazima. Ruka kama huna uhakika.",
-        "photo": "Si lazima. Picha nzuri inamsaidia afisa ugani."
+        "photo": "Si lazima. Picha nzuri inamsaidia msimamizi."
       },
       "moreDetails": "Ongeza maelezo zaidi",
       "skip": "Ruka",
@@ -478,7 +478,7 @@
         "safety": "Sera ya usalama",
         "llm": "Limepangwa upya na AI ({name})"
       },
-      "footer": "Msaidizi anatumia taarifa za shamba lako na ushauri ulioidhinishwa pekee. Hatoi ushauri wa dawa au kemikali — kwa hilo, wasiliana na afisa ugani.",
+      "footer": "Msaidizi anatumia taarifa za shamba lako na ushauri ulioidhinishwa pekee. Hatoi ushauri wa dawa au kemikali — kwa hilo, wasiliana na msimamizi.",
       "recordNote": "Majibu yanatumia ripoti ulizohifadhi na utabiri unaopatikana. Utabiri unaweza kubadilika."
     },
     "farm": {
@@ -1163,14 +1163,14 @@
       "unvalidatedNotice": "Hatua {n} kati ya {total} bado hazijaidhinishwa na wataalamu wa ndani. Bado zinaweza kupendekezwa (isipokuwa \"Hitaji hatua zilizoidhinishwa\" imewashwa kwenye Mipangilio) na zinaonyeshwa kwa wakulima kama \"zinasubiri uthibitisho\".",
       "unvalidated": "Haijaidhinishwa",
       "disabled": "Imezimwa",
-      "escalates": "Inapelekwa kwa afisa ugani",
+      "escalates": "Inapelekwa kwa msimamizi",
       "andAbove": "na zaidi",
       "sourceLabel": "Chanzo",
       "used": "imetumika katika mapendekezo {n}",
       "validatedBy": "imeidhinishwa na {name} tarehe {date}",
       "createTitle": "Hatua mpya",
       "editTitle": "Hariri {code}",
-      "createNote": "Hatua mpya zinaanza bila kuidhinishwa. Afisa ugani au msimamizi lazima aziidhinishe.",
+      "createNote": "Hatua mpya zinaanza bila kuidhinishwa. Msimamizi au msimamizi lazima aziidhinishe.",
       "resetNote": "Kubadilisha maandishi ya hatua, maelezo, aina ya hatari, viwango au masharti kunaondoa uthibitisho wa wataalamu (mfumo unafanya hivi wenyewe).",
       "resetWarning": "Umebadilisha kile wakulima wanaambiwa. Kuhifadhi KUTAONDOA uthibitisho wa wataalamu wa hatua hii.",
       "code": "Msimbo",
@@ -1193,7 +1193,7 @@
       "priority": "Kipaumbele",
       "priorityHint": "0–100, kikubwa kinashinda zikilingana nyingi",
       "enabled": "Imewashwa",
-      "escalate": "Peleka kwa afisa ugani",
+      "escalate": "Peleka kwa msimamizi",
       "actionEn": "Hatua (Kiingereza)",
       "actionSw": "Hatua (Kiswahili)",
       "explanationEn": "Maelezo (Kiingereza)",
@@ -1726,7 +1726,7 @@
         },
         "approved": {
           "title": "Pendekezo lililoidhinishwa",
-          "text": "Mkulima anapokea hatua moja wazi, sababu zake, uharaka wake na kama awasiliane na afisa ugani."
+          "text": "Mkulima anapokea hatua moja wazi, sababu zake, uharaka wake na kama awasiliane na msimamizi."
         },
         "llm": {
           "title": "Mfumo wa lugha (maelezo tu)",
@@ -1811,7 +1811,7 @@
         "passwordMatch": "Manenosiri hayalingani.",
         "consent": "Lazima ukubali matumizi ya data ili kufungua akaunti."
       },
-      "emailHint": "Si lazima.",
+      "emailHint": "Si lazima. Hutumika kurejesha nenosiri kwa barua pepe.",
       "optionalTitle": "Maelezo zaidi (si lazima)",
       "smsOptIn": "Nitumie SMS za tahadhari kuhusu shamba langu",
       "smsOptInHint": "Ujumbe muhimu tu. Unaweza kubadilisha baadaye kwenye Mipangilio."
@@ -1823,21 +1823,22 @@
     },
     "reset": {
       "title": "Badilisha nenosiri",
-      "subtitle": "Weka namba yako ya simu. Tutakutumia namba ya siri ya tarakimu 6 kwa SMS.",
-      "phoneHint": "Namba ya simu uliyojisajili nayo, mfano 0777 123 456.",
-      "sendCode": "Tuma namba kwa SMS",
+      "subtitle": "Weka anwani ya barua pepe uliyojisajili nayo. Tutakutumia namba ya siri ya tarakimu 6 kwa barua pepe.",
+      "emailHint": "Tumia barua pepe iliyohifadhiwa kwenye akaunti yako. Kama huna barua pepe iliyosajiliwa, wasiliana na msimamizi.",
+      "sendCode": "Tuma namba kwa barua pepe",
       "sending": "Inatuma namba…",
-      "codeSent": "Kama {phone} imesajiliwa, namba ya tarakimu 6 imetumwa kwa SMS. Inafanya kazi kwa dakika 15.",
-      "code": "Namba ya tarakimu 6 kutoka SMS",
+      "codeSent": "Kama {email} imesajiliwa, namba ya tarakimu 6 imetumwa kwa barua pepe. Angalia kikasha na folda ya barua taka. Inafanya kazi kwa dakika 15.",
+      "code": "Namba ya tarakimu 6 kutoka barua pepe",
       "newPassword": "Nenosiri jipya",
       "save": "Hifadhi nenosiri jipya",
       "saving": "Inahifadhi…",
-      "resend": "Hukupata SMS? Tuma namba mpya",
+      "resend": "Hukupata barua pepe? Tuma namba mpya",
       "backToLogin": "Rudi kuingia",
       "doneTitle": "Nenosiri limebadilishwa",
       "doneText": "Nenosiri lako jipya limehifadhiwa. Sasa unaweza kuingia.",
       "errors": {
-        "code": "Weka tarakimu 6 kutoka kwenye SMS.",
+        "email": "Weka anwani halali ya barua pepe.",
+        "code": "Weka tarakimu 6 kutoka kwenye barua pepe.",
         "password": "Angalau herufi 8, zikiwemo herufi na namba."
       }
     },

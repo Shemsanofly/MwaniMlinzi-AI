@@ -37,9 +37,9 @@ export default function RecordBookView({ farmId, readOnly = false }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{t('records.fromRecords')}</p>
         {cycles.length > 1 && (
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex min-w-0 w-full flex-col gap-2 text-sm sm:w-auto sm:flex-row">
             <span className="text-slate-600">{t('records.cycle')}</span>
-            <select className="input w-auto py-1.5" value={selected || ''} onChange={(e) => setCycleId(e.target.value || undefined)}>
+            <select className="input min-w-0 py-1.5 sm:w-auto" value={selected || ''} onChange={(e) => setCycleId(e.target.value || undefined)}>
               {cycles.map((c) => (
                 <option key={c.id} value={c.id}>{t('records.cycleLabel', { date: date(c.plantingDate, lang) })}{c.status === 'ACTIVE' ? ` (${t('records.current')})` : ''}</option>
               ))}

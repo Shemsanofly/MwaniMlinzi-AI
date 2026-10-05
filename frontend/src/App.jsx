@@ -28,7 +28,6 @@ const FarmerHistory = page(() => import('./pages/farmer/History.jsx'));
 const FarmerAssistant = page(() => import('./pages/farmer/Assistant.jsx'));
 const FarmerRecords = page(() => import('./pages/farmer/RecordBook.jsx'));
 // Field operations reused by admin
-const CoopDashboard = page(() => import('./pages/cooperative/CoopDashboard.jsx'));
 const CoopForecast = page(() => import('./pages/cooperative/Forecast.jsx'));
 const CoopAlerts = page(() => import('./pages/cooperative/Alerts.jsx'));
 const ExtDashboard = page(() => import('./pages/extension/Dashboard.jsx'));
@@ -87,34 +86,6 @@ export default function App() {
             <Route path="/farmer/assistant" element={<FarmerAssistant />} />
             <Route path="/farmer/alerts" element={<Notifications />} />
             <Route path="/farmer/settings" element={<AccountSettings />} />
-          </Route>
-        </Route>
-
-        {/* Cooperative staff: scoped to one cooperative's farms, forecasts and alerts. */}
-        <Route element={<ProtectedRoute roles={['COOPERATIVE_ADMIN']} />}>
-          <Route element={<AppLayout />}>
-            <Route path="/cooperative" element={<Navigate to="/cooperative/dashboard" replace />} />
-            <Route path="/cooperative/dashboard" element={<CoopDashboard />} />
-            <Route path="/cooperative/farms" element={<ExtFarms />} />
-            <Route path="/cooperative/farms/:id" element={<StaffFarmDetail />} />
-            <Route path="/cooperative/alerts" element={<CoopAlerts />} />
-            <Route path="/cooperative/forecast" element={<CoopForecast />} />
-            <Route path="/cooperative/impact" element={<Impact />} />
-          </Route>
-        </Route>
-
-        {/* Extension officer: cross-cooperative view, visit prioritisation, report reviews. */}
-        <Route element={<ProtectedRoute roles={['EXTENSION_OFFICER']} />}>
-          <Route element={<AppLayout />}>
-            <Route path="/extension" element={<Navigate to="/extension/dashboard" replace />} />
-            <Route path="/extension/dashboard" element={<ExtDashboard />} />
-            <Route path="/extension/farms" element={<ExtFarms />} />
-            <Route path="/extension/farms/:id" element={<StaffFarmDetail />} />
-            <Route path="/extension/risk-map" element={<ExtRiskMap />} />
-            <Route path="/extension/reviews" element={<ExtReviews />} />
-            <Route path="/extension/alerts" element={<CoopAlerts />} />
-            <Route path="/extension/forecast" element={<CoopForecast />} />
-            <Route path="/extension/impact" element={<Impact />} />
           </Route>
         </Route>
 

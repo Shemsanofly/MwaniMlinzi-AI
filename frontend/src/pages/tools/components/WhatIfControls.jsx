@@ -52,16 +52,16 @@ export default function WhatIfControls({ values, onChange, disabled, missing = [
         const v = values[f.key];
         return (
           <div key={f.key}>
-            <div className="flex items-center justify-between gap-3">
-              <label htmlFor={id} className="text-sm font-medium text-slate-700">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <label htmlFor={id} className="min-w-0 flex-[1_1_9rem] text-sm font-medium text-slate-700">
                 {t(`tools.whatIf.fields.${f.key}`)}
                 {missing.includes(f.key) && <span className="block text-xs font-normal text-slate-500">{t('tools.whatIf.noFieldReading')}</span>}
               </label>
-              <div className="flex items-center gap-1.5">
+              <div className="flex shrink-0 items-center gap-1.5">
                 <input
                   id={id}
                   type="number"
-                  className="w-24 rounded-lg border border-slate-300 px-2 py-1 text-right text-sm tabular-nums focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-200"
+                  className="min-h-11 w-24 rounded-lg border border-slate-300 px-2 py-1 text-right text-base tabular-nums focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-200"
                   min={f.min}
                   max={f.max}
                   step={f.step}
@@ -75,7 +75,7 @@ export default function WhatIfControls({ values, onChange, disabled, missing = [
             <input
               type="range"
               aria-label={`${t(`tools.whatIf.fields.${f.key}`)} (slider)`}
-              className="mt-1 w-full accent-ocean-700"
+              className="mt-1 min-h-11 w-full accent-ocean-700"
               min={f.min}
               max={f.max}
               step={f.step}

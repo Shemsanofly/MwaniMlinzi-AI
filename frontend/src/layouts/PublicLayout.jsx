@@ -25,12 +25,12 @@ export default function PublicLayout() {
     'relative rounded-lg px-3 py-2 text-sm font-semibold transition-colors after:absolute after:inset-x-3 after:-bottom-0.5 after:h-0.5 after:origin-left after:rounded-full after:bg-lagoon-400 after:transition-transform after:duration-300',
     isActive ? 'text-ocean-900 after:scale-x-100' : 'text-slate-600 after:scale-x-0 hover:text-ocean-900 hover:after:scale-x-100',
   );
-  const cta = 'whitespace-nowrap rounded-xl bg-ocean-900 px-3.5 py-2 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.12)] transition hover:bg-ocean-800 active:scale-[0.97] sm:px-4';
+  const cta = 'inline-flex min-h-11 items-center justify-center rounded-xl bg-ocean-900 px-3 py-2 text-center text-sm font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.12)] transition hover:bg-ocean-800 active:scale-[0.97] sm:px-4';
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="app-shell flex min-w-0 flex-col">
       <OfflineBanner />
-      <header className={cx('sticky top-0 z-[900] border-b bg-sand-50/80 backdrop-blur-xl transition-[border-color,box-shadow] duration-300', scrolled ? 'border-slate-200/80 shadow-[0_6px_24px_-16px_rgb(8_49_64/0.35)]' : 'border-transparent')}>
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:gap-4 sm:px-6">
+      <header className={cx('safe-top sticky top-0 z-[900] border-b bg-sand-50/80 backdrop-blur-xl transition-[border-color,box-shadow] duration-300', scrolled ? 'border-slate-200/80 shadow-[0_6px_24px_-16px_rgb(8_49_64/0.35)]' : 'border-transparent')}>
+        <div className="safe-page mx-auto flex min-h-16 max-w-7xl items-center gap-2 py-1 sm:gap-4">
           <div className="min-w-0"><Logo compact iconOnlyOnPhone="xs" /></div>
           <nav className="ml-6 hidden items-center gap-1 md:flex" aria-label={t('a11y.publicNav')}>
             <NavLink to="/about" className={link}>{t('nav.about')}</NavLink>
@@ -48,7 +48,7 @@ export default function PublicLayout() {
           <NavLink to="/how-it-works" className={link}>{t('nav.howItWorks')}</NavLink>
         </nav>
       </header>
-      <main className="flex-1"><Outlet /></main>
+      <main className="app-content flex-1"><Outlet /></main>
       <footer className="ocean-band text-ocean-200">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 pb-8 pt-14 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
           <div>

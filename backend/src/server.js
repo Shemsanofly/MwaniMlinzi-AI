@@ -27,20 +27,40 @@ async function main() {
     console.error('[db] could not connect to PostgreSQL — check DATABASE_URL and that the server is running:', err.message);
   }
   const app = createApp();
-  const server = app.listen(env.port, () => {
+  let tasks = [];
+  let stopping = false;
+  const server = app.listen(env.port, (err) => {
+    // Express 5 passes listen failures to this callback, including EADDRINUSE.
+    if (err) {
+      console.error(err.code === 'EADDRINUSE'
+        ? `[api] Port ${env.port} is already in use. Stop the previous dev terminal before restarting.`
+        : `[api] Could not start: ${err.message}`);
+      shutdown('startup failure', 1);
+      return;
+    }
     console.log(`[api] MwaniMlinzi AI API on http://localhost:${env.port}  (docs: /api/docs)`);
+    if (env.enableJobs) tasks = startScheduler();
   });
-  if (env.enableJobs) startScheduler();
 
-  const shutdown = async (signal) => {
+  const shutdown = async (signal, code = 0) => {
+    if (stopping) return;
+    stopping = true;
     console.log(`[api] ${signal} received, shutting down`);
-    server.close(async () => {
+    const deadline = setTimeout(() => process.exit(code), 5000);
+    deadline.unref();
+    await Promise.allSettled(tasks.map((task) => task.destroy()));
+    await new Promise((resolve) => server.close(resolve));
+    try {
       await prisma.$disconnect();
-      process.exit(0);
-    });
+    } finally {
+      process.exit(code);
+    }
   };
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
-main();
+main().catch((err) => {
+  console.error(`[api] Could not start: ${err.message}`);
+  process.exit(1);
+});

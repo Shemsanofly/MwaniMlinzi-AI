@@ -19,10 +19,9 @@ const upload = multer({
 });
 
 const api = Router();
-// Any staff seat. Fine-grained checks (cooperative scoping, admin-only ops) are enforced per-route below.
-const STAFF = ['COOPERATIVE_ADMIN', 'EXTENSION_OFFICER', 'ADMIN'];
-// Staff seats that can see across cooperatives (not scoped to a single one).
-const CROSS_COOP_STAFF = ['EXTENSION_OFFICER', 'ADMIN'];
+// Farm management and field operations require an administrator.
+const STAFF = ['ADMIN'];
+const CROSS_COOP_STAFF = STAFF;
 
 // Public
 api.get('/health', core.health);
@@ -70,7 +69,7 @@ api.get('/cooperatives/mine/dashboard', authorize(...STAFF), dash.myCooperativeD
 api.get('/cooperatives/:id/dashboard', authorize(...STAFF), dash.cooperativeDashboard);
 api.get('/cooperatives/:id/farmers', authorize(...STAFF), dash.cooperativeFarmers);
 
-// Extension-wide operations: observable to extension officers and admins across cooperatives.
+// Field operations across cooperatives: administrator access only.
 api.get('/extension/dashboard', authorize(...CROSS_COOP_STAFF), dash.extensionDashboard);
 api.get('/extension/observations', authorize(...CROSS_COOP_STAFF), dash.extensionObservations);
 api.patch('/extension/observations/:id/review', authorize(...CROSS_COOP_STAFF), validate(s.reviewSchema), dash.reviewObservation);

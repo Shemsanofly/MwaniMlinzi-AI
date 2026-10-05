@@ -6,10 +6,10 @@
   "type": "module",
   "main": "src/server.js",
   "engines": {
-    "node": ">=18.18"
+    "node": ">=20.0.0"
   },
   "scripts": {
-    "dev": "node --watch src/server.js",
+    "dev": "node ../scripts/dev.mjs backend",
     "start": "node src/server.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
     "lint": "eslint src tests prisma/seed.js prisma/data",
@@ -19,7 +19,8 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "ai:train": "node ../ai/scripts/trainModel.js",
-    "at:diagnose": "node scripts/at-sms-diagnose.js"
+    "at:diagnose": "node scripts/at-sms-diagnose.js",
+    "email:verify": "node scripts/email-verify.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
@@ -36,6 +37,7 @@
     "morgan": "^1.12.1",
     "multer": "^2.4.0",
     "node-cron": "^4.6.0",
+    "nodemailer": "^10.0.14",
     "swagger-ui-express": "^5.0.1",
     "zod": "^4.6.5"
   },

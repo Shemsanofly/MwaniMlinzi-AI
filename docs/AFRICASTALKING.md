@@ -182,7 +182,7 @@ Automated tests (no AT account needed; a fake client replaces the network):
 | 7 | Symptom report | `2` → farm → `1` | Report saved (web app shows a USSD observation), risk re-run, SMS confirmation |
 | 8 | Harvest | `3` → farm → `abc` → `120` → `1` | Error for `abc`; then "Mavuno ya kg 120 yamerekodiwa"; harvest has channel USSD |
 | 8b | Session timeout | Start a session, wait more than 5 minutes, answer | "Muda wa kipindi umekwisha. Tafadhali piga tena." |
-| 8c | Password reset | Web → Log in → "Forgot your password?" → phone | 6-digit code arrives by SMS (simulator); code + new password → log in. Without `AT_*` the page says SMS is not configured |
+| 8c | Password reset | Web → Log in → "Forgot your password?" → registered email | 6-digit code arrives by email; code + new password → log in. Uses SMTP, independently of Africa's Talking. See [EMAIL.md](EMAIL.md) |
 | 9 | Language | `5` → `2` | English menu; profile language is now English (web app follows after the next login) |
 | 10 | Bad secret | Call the callback URL without `?secret=` | HTTP 403 `END Access denied.`; `event_logs` (INTEGRATION) status `REJECTED` |
 | 11 | Incoming SMS | Send `HATARI` to the short code | Reply SMS with risk and action |

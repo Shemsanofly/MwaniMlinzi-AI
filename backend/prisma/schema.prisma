@@ -14,9 +14,6 @@ datasource db {
 
 enum RoleName {
   FARMER
-  COOPERATIVE_ADMIN
-  EXTENSION_OFFICER
-  BUYER
   ADMIN
 }
 
@@ -310,7 +307,7 @@ model User {
   notifyRiskAlerts  Boolean   @default(true) @map("notify_risk_alerts")
   notifyHarvest     Boolean   @default(true) @map("notify_harvest_reminders")
   notifySystem      Boolean   @default(true) @map("notify_system_alerts")
-  // Legacy staff scoping field; active app roles are FARMER and ADMIN (other RoleName values are legacy).
+  // Optional cooperative association; only FARMER and ADMIN roles exist.
   cooperativeId     String?   @map("cooperative_id") @db.Uuid
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")

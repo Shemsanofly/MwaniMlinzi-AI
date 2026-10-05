@@ -81,14 +81,18 @@ npm run seed
 The seed is **non-destructive** and safe to re-run (also in production). It upserts roles and permissions (FARMER,
 ADMIN), the 2 seaweed species (`KAPPA`, `EUCH`), default system settings and the 17 starter Action Library entries
 (source *"MwaniMlinzi starter rule set v1 — awaiting validation by local seaweed extension experts"*; existing entries
-are left untouched so expert edits and validations are kept). If no admin exists it creates one:
+keep expert edits and validations; unchanged, unvalidated starter support labels are updated to Admin). If no admin exists it creates one:
 
 - email `ADMIN_EMAIL` (default `admin@mwanimlinzi.local`)
 - password `ADMIN_PASSWORD` (at least 12 characters), or — if empty — a generated password that is printed once and
-  saved to `backend/ADMIN_CREDENTIALS.local.txt` (git-ignored). Change it after the first login.
+  saved to `backend/DEMO_CREDENTIALS.local.txt` (git-ignored). Change it after the first login.
 
-No farmers, farms, observations or environmental data are created. Farmers register themselves (web or USSD), and all
+The seed also ensures `farmer@mwanimlinzi.local` with a farmer profile and cooperative membership. Existing passwords are preserved. No farms, observations or environmental data are created. Other farmers register themselves (web or USSD), and all
 environmental readings come from live providers.
+
+### Two account roles
+
+The `RoleName` enum contains only `FARMER` and `ADMIN`. Migration `20261004180000_farmer_admin_roles_only` preserves users, passwords and Admin access, converts accounts without a retained role to Farmer, adds missing profiles, and removes obsolete role assignments and enum values. Apply it with `npx prisma migrate deploy`, then `npm run seed` to synchronize permissions. Back up the database before upgrading.
 
 ### Upgrading a database that still holds old demo data
 

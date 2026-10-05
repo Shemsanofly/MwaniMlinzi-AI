@@ -189,26 +189,31 @@ function DashboardBody({ ff }) {
     <div>
       <FarmSwitcher ff={ff} />
 
-      {/* Current risk + why (the card carries its own heading) */}
-      {risksQ.isLoading ? <div className="flex justify-center p-6"><Spinner /></div>
-        : risksQ.error ? <ErrorState error={risksQ.error} onRetry={risksQ.refetch} compact />
-        : <CurrentRiskCard risk={risk} onCheck={() => firstCheck.mutate()} checking={firstCheck.isPending} checkError={firstCheck.error} />}
+      <div className="grid min-w-0 gap-x-5 xl:grid-cols-2">
+        <div>
+          {/* Current risk + why (the card carries its own heading) */}
+          {risksQ.isLoading ? <div className="flex justify-center p-6"><Spinner /></div>
+            : risksQ.error ? <ErrorState error={risksQ.error} onRetry={risksQ.refetch} compact />
+            : <CurrentRiskCard risk={risk} onCheck={() => firstCheck.mutate()} checking={firstCheck.isPending} checkError={firstCheck.error} />}
 
-      {/* Next action + when */}
-      <SectionTitle>{t('farmer.dashboard.nextAction')}</SectionTitle>
-      {risk && (
-        <div className="space-y-2">
-          <NextActionSimple risk={risk} hasCycle={!!cycle} onRecordAction={onRecordAction} actionLoading={recordAction.isPending} />
-          <FormError error={recordAction.error} />
-          <ActionRecordedNotice action={recorded} onClose={() => setRecorded(null)} />
+          {/* Next action + when */}
+          <SectionTitle>{t('farmer.dashboard.nextAction')}</SectionTitle>
+          {risk && (
+            <div className="space-y-2">
+              <NextActionSimple risk={risk} hasCycle={!!cycle} onRecordAction={onRecordAction} actionLoading={recordAction.isPending} />
+              <FormError error={recordAction.error} />
+              <ActionRecordedNotice action={recorded} onClose={() => setRecorded(null)} />
+            </div>
+          )}
         </div>
-      )}
+        <div>
+          {/* Today at sea: low-tide work window + drying weather (daily use) */}
+          <SeaOutlookCard farmId={farmId} />
 
-      {/* Today at sea: low-tide work window + drying weather (daily use) */}
-      <SeaOutlookCard farmId={farmId} />
-
-      {/* This season: income, costs and profit from the record book */}
-      <SeasonCard farmId={farmId} />
+          {/* This season: income, costs and profit from the record book */}
+          <SeasonCard farmId={farmId} />
+        </div>
+      </div>
 
       {/* Farm, crop age, expected harvest */}
       <Card className="mt-4 p-4">
@@ -218,7 +223,7 @@ function DashboardBody({ ff }) {
           <span className="text-sm font-semibold text-slate-500">{farm.farmCode}</span>
         </div>
         {cycle ? (
-          <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="mt-3 grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
             <div className="rounded-lg bg-seaweed-50 p-3">
               <p className="text-xs font-semibold text-seaweed-700">{t('common.cropAge')}</p>
               <p className="text-2xl font-bold text-slate-900">{farm.cropAgeDays != null ? t('common.days', { n: farm.cropAgeDays }) : '—'}</p>

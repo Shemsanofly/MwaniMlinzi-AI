@@ -11,8 +11,6 @@ const saveUser = (u) => { try { localStorage.setItem(USER_KEY, JSON.stringify(u)
 
 export const HOME_FOR_ROLE = {
   FARMER: '/farmer/dashboard',
-  COOPERATIVE_ADMIN: '/cooperative/dashboard',
-  EXTENSION_OFFICER: '/extension/dashboard',
   ADMIN: '/admin/dashboard',
 };
 
@@ -57,21 +55,28 @@ export function AuthProvider({ children }) {
     if (tokenStore.get()) loadMe();
   }, [clear, loadMe]);
 
-  const login = useCallback(async (identifier, password) => {
-    const data = await authApi.login(identifier, password);
+  const acceptSession = useCallback(async (data) => {
+    // Login/register already returned the authenticated profile. Save it
+    // before /me so a temporary outage cannot erase a newly valid session
+    // or restore the previous account's cached profile and memberships.
+    queryClient.clear();
+    try { localStorage.removeItem('mwanimlinzi.cache'); } catch { /* storage unavailable */ }
     tokenStore.set(data.token);
+    saveUser({ user: data.user, cooperative: null, memberships: [] });
+    setUser(data.user);
+    setExtra({ cooperative: null, memberships: [] });
     if (data.user.preferredLanguage) setLang(data.user.preferredLanguage);
     await loadMe();
     return data.user;
-  }, [loadMe, setLang]);
+  }, [loadMe, queryClient, setLang]);
+
+  const login = useCallback(async (identifier, password) => {
+    return acceptSession(await authApi.login(identifier, password));
+  }, [acceptSession]);
 
   const register = useCallback(async (body) => {
-    const data = await authApi.register(body);
-    tokenStore.set(data.token);
-    if (data.user.preferredLanguage) setLang(data.user.preferredLanguage);
-    await loadMe();
-    return data.user;
-  }, [loadMe, setLang]);
+    return acceptSession(await authApi.register(body));
+  }, [acceptSession]);
 
   const logout = useCallback(async () => {
     try { await authApi.logout(); } catch { /* token may already be invalid */ }

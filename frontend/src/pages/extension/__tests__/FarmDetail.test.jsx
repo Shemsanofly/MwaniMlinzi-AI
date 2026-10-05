@@ -46,7 +46,7 @@ describe('Staff farm detail', () => {
     await waitFor(() => expect(farmApi.runRisks).toHaveBeenCalledWith('f1'));
   });
 
-  it('farmers cannot flag or add an extension note', async () => {
+  it('farmers cannot flag or add an field note', async () => {
     roles = ['FARMER'];
     renderPage(<StaffFarmDetail />, { route: '/admin/farms/f1?tab=risk', path: '/admin/farms/:id' });
     expect(await screen.findByText('Heat / Ice-Ice')).toBeInTheDocument();

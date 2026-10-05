@@ -18,7 +18,7 @@ Everything in that loop is real backend logic stored in PostgreSQL — no mock U
 | Layer | Technology |
 |---|---|
 | Frontend | React 19, Vite, React Router, TanStack Query, Axios, Tailwind CSS, Recharts, Leaflet + OpenStreetMap |
-| Backend | Node.js (≥18.18), Express 5, JavaScript (ES modules), Prisma ORM, Zod, JWT, bcryptjs, Helmet, rate limiting, node-cron |
+| Backend | Node.js (≥20), Express 5, JavaScript (ES modules), Prisma ORM, Zod, JWT, bcryptjs, Helmet, rate limiting, node-cron, SMTP email |
 | Database | PostgreSQL (managed with pgAdmin) |
 | AI | Rule-based risk engine (always on) + optional dependency-free JavaScript logistic regression, with an optional Python LightGBM / XGBoost microservice (`ai/ml-service/`) that the Node backend prefers when it is reachable; Action Engine; optional LLM for explanation/translation only |
 | Deployment | No Docker. `npm` + PostgreSQL on Windows, Linux or macOS; PM2 for production |
@@ -27,7 +27,7 @@ The database has **29 application tables (30 including Prisma migration history)
 
 ## What is built
 
-- **Roles:** four seats — **Farmer**, **Cooperative staff**, **Extension officer** and **Admin**. Cooperative staff see only their own cooperative; extension officers see all farms; the admin runs the system. JWT auth, role checks and per-farm ownership scoping on every endpoint.
+- **Roles:** **Farmer** and **Admin** only. Farmers access their own farms and records. Admins manage all farms, cooperatives, field reviews and system settings. JWT authentication, role checks and ownership checks protect every endpoint.
 - **Self-registration:** farmers register on the web (phone number + password, optional cooperative) or through the USSD menu, then add their farm on a map; risk is calculated straight away.
 - **Farms & records:** farm profiles with locations, planting cycles (crop age always derived from the planting date), an observation wizard with optional photo upload, harvests (expected vs actual, difference, loss %), losses, quality, drying.
 - **Environmental data:** live weather (Open-Meteo by default) and ocean data (Open-Meteo Marine by default), both free and keyless, with **LIVE → CACHED → no reading** fallback. Every record stores its `source` and provider; missing values stay empty and are never invented.
@@ -38,8 +38,6 @@ The database has **29 application tables (30 including Prisma migration history)
 - **Feedback loop:** prediction → recommendation → farmer action → outcome → automatic model-feedback label → field evaluation metrics and future training data.
 - **Dashboards:**
   - Mobile-first **farmer** app (English/Kiswahili) — current risk in plain words, next action, record book.
-  - **Cooperative staff** dashboard — a trimmed view of their own cooperative only: members, active farms, current risk mix, next 30 days expected harvest, active alerts, members who haven't reported recently.
-  - **Extension officer** dashboard — all farms across cooperatives, risk map, visit prioritisation, report reviews, harvest forecasts for 7/14/30 days with uncertainty ranges.
   - **Admin** console — users, action library, models, TMA bulletin uploader, access tokens for buyer/NGO exports, impact dashboard (slide-11 targets live), settings, audit log, jobs.
   - **Partner view** at `/partner` — a public page where a buyer, programme or NGO pastes their signed access token and sees the cooperative aggregates they are authorised to see; no login, nothing farmer-identifying.
 - **Daily farm tools:** *Today at sea* — the next daylight low tide with the best hours to work, and whether today is good for drying seaweed (Good / Caution / Bad from the live rain forecast, with approved advice to keep seaweed off the ground), on the web, USSD and — for farms at harvest when rain is likely — by SMS. Calculated every morning at 06:00 (and refreshed at 14:00) from Open-Meteo forecasts for each farm's point.
@@ -51,7 +49,7 @@ The database has **29 application tables (30 including Prisma migration history)
 
 ## Quick start (development)
 
-Prerequisites: **Node.js 18.18+ (20/22 recommended)**, **PostgreSQL 14+**, **pgAdmin 4** (optional but recommended).
+Prerequisites: **Node.js 20+ (22 recommended)**, **PostgreSQL 14+**, **pgAdmin 4** (optional but recommended). Email password recovery requires an SMTP sender; see [EMAIL.md](docs/EMAIL.md).
 The backend needs outbound internet access for live weather and ocean data.
 
 ```bash
@@ -75,9 +73,38 @@ cd ..
 npm run dev                     # API on :5000 and app on :5173; Ctrl+C stops both
 ```
 
-Use the project-root `npm run dev` for everyday development. Running only the frontend does not start
-the API and causes "Cannot reach the server" errors on login and other API requests. You can still run
-`npm run dev` in `backend` and `frontend` in separate terminals if you want to manage them separately.
+Use `npm.cmd run dev` in either `MwaniMvuvi AI` or `MwaniMlinzi-AI` for everyday development.
+The command checks server and database health, reuses an already running app, and prints `SUCCESS`
+with the login URL. Repeating it while automatic startup is active does not launch duplicate servers.
+Running it in `frontend` also ensures the API is available; running it in `backend` starts or reuses
+only the API. Unrelated programs occupying an app port still produce a clear error.
+
+After closing the dev terminal or restarting your computer, open a terminal in `MwaniMlinzi-AI` and run
+`npm run dev` again before opening http://localhost:5173. The launcher stops both process trees on
+Ctrl+C and also cleans them up if its terminal is closed abruptly. It reports occupied ports instead
+of silently moving the frontend to a different URL. Keep the PostgreSQL service running.
+If PowerShell blocks `npm.ps1`, use `npm.cmd run dev` (no execution-policy change needed).
+
+For everyday use on Windows, enable background startup once from the project root:
+
+```powershell
+npm.cmd run autostart:install
+```
+
+The app starts immediately and at each Windows sign-in, independently of development terminals.
+The background runner restarts the API or frontend within a few seconds if either exits. It leaves
+separately started servers alone and takes over when their ports become free. PostgreSQL must
+remain running (set its Windows service to Automatic). Open http://localhost:5173/login.
+Logs are saved in `.local/server.log` and `.local/server-error.log`. To disable automatic startup,
+run `npm.cmd run autostart:remove`. Use `npm.cmd run stop:local` to stop the runner without removing
+automatic startup, for example before switching to `npm run dev` for backend code changes.
+The app retries login briefly during temporary server or database interruptions; incorrect passwords
+are reported immediately. An ongoing outage still shows an error after the bounded retries.
+
+To verify startup, repeated commands, shutdown, abrupt-close recovery and occupied-port handling,
+run `npm run test:dev`. These checks use separate ports and leave the running app available.
+They check the existing database's health without changing its data. Frontend tests use one worker
+to avoid worker startup failures and timeouts on Windows under heavy memory pressure.
 
 | | URL |
 |---|---|
@@ -89,14 +116,15 @@ the API and causes "Cannot reach the server" errors on login and other API reque
 ### What `npm run seed` does
 
 It never deletes anything and is safe to re-run. It upserts roles, permissions, the two seaweed species, default
-settings and the starter Action Library (existing entries are left untouched), and creates the first admin if none
-exists:
+settings and the starter Action Library (expert edits and validations are preserved), and ensures one demo account for
+each of the two roles:
 
 - email: `ADMIN_EMAIL` (default `admin@mwanimlinzi.local`)
 - password: `ADMIN_PASSWORD` (at least 12 characters), or — if empty — a generated password printed once and saved to
-  `backend/ADMIN_CREDENTIALS.local.txt` (git-ignored). Change it after the first login.
+  `backend/DEMO_CREDENTIALS.local.txt` (git-ignored). Change it after the first login.
+- farmer: `farmer@mwanimlinzi.local`, with a generated password and an initialized farmer profile linked to the demo cooperative. Existing passwords are preserved. These `.local` demo addresses cannot receive real email; use a real account email to test recovery.
 
-No farmers, farms, observations or environmental data are created. Farmers register themselves.
+The seed updates unchanged, unvalidated starter support labels to refer to Admin. No farms, observations, sales or environmental readings are created by the seed. Other farmers register themselves.
 
 ### First run
 
@@ -111,6 +139,8 @@ No farmers, farms, observations or environmental data are created. Farmers regis
 The full judge walkthrough is in [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md).
 
 ### Existing development database
+
+Run `npx prisma migrate deploy` and `npm run seed` from `backend` to apply the two-role model. The migration preserves accounts, passwords, existing Admin access and farm records. Accounts with removed roles become Farmer accounts with profiles; it does not grant Admin access. The database enum and available role choices contain only `FARMER` and `ADMIN`. Historical migration files remain unchanged.
 
 A database created before the switch to real data may still hold old demo readings. `npx prisma migrate deploy`
 applies the migration that removes them (and the old demo columns). For a completely clean start:
@@ -131,6 +161,8 @@ applies the migration that removes them (and the old demo columns). For a comple
 | Frontend tests / lint | `cd frontend && npm test` · `npm run lint` |
 
 ## Providers and configuration
+
+Password recovery sends a six-digit code only to the real email saved on the user account. Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` and `SMTP_FROM` in `backend/.env`, then run `npm run email:verify` from `backend` to check the sender connection. Codes expire after 15 minutes and cannot be reused. See [docs/EMAIL.md](docs/EMAIL.md).
 
 Environmental data is always live. With the defaults no key is needed:
 
@@ -164,7 +196,7 @@ is still computed from the farm data and farmer reports, stored with data source
 SMS and USSD are never simulated: without Africa's Talking credentials every SMS attempt is logged as `NOT_CONFIGURED`.
 Details: [docs/AI.md](docs/AI.md) and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-### Giving buyers, programmes or NGOs read access
+### Giving external partners read access (no additional account roles)
 
 Admins issue signed, revocable access tokens in **Admin → Access tokens**:
 
@@ -194,7 +226,7 @@ in turn falls back to the rule-based engine. The system is never dependent on th
 
 ## Data honesty
 
-- There is no demo data. Every farmer, farm and report was entered by a person; every environmental reading comes from
+- Seeding creates only reference data and two demo logins. Every farm and report was entered by a person; every environmental reading comes from
   a live provider and stores its `source` (`LIVE`, `CACHED`) and provider name. Missing values stay empty and are never
   invented. What-if runs are stored as `SIMULATION` and never shown as real risk.
 - Risk comes from the rule-based engine. Its coefficients are expert-style starting values that still need calibration

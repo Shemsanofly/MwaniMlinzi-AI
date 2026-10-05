@@ -5,14 +5,14 @@ import { loadUser, signToken } from '../middleware/auth.js';
 import { ok, created } from '../utils/response.js';
 import { AppError, badRequest, conflict } from '../utils/errors.js';
 import { audit } from '../utils/audit.js';
-import { maskPhone, normalizeTzPhone } from '../utils/phone.js';
-import { SMSService } from '../services/smsService.js';
+import { normalizeTzPhone } from '../utils/phone.js';
+import { EmailService } from '../services/emailService.js';
 
 // Used to equalise response time when the email does not exist.
 const DUMMY_HASH = bcrypt.hashSync('timing-equaliser-not-a-password', 12);
 
 // Order matters: more-privileged seats win so the chosen home surface fits the role's day job.
-const primaryRole = (roles) => ['ADMIN', 'EXTENSION_OFFICER', 'COOPERATIVE_ADMIN', 'FARMER'].find((r) => roles.includes(r)) || roles[0];
+const primaryRole = (roles) => ['ADMIN', 'FARMER'].find((r) => roles.includes(r)) || roles[0];
 const withPrimary = (u) => ({ ...u, primaryRole: primaryRole(u.roles) });
 
 export async function register(req, res) {
@@ -107,71 +107,79 @@ export async function logout(req, res) {
   return ok(res, {}, 'Logged out');
 }
 
-/* ───────────── Password reset by SMS code ───────────── */
+/* ───────────── Password reset by email code ───────────── */
 
 export const RESET_CODE_TTL_MS = 15 * 60 * 1000;
 const RESET_MAX_ATTEMPTS = 5;
-const RESET_MAX_PER_WINDOW = 3; // codes per number per TTL window
-const RESET_SMS = {
-  sw: (code) => `MWANIMLINZI: Namba yako ya kubadilisha nenosiri ni ${code}. Inaisha baada ya dakika 15. Usimpe mtu yeyote.`,
-  en: (code) => `MWANIMLINZI: Your password reset code is ${code}. It expires in 15 minutes. Do not share it with anyone.`,
-};
+const RESET_MAX_PER_WINDOW = 3; // codes per account per TTL window
+const RESET_SENT = 'If this email is registered, a password reset code has been sent by email.';
 
 /**
- * Step 1: send a 6-digit code by SMS. The reply is the same whether or not the number is registered
- * (no account enumeration). If SMS is not configured, say so instead of pretending a code was sent.
+ * Step 1: email a 6-digit code. Unknown/disabled accounts get the same reply
+ * without sending mail, so this endpoint does not disclose registered emails.
  */
 export async function forgotPassword(req, res) {
-  const { phone } = req.valid.body;
-  if (!SMSService.isConfigured()) {
-    throw new AppError('NOT_CONFIGURED', 'Password reset by SMS is not available because SMS is not configured. Please contact your cooperative or an administrator.', 503);
+  const { email } = req.valid.body;
+  if (!EmailService.isConfigured()) {
+    throw new AppError('EMAIL_NOT_CONFIGURED', 'Email password recovery is unavailable. Please contact an administrator.', 503);
   }
-  const user = await prisma.user.findUnique({ where: { phone } });
+  const user = await prisma.user.findUnique({ where: { email } });
   if (!user || !user.isActive) {
     await bcrypt.hash('timing-equaliser', 10);
-    return ok(res, {}, 'If this number is registered, a reset code has been sent by SMS.');
+    return ok(res, {}, RESET_SENT);
   }
   const since = new Date(Date.now() - RESET_CODE_TTL_MS);
   const recent = await prisma.passwordReset.count({ where: { userId: user.id, createdAt: { gte: since } } });
   if (recent >= RESET_MAX_PER_WINDOW) {
     await audit(req, 'PASSWORD_RESET_THROTTLED', 'User', user.id);
-    return ok(res, {}, 'If this number is registered, a reset code has been sent by SMS.');
+    return ok(res, {}, RESET_SENT);
   }
   const code = String(crypto.randomInt(0, 1_000_000)).padStart(6, '0');
   await prisma.passwordReset.updateMany({ where: { userId: user.id, usedAt: null }, data: { usedAt: new Date() } });
   const reset = await prisma.passwordReset.create({
     data: { userId: user.id, codeHash: await bcrypt.hash(code, 10), expiresAt: new Date(Date.now() + RESET_CODE_TTL_MS) },
   });
-  const lang = user.preferredLanguage === 'en' ? 'en' : 'sw';
-  const sent = await SMSService.sendRaw(phone, RESET_SMS[lang](code), { type: 'PASSWORD_RESET', language: lang, logMessage: RESET_SMS[lang]('******') });
-  if (!['QUEUED', 'SENT', 'DELIVERED'].includes(sent.status)) {
+  const sent = await EmailService.sendPasswordReset(user, code);
+  if (sent.status !== 'SENT') {
     await prisma.passwordReset.update({ where: { id: reset.id }, data: { usedAt: new Date() } });
-    console.warn(`[auth] reset code SMS to ${maskPhone(phone)} not sent: ${sent.status}`);
-    throw new AppError('PROVIDER_ERROR', 'We could not send the SMS. Please try again later.', 502);
+    throw new AppError('EMAIL_SEND_FAILED', 'We could not send the reset email. Please try again later.', 502);
   }
   req.user = { id: user.id };
   await audit(req, 'PASSWORD_RESET_REQUESTED', 'User', user.id);
-  return ok(res, {}, 'If this number is registered, a reset code has been sent by SMS.');
+  return ok(res, {}, RESET_SENT);
 }
 
 /** Step 2: check the code (limited attempts, expires after 15 minutes) and set the new password. */
 export async function resetPassword(req, res) {
-  const { phone, code, newPassword } = req.valid.body;
+  const { email, code, newPassword } = req.valid.body;
   const invalid = () => new AppError('INVALID_CODE', 'The code is wrong or has expired. Request a new code.', 400);
-  const user = await prisma.user.findUnique({ where: { phone } });
+  const user = await prisma.user.findUnique({ where: { email } });
   const reset = user?.isActive
     ? await prisma.passwordReset.findFirst({ where: { userId: user.id, usedAt: null, expiresAt: { gt: new Date() } }, orderBy: { createdAt: 'desc' } })
     : null;
   if (!reset) { await bcrypt.compare(code, DUMMY_HASH); throw invalid(); }
   if (!(await bcrypt.compare(code, reset.codeHash))) {
-    const attempts = reset.attempts + 1;
-    await prisma.passwordReset.update({ where: { id: reset.id }, data: { attempts, usedAt: attempts >= RESET_MAX_ATTEMPTS ? new Date() : null } });
+    await prisma.$transaction(async (tx) => {
+      await tx.passwordReset.updateMany({
+        where: { id: reset.id, usedAt: null, attempts: { lt: RESET_MAX_ATTEMPTS } },
+        data: { attempts: { increment: 1 } },
+      });
+      await tx.passwordReset.updateMany({
+        where: { id: reset.id, usedAt: null, attempts: { gte: RESET_MAX_ATTEMPTS } },
+        data: { usedAt: new Date() },
+      });
+    });
     throw invalid();
   }
-  await prisma.$transaction([
-    prisma.user.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(newPassword, 12) } }),
-    prisma.passwordReset.update({ where: { id: reset.id }, data: { usedAt: new Date() } }),
-  ]);
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  await prisma.$transaction(async (tx) => {
+    const consumed = await tx.passwordReset.updateMany({
+      where: { id: reset.id, usedAt: null, expiresAt: { gt: new Date() }, attempts: { lt: RESET_MAX_ATTEMPTS } },
+      data: { usedAt: new Date() },
+    });
+    if (consumed.count !== 1) throw invalid();
+    await tx.user.update({ where: { id: user.id }, data: { passwordHash } });
+  });
   req.user = { id: user.id };
   await audit(req, 'PASSWORD_RESET', 'User', user.id);
   return ok(res, {}, 'Password changed. You can now log in.');

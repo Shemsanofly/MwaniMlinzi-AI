@@ -44,14 +44,31 @@ describe('role-based access control', () => {
     expect(ok.body.data.action.validated).toBe(true);
   });
 
-  test('admin cannot assign dormant roles', async () => {
-    const res = await api().post('/api/admin/users').set(auth(admin)).send({
-      email: 'legacy-role@example.com',
-      password: 'Passw0rd!x',
-      fullName: 'Legacy Role',
-      roles: ['BUYER'],
+  test('only FARMER and ADMIN exist in the database and the role API', async () => {
+    const roles = await api().get('/api/admin/roles').set(auth(admin));
+    expect(roles.status).toBe(200);
+    expect(roles.body.data.roles.map((role) => role.name).sort()).toEqual(['ADMIN', 'FARMER']);
+    const values = await prisma.$queryRaw`SELECT enumlabel FROM pg_enum JOIN pg_type ON pg_type.oid = pg_enum.enumtypid WHERE pg_type.typname = 'RoleName' ORDER BY enumlabel`;
+    expect(values.map((value) => value.enumlabel)).toEqual(['ADMIN', 'FARMER']);
+  });
+
+  test.each(['COOPERATIVE_ADMIN', 'EXTENSION_OFFICER', 'BUYER'])('admin cannot create or assign removed role %s', async (role) => {
+    const created = await api().post('/api/admin/users').set(auth(admin)).send({
+      email: `removed-${role.toLowerCase()}@example.test`, password: 'Passw0rd!x', fullName: 'Removed Role', roles: [role],
     });
-    expect(res.status).toBe(400);
+    expect(created.status).toBe(400);
+    const farmerUser = await prisma.user.findUnique({ where: { email: 'farmer@example.test' } });
+    const updated = await api().patch(`/api/admin/users/${farmerUser.id}`).set(auth(admin)).send({ roles: [role] });
+    expect(updated.status).toBe(400);
+    const user = await prisma.user.findUnique({ where: { id: farmerUser.id }, include: { roles: { include: { role: true } } } });
+    expect(user.roles.map((assignment) => assignment.role.name)).toEqual(['FARMER']);
+  });
+
+  test('field operations, reviews and cooperative dashboards require ADMIN', async () => {
+    for (const path of ['/api/extension/dashboard', '/api/extension/observations', '/api/extension/recommendations', '/api/cooperatives/mine/dashboard', '/api/dashboard/impact']) {
+      expect((await api().get(path).set(auth(farmer))).status).toBe(403);
+      expect((await api().get(path).set(auth(admin))).status).toBe(200);
+    }
   });
 
   test('invalid ids return 404 not 500', async () => {

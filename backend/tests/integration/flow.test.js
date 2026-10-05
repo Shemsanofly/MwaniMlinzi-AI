@@ -73,7 +73,7 @@ describe('end-to-end risk → action → outcome flow', () => {
 
   let actionId;
   test('farmer records the action taken, linked to the recommendation', async () => {
-    const res = await api().post(`/api/farms/${farm.id}/actions`).set(auth(farmer)).send({ recommendationId: recId, actionTaken: true, notes: 'Called extension officer' });
+    const res = await api().post(`/api/farms/${farm.id}/actions`).set(auth(farmer)).send({ recommendationId: recId, actionTaken: true, notes: 'Called administrator' });
     expect(res.status).toBe(201);
     actionId = res.body.data.action.id;
     const recs = await api().get(`/api/farms/${farm.id}/recommendations`).set(auth(farmer));

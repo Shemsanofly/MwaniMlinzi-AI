@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart3, Bell, BookOpen, ClipboardCheck, Cloud, Compass, Cpu, FlaskConical, Gauge, Home, Key, LogOut, Map, Menu,
@@ -12,35 +12,10 @@ import NotificationBell from './NotificationBell.jsx';
 import OfflineBanner from './OfflineBanner.jsx';
 import { cx } from '../components/ui/index.jsx';
 import { useDialog } from '../hooks/useDialog.js';
+import { useDesktop } from '../hooks/useMediaQuery.js';
 
-/** Staff navigation per role, grouped so each sidebar stays short: MAIN (daily work), INSIGHTS, SYSTEM.
- *  The right sidebar is picked by role: ADMIN (superset), EXTENSION_OFFICER (cross-coop field ops),
- *  COOPERATIVE_ADMIN (own coop only). An admin that also holds another seat still sees ADMIN. */
+/** Administrator navigation: daily work, field operations and system settings. */
 export const NAV = {
-  COOPERATIVE_ADMIN: [
-    { group: 'main', items: [
-      { to: '/cooperative/dashboard', key: 'fieldOverview', icon: Home },
-      { to: '/cooperative/farms', key: 'farms', icon: Sprout },
-    ] },
-    { group: 'field', items: [
-      { to: '/cooperative/alerts', key: 'alerts', icon: Bell },
-      { to: '/cooperative/forecast', key: 'forecast', icon: BarChart3 },
-      { to: '/cooperative/impact', key: 'impact', icon: Gauge },
-    ] },
-  ],
-  EXTENSION_OFFICER: [
-    { group: 'main', items: [
-      { to: '/extension/dashboard', key: 'fieldOverview', icon: Home },
-      { to: '/extension/farms', key: 'farms', icon: Sprout },
-    ] },
-    { group: 'field', items: [
-      { to: '/extension/risk-map', key: 'riskMap', icon: Map },
-      { to: '/extension/reviews', key: 'reviews', icon: ClipboardCheck },
-      { to: '/extension/alerts', key: 'alerts', icon: Bell },
-      { to: '/extension/forecast', key: 'forecast', icon: BarChart3 },
-      { to: '/extension/impact', key: 'impact', icon: Gauge },
-    ] },
-  ],
   ADMIN: [
     { group: 'main', items: [
       { to: '/admin/dashboard', key: 'dashboard', icon: Home },
@@ -116,9 +91,11 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
+  const desktop = useDesktop();
+  useEffect(() => { if (desktop) setOpen(false); }, [desktop]);
   const roles = user?.roles || [];
   // Pick exactly one NAV section — ADMIN wins if present, else first operator seat the user holds.
-  const PRIORITY = ['ADMIN', 'EXTENSION_OFFICER', 'COOPERATIVE_ADMIN'];
+  const PRIORITY = ['ADMIN'];
   const sections = PRIORITY.filter((r) => roles.includes(r)).slice(0, 1);
   const close = () => setOpen(false);
   const panel = useRef(null);
@@ -147,18 +124,18 @@ export default function AppLayout() {
   );
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="app-shell flex min-w-0 flex-col">
       <OfflineBanner />
-      <div className="flex flex-1">
+      <div className="flex min-w-0 flex-1">
         <aside className="ocean-band hidden w-[17rem] shrink-0 lg:block">
-          <div className="sticky top-0 flex h-screen flex-col">
+          <div className="safe-top sticky top-0 flex h-dvh flex-col">
             <div className="flex h-16 shrink-0 items-center px-5"><Logo light to="/" /></div>
             {sidebar}
           </div>
         </aside>
         {open && (
           <div className="fixed inset-0 z-[1200] flex lg:hidden" role="dialog" aria-modal="true" aria-label={t('a11y.mainNav')}>
-            <div ref={panel} tabIndex={-1} className="ocean-band flex w-72 max-w-[85vw] animate-[drawer_0.35s_var(--ease-out-soft)_both] flex-col shadow-[var(--shadow-float)] outline-none">
+            <div ref={panel} tabIndex={-1} className="safe-top ocean-band flex min-h-0 w-72 max-w-[85vw] animate-[drawer_0.35s_var(--ease-out-soft)_both] flex-col pb-[env(safe-area-inset-bottom)] shadow-[var(--shadow-float)] outline-none">
               <div className="flex h-16 shrink-0 items-center justify-between px-4"><Logo light /><button type="button" onClick={() => setOpen(false)} className="flex h-11 w-11 items-center justify-center rounded-lg text-white transition hover:bg-white/10" aria-label={t('a11y.closeMenu')}><X /></button></div>
               {sidebar}
             </div>
@@ -166,18 +143,20 @@ export default function AppLayout() {
           </div>
         )}
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-[900] flex h-16 min-w-0 items-center gap-2 border-b border-slate-200/70 bg-sand-50/80 px-3 backdrop-blur-xl sm:gap-3 sm:px-6">
-            <button type="button" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 lg:hidden" onClick={() => setOpen(true)} aria-label={t('a11y.openMenu')}><Menu /></button>
-            <div className="min-w-0 lg:hidden"><Logo compact iconOnlyOnPhone /></div>
-            <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
-              <LanguageSwitch />
-              <NotificationBell />
-              <button type="button" onClick={async () => { navigate('/login', { replace: true }); await logout(); }} className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-xl px-2.5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-900/5 hover:text-slate-900">
-                <LogOut className="h-4 w-4" aria-hidden /><span className="hidden sm:inline">{t('actions.logout')}</span>
-              </button>
+          <header className="safe-top sticky top-0 z-[900] border-b border-slate-200/70 bg-sand-50/80 backdrop-blur-xl">
+            <div className="safe-page flex min-h-16 min-w-0 items-center gap-1 py-1 sm:gap-3">
+              <button type="button" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 lg:hidden" onClick={() => setOpen(true)} aria-label={t('a11y.openMenu')}><Menu /></button>
+              <div className="min-w-0 lg:hidden"><Logo compact iconOnlyOnPhone /></div>
+              <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+                <LanguageSwitch />
+                <NotificationBell />
+                <button type="button" onClick={async () => { navigate('/login', { replace: true }); await logout(); }} className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-xl px-2.5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-900/5 hover:text-slate-900">
+                  <LogOut className="h-4 w-4" aria-hidden /><span className="hidden sm:inline">{t('actions.logout')}</span>
+                </button>
+              </div>
             </div>
           </header>
-          <main key={pathname} className="mx-auto w-full max-w-7xl flex-1 animate-rise px-4 py-6 sm:px-6 sm:py-8"><Outlet /></main>
+          <main key={pathname} className="app-content safe-page mx-auto max-w-7xl flex-1 animate-rise py-6 sm:py-8"><Outlet /></main>
         </div>
       </div>
     </div>

@@ -55,7 +55,7 @@ function TargetBar({ label, value, target, help }) {
 export default function Impact() {
   const { t } = useI18n();
   const { hasRole, cooperative: ownCoop } = useAuth();
-  const canChooseCoop = hasRole('EXTENSION_OFFICER', 'ADMIN');
+  const canChooseCoop = hasRole('ADMIN');
   const [days, setDays] = useState(90);
   const [cooperativeId, setCooperativeId] = useState('');
 

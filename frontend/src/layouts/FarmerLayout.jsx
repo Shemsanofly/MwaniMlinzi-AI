@@ -85,16 +85,16 @@ export default function FarmerLayout() {
   useEffect(() => { window.scrollTo?.(0, 0); }, [pathname]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-sand-50">
+    <div className="app-shell flex min-w-0 flex-col bg-sand-50">
       <OfflineBanner />
-      <header className="sticky top-0 z-[900] border-b border-slate-200/70 bg-sand-50/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 max-w-3xl items-center gap-2 px-4">
+      <header className="safe-top sticky top-0 z-[900] border-b border-slate-200/70 bg-sand-50/80 backdrop-blur-xl">
+        <div className="safe-page mx-auto flex min-h-14 max-w-5xl items-center gap-2 py-1">
           <div className="min-w-0"><Logo to="/farmer/dashboard" compact /></div>
           <div className="ml-auto shrink-0"><LanguageSwitch /></div>
         </div>
       </header>
-      <main key={pathname} className="mx-auto min-w-0 w-full max-w-3xl flex-1 animate-rise px-4 pb-[calc(8rem+env(safe-area-inset-bottom))] pt-5"><Outlet /></main>
-      <nav className="fixed inset-x-0 bottom-0 z-[900] px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2" aria-label={t('a11y.farmerNav')}>
+      <main key={pathname} className="app-content safe-page mx-auto max-w-5xl flex-1 animate-rise pb-[calc(8rem+env(safe-area-inset-bottom))] pt-5 sm:pt-7"><Outlet /></main>
+      <nav className="fixed inset-x-0 bottom-0 z-[900] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2" aria-label={t('a11y.farmerNav')}>
         <div className="mx-auto grid max-w-md grid-cols-5 rounded-[1.75rem] border border-white/60 bg-white/90 px-1 shadow-[0_12px_40px_-12px_rgb(5_31_41/0.35)] ring-1 ring-slate-900/5 backdrop-blur-xl">
           {TABS.map(({ to, key, icon, badge }) => (
             <NavLink key={to} to={to} className={({ isActive }) => tabClass(isActive)}>

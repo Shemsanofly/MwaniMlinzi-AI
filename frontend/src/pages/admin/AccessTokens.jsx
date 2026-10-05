@@ -28,7 +28,7 @@ function IssueForm({ cooperatives, onCreated }) {
   });
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); if (form.label.trim()) mut.mutate(); }} className="grid gap-3 sm:grid-cols-5">
+    <form onSubmit={(e) => { e.preventDefault(); if (form.label.trim()) mut.mutate(); }} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
       <div className="sm:col-span-2">
         <label htmlFor="tok-label" className="label">{t('admin.tokens.labelField')}</label>
         <input id="tok-label" className="input" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} placeholder={t('admin.tokens.labelPlaceholder')} required maxLength={120} />
@@ -52,7 +52,7 @@ function IssueForm({ cooperatives, onCreated }) {
           {EXPIRY_CHOICES.map((d) => <option key={d} value={d}>{t('admin.tokens.days', { n: d })}</option>)}
         </select>
       </div>
-      <div className="sm:col-span-5 flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 sm:col-span-2 xl:col-span-5">
         <Button type="submit" icon={Plus} loading={mut.isPending} disabled={mut.isPending || !form.label.trim()}>{t('admin.tokens.issue')}</Button>
         <FormError error={mut.error} />
       </div>

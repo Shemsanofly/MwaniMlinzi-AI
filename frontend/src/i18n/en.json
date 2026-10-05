@@ -85,7 +85,7 @@
     "acknowledge": "Acknowledge",
     "resolve": "Resolve",
     "markAllRead": "Mark all as read",
-    "contactExtension": "Contact extension officer",
+    "contactExtension": "Contact administrator",
     "didIt": "I did this",
     "couldNot": "Could not do it",
     "ok": "OK",
@@ -133,8 +133,6 @@
   },
   "roles": {
     "FARMER": "Farmer",
-    "COOPERATIVE_ADMIN": "Cooperative staff",
-    "EXTENSION_OFFICER": "Extension officer",
     "ADMIN": "Admin"
   },
   "common": {
@@ -190,6 +188,8 @@
       "UPLOAD_ERROR": "The file could not be uploaded. Please try again.",
       "PAYLOAD_TOO_LARGE": "The file or data is too large.",
       "NOT_CONFIGURED": "This feature is not set up yet.",
+      "EMAIL_NOT_CONFIGURED": "Email password recovery is unavailable. Please contact an administrator.",
+      "EMAIL_SEND_FAILED": "We could not send the reset email. Please try again later.",
       "PROVIDER_ERROR": "An outside service did not respond. Please try again later.",
       "WRONG_PASSWORD": "The current password is not correct.",
       "INVALID_CODE": "The code is wrong or has expired. Request a new code."
@@ -306,7 +306,7 @@
         "breakage": "Broken branches, lines or ropes.",
         "unusualGrowth": "Very slow, soft or strange growth.",
         "details": "Optional. Skip if you are not sure.",
-        "photo": "Optional. A clear photo helps the extension officer."
+        "photo": "Optional. A clear photo helps the administrator."
       },
       "moreDetails": "Add more details",
       "skip": "Skip",
@@ -478,7 +478,7 @@
         "safety": "Safety policy",
         "llm": "Rephrased by AI ({name})"
       },
-      "footer": "The helper only uses your farm data and approved guidance. It does not give treatment or chemical advice — for that, contact your extension officer.",
+      "footer": "The helper only uses your farm data and approved guidance. It does not give treatment or chemical advice — for that, contact your administrator.",
       "recordNote": "Answers use your saved farm reports and available forecasts. Forecasts can change."
     },
     "farm": {
@@ -922,7 +922,7 @@
       "noVisits": "No active farms to prioritise",
       "highRisk": "High-risk farms",
       "disease": "Recent disease reports",
-      "diseaseSub": "From farmer and officer observations",
+      "diseaseSub": "From farmer and admin observations",
       "noDisease": "No disease reports.",
       "recentAlerts": "Recent alerts"
     },
@@ -1030,7 +1030,7 @@
       "actionTaken": "Action taken",
       "noHarvests": "No harvests recorded.",
       "noLosses": "No losses recorded.",
-      "addNote": "Add extension note",
+      "addNote": "Add field note",
       "note": "Note",
       "notePlaceholder": "What did you observe or advise?",
       "visitPriority": "Visit priority",
@@ -1038,7 +1038,7 @@
       "visitByOn": "Visit by {date}",
       "saveNote": "Save note",
       "noteSaved": "Note saved.",
-      "noNotes": "No extension notes yet"
+      "noNotes": "No field notes yet"
     }
   },
   "admin": {
@@ -1163,14 +1163,14 @@
       "unvalidatedNotice": "{n} of {total} actions are not yet validated by local experts. They can still be recommended (unless \"Require validated actions\" is on in Settings) and are shown to farmers as \"pending validation\".",
       "unvalidated": "Not validated",
       "disabled": "Disabled",
-      "escalates": "Escalates to extension",
+      "escalates": "Escalates to admin",
       "andAbove": "and above",
       "sourceLabel": "Source",
       "used": "used in {n} recommendations",
       "validatedBy": "validated by {name} on {date}",
       "createTitle": "New action",
       "editTitle": "Edit {code}",
-      "createNote": "New actions start as not validated. An extension officer or admin must validate them.",
+      "createNote": "New actions start as not validated. An admin must validate them.",
       "resetNote": "Changing the action text, explanation, risk type, levels or conditions resets expert validation (the backend does this automatically).",
       "resetWarning": "You changed what farmers are told. Saving will RESET the expert validation of this action.",
       "code": "Code",
@@ -1193,7 +1193,7 @@
       "priority": "Priority",
       "priorityHint": "0–100, higher wins when several match",
       "enabled": "Enabled",
-      "escalate": "Escalate to extension officer",
+      "escalate": "Escalate to administrator",
       "actionEn": "Action (English)",
       "actionSw": "Action (Kiswahili)",
       "explanationEn": "Explanation (English)",
@@ -1586,7 +1586,7 @@
       "report": "Report symptoms",
       "sea": "Sea temp",
       "waves": "Waves",
-      "example": "Example screen — not real farm data"
+      "example": " "
     },
     "loop": {
       "aria": "Loop: Monitor, Predict, Act, Learn",
@@ -1726,7 +1726,7 @@
         },
         "approved": {
           "title": "Approved recommendation",
-          "text": "The farmer receives one clear next action, the reasons behind it, its urgency and whether an extension officer should be contacted."
+          "text": "The farmer receives one clear next action, the reasons behind it, its urgency and whether an administrator should be contacted."
         },
         "llm": {
           "title": "Language model (explanation only)",
@@ -1811,7 +1811,7 @@
         "passwordMatch": "Passwords do not match.",
         "consent": "You must agree to data use to create an account."
       },
-      "emailHint": "Optional.",
+      "emailHint": "Optional. Used to recover your password by email.",
       "optionalTitle": "More details (optional)",
       "smsOptIn": "Send me SMS alerts about my farm",
       "smsOptInHint": "Only important messages. You can change this later in Settings."
@@ -1823,21 +1823,22 @@
     },
     "reset": {
       "title": "Reset your password",
-      "subtitle": "Enter your phone number. We will send you a 6-digit code by SMS.",
-      "phoneHint": "The phone number you registered with, e.g. 0777 123 456.",
-      "sendCode": "Send code by SMS",
+      "subtitle": "Enter your registered email address. We will send you a 6-digit code by email.",
+      "emailHint": "Use the email address saved on your account. If you have no registered email, contact an administrator.",
+      "sendCode": "Send code by email",
       "sending": "Sending code…",
-      "codeSent": "If {phone} is registered, a 6-digit code has been sent by SMS. It is valid for 15 minutes.",
-      "code": "6-digit code from the SMS",
+      "codeSent": "If {email} is registered, a 6-digit code has been sent by email. Check your inbox and spam folder. It is valid for 15 minutes.",
+      "code": "6-digit code from the email",
       "newPassword": "New password",
       "save": "Save new password",
       "saving": "Saving…",
-      "resend": "Did not get the SMS? Send a new code",
+      "resend": "Did not get the email? Send a new code",
       "backToLogin": "Back to log in",
       "doneTitle": "Password changed",
       "doneText": "Your new password is saved. You can now log in.",
       "errors": {
-        "code": "Enter the 6 digits from the SMS.",
+        "email": "Enter a valid email address.",
+        "code": "Enter the 6 digits from the email.",
         "password": "At least 8 characters, with a letter and a number."
       }
     },

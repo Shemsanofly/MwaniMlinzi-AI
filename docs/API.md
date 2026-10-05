@@ -4,6 +4,8 @@ Base URL: `http://localhost:5000/api` · Interactive docs (Swagger UI): `http://
 
 ## Conventions
 
+The only account roles are `FARMER` and `ADMIN`. Public signup creates Farmer accounts. Admins manage all cooperatives, field reviews and aggregate reports; Farmer reads and writes are scoped to their own farms.
+
 **Authentication** — `Authorization: Bearer <JWT>` from `POST /auth/login` or `/auth/register`. Tokens expire after
 `JWT_EXPIRES_IN` (default 7 days). The user and roles are re-loaded from PostgreSQL on each request, so role changes and
 deactivation apply immediately. Logout = the client discards the token (`POST /auth/logout` records it in the audit log).
@@ -55,8 +57,8 @@ the farm owner and admins.
 | GET | `/auth/me` | `{ user, cooperative, memberships[] }` |
 | PATCH | `/auth/me` | `{ fullName?, phone?, email?, preferredLanguage?, smsEnabled?, notifyRiskAlerts?, notifyHarvest?, notifySystem? }` |
 | POST | `/auth/change-password` | `{ currentPassword, newPassword }` (400 `WRONG_PASSWORD` if the current one is wrong) |
-| POST | `/auth/forgot-password` | `{ phone }` → sends a 6-digit code by SMS (same reply for unknown numbers; 503 `NOT_CONFIGURED` if SMS is not set up, 502 `PROVIDER_ERROR` if sending failed). Max 3 codes per 15 min |
-| POST | `/auth/reset-password` | `{ phone, code, newPassword }` → 400 `INVALID_CODE` if wrong/expired/used; a code expires after 15 min or 5 wrong tries. Only a hash of the code is stored; the SMS log shows `******` |
+| POST | `/auth/forgot-password` | `{ email }` → sends a 6-digit code to the registered email, in the account language (same reply for unknown/disabled emails; 503 `EMAIL_NOT_CONFIGURED` if SMTP is not set up, 502 `EMAIL_SEND_FAILED` if sending failed). Max 3 codes per 15 min; resend invalidates older codes. See [EMAIL.md](EMAIL.md) |
+| POST | `/auth/reset-password` | `{ email, code, newPassword }` → 400 `INVALID_CODE` if wrong/expired/used; a code expires after 15 min or 5 wrong tries. Email is trimmed and lowercased. Only a hash of the code is stored; the email delivery log shows `******`. Successful codes can only be consumed once |
 | POST | `/auth/logout` | audit only |
 
 ## Farms (FARMER, ADMIN)
@@ -209,7 +211,7 @@ farm the observation belongs to.
 | Method | Path | Description |
 |---|---|---|
 | GET | `/admin/dashboard` | Counts, users by role, predictions by level, feedback, models, recent jobs |
-| GET / POST / PATCH | `/admin/users`, `/admin/users/:id` | List (`search`, `role`, `page`, `limit`), create `{ email, password, fullName, phone?, roles[], cooperativeId?, preferredLanguage }`, update `{ fullName?, phone?, isActive?, roles?, cooperativeId? }` |
+| GET / POST / PATCH | `/admin/users`, `/admin/users/:id` | List (`search`, `role`, `page`, `limit`), create `{ email, password, fullName, phone?, roles[] (FARMER or ADMIN only), cooperativeId?, preferredLanguage }`, update `{ fullName?, phone?, isActive?, roles?, cooperativeId? }` |
 | GET | `/admin/roles` | Roles + permission keys |
 | GET / PUT | `/admin/settings`, `/admin/settings/:key` | `{ value }` — keys: `risk.thresholds`, `ai.mode`, `ai.mlBlendWeight`, `ai.minTrainingRecords`, `actions.requireValidated`, `alerts.missingReportDays`, `alerts.dedupHours`, `environment.maxCacheAgeHours`, `notifications.smsEnabled` (validated) |
 | GET / PATCH | `/admin/models`, `/admin/models/:id` | Models + held-out metrics + field evaluation; `{ status: ACTIVE\|TRAINED\|RETIRED }` (one ACTIVE per risk type) |

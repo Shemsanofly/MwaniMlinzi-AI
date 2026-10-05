@@ -13,7 +13,7 @@ const phone = z.string().trim().max(32)
 const password = z.string().min(8, 'Password must be at least 8 characters').max(128)
   .regex(/[A-Za-z]/, 'Password must contain a letter').regex(/[0-9]/, 'Password must contain a number');
 const optEmail = z.union([z.string().trim().toLowerCase().email().max(200), z.literal('').transform(() => null)]).optional().nullable();
-const activeRole = z.enum(['FARMER', 'COOPERATIVE_ADMIN', 'EXTENSION_OFFICER', 'ADMIN']);
+const activeRole = z.enum(['FARMER', 'ADMIN']);
 
 export const registerSchema = z.object({
   fullName: trimmed(120),
@@ -52,10 +52,11 @@ export const changePasswordSchema = z.object({
   newPassword: password,
 });
 
-export const forgotPasswordSchema = z.object({ phone });
+const registeredEmail = z.string().trim().toLowerCase().email('Enter a valid email address').max(200);
+export const forgotPasswordSchema = z.object({ email: registeredEmail });
 export const resetPasswordSchema = z.object({
-  phone,
-  code: z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code from the SMS'),
+  email: registeredEmail,
+  code: z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code from the email'),
   newPassword: password,
 });
 

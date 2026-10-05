@@ -34,7 +34,7 @@ export function Pagination({ page, limit, total, onPage }) {
   return (
     <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
       <span>{t('admin.common.showing', { from, to, total })}</span>
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
         <Button size="sm" variant="secondary" icon={ChevronLeft} disabled={page <= 1} onClick={() => onPage(page - 1)}>{t('admin.common.prev')}</Button>
         <span className="tabular-nums">{page} / {pages}</span>
         <Button size="sm" variant="secondary" disabled={page >= pages} onClick={() => onPage(page + 1)}>{t('admin.common.next')}<ChevronRight className="h-4 w-4" aria-hidden /></Button>
@@ -74,7 +74,7 @@ export function ConfusionMatrix({ cm }) {
     </div>
   );
   return (
-    <div className="inline-grid grid-cols-[auto_1fr_1fr] items-center gap-1.5 text-xs">
+    <div className="inline-grid max-w-full grid-cols-[minmax(0,auto)_minmax(0,1fr)_minmax(0,1fr)] items-center gap-1.5 text-xs">
       <span />
       <span className="text-center font-semibold text-slate-500">{t('admin.models.predYes')}</span>
       <span className="text-center font-semibold text-slate-500">{t('admin.models.predNo')}</span>

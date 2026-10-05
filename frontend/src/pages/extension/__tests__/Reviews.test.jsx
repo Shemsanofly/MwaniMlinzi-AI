@@ -19,7 +19,7 @@ const rec = {
   id: 'rec1', farmId: 'f1', status: 'PENDING', reviewStatus: 'PENDING', createdAt: new Date().toISOString(),
   farm: { id: 'f1', farmCode: 'FARM001', name: 'Paje Kusini' },
   prediction: { id: 'p1', riskType: 'HEAT_ICE_ICE', riskLevel: 'CRITICAL', probability: 0.965, explanation: 'SST is +1.5°C above normal', flagged: false },
-  actionLibrary: { code: 'HEAT_CRITICAL_ESCALATE', action: 'Escalate to an extension officer', actionSw: 'Wasiliana na afisa ugani', urgency: 'IMMEDIATE', validated: false },
+  actionLibrary: { code: 'HEAT_CRITICAL_ESCALATE', action: 'Escalate to an administrator', actionSw: 'Wasiliana na msimamizi', urgency: 'IMMEDIATE', validated: false },
 };
 
 describe('Extension reviews', () => {
@@ -45,7 +45,7 @@ describe('Extension reviews', () => {
 
   it('flags a prediction from the recommendations tab', async () => {
     renderPage(<ExtensionReviews />, { route: '/extension/reviews?tab=recommendations' });
-    expect(await screen.findByText('Escalate to an extension officer')).toBeInTheDocument();
+    expect(await screen.findByText('Escalate to an administrator')).toBeInTheDocument();
     expect(screen.getByText('Pending local expert validation')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Flag prediction' }));
     const dialog = await screen.findByRole('dialog');

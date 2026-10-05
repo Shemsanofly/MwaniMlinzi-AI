@@ -102,10 +102,7 @@ export async function cooperativeDashboard(req, res) {
   if (!isUuid(id)) throw notFound('Cooperative');
   const coop = await prisma.cooperative.findUnique({ where: { id } });
   if (!coop) throw notFound('Cooperative');
-  // ADMIN and EXTENSION_OFFICER see any cooperative. COOPERATIVE_ADMIN sees only their own.
-  const crossCoop = hasRole(req.user, ...CROSS_COOP_STAFF);
-  const ownCoop = hasRole(req.user, ROLES.COOPERATIVE_ADMIN) && req.user.cooperativeId === id;
-  if (!crossCoop && !ownCoop) throw forbidden('You can only view your own cooperative');
+  if (!hasRole(req.user, ROLES.ADMIN)) throw forbidden('Administrator access required');
   const members = await prisma.cooperativeMember.count({ where: { cooperativeId: id, isActive: true } });
   const data = await portfolio({ cooperativeId: id });
   // Farm performance: yield vs estimate per farm from harvest records.
@@ -125,7 +122,7 @@ export async function cooperativeDashboard(req, res) {
 
 export async function myCooperativeDashboard(req, res) {
   let coopId = req.user.cooperativeId;
-  // Cross-cooperative staff without a home cooperative get the first one (or ?cooperativeId=) so the view is usable.
+  // Administrators can choose a cooperative or use the first available one.
   if (!coopId && hasRole(req.user, ...CROSS_COOP_STAFF)) {
     coopId = isUuid(req.query.cooperativeId) ? req.query.cooperativeId : (await prisma.cooperative.findFirst({ orderBy: { name: 'asc' }, select: { id: true } }))?.id;
   }
@@ -147,9 +144,7 @@ export async function listCooperatives(req, res) {
 export async function cooperativeFarmers(req, res) {
   const { id } = req.params;
   if (!isUuid(id)) throw notFound('Cooperative');
-  const crossCoop = hasRole(req.user, ...CROSS_COOP_STAFF);
-  const ownCoop = hasRole(req.user, ROLES.COOPERATIVE_ADMIN) && req.user.cooperativeId === id;
-  if (!crossCoop && !ownCoop) throw forbidden('You can only view your own cooperative');
+  if (!hasRole(req.user, ROLES.ADMIN)) throw forbidden('Administrator access required');
   const members = await prisma.cooperativeMember.findMany({
     where: { cooperativeId: id },
     include: { farmer: { include: { user: { select: { fullName: true, phone: true, email: true } }, farms: { select: { id: true, farmCode: true, name: true, status: true } } } } },
@@ -170,7 +165,7 @@ export async function extensionDashboard(_req, res) {
   notes.forEach((n) => { if (!lastVisit[n.farmId]) lastVisit[n.farmId] = n.createdAt; });
   const pendingByFarm = {};
   pendingObservations.forEach((o) => { pendingByFarm[o.farmId] = (pendingByFarm[o.farmId] || 0) + 1; });
-  // Visit priority: highest risk probability, unreviewed reports and time since the last officer note.
+  // Visit priority: highest risk probability, unreviewed reports and time since the last field note.
   const visitPriority = data.farms.filter((f) => f.status === 'ACTIVE').map((f) => {
     const maxProb = Math.max(0, ...['HEAT_ICE_ICE', 'STORM_LINE_DAMAGE', 'POOR_GROWTH'].map((rt) => f.latestRisks?.[rt]?.probability ?? 0));
     const daysSinceVisit = lastVisit[f.id] ? Math.floor((Date.now() - new Date(lastVisit[f.id])) / 86400000) : 30;
@@ -257,16 +252,13 @@ export async function adminDashboard(_req, res) {
 
 /**
  * GET /api/dashboard/impact — slide-11 pilot targets, computed live from the real records.
- * COOPERATIVE_ADMIN sees their own cooperative; EXTENSION_OFFICER and ADMIN see all (or a chosen one).
+ * Administrators see all cooperatives or filter to a chosen one.
  */
 export async function impactMetrics(req, res) {
   const days = Math.min(Math.max(Number(req.query.days) || 90, 7), 365);
   const since = addDays(new Date(), -days);
 
-  // Resolve the cooperative scope: COOPERATIVE_ADMIN is pinned to their own; others may pass ?cooperativeId=.
-  const isCoopAdmin = hasRole(req.user, ROLES.COOPERATIVE_ADMIN) && !hasRole(req.user, ...CROSS_COOP_STAFF);
-  const requested = isUuid(req.query.cooperativeId) ? req.query.cooperativeId : null;
-  const cooperativeId = isCoopAdmin ? req.user.cooperativeId : requested;
+  const cooperativeId = isUuid(req.query.cooperativeId) ? req.query.cooperativeId : null;
   const farmWhere = cooperativeId ? { cooperativeId } : {};
 
   const [farmerCount, activeFarmCount, observations, actions, outcomes, alerts, harvests] = await Promise.all([

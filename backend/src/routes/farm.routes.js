@@ -7,9 +7,9 @@ import * as s from '../validators/schemas.js';
 const r = Router();
 r.use(authenticate);
 
-// Viewing is open to farm owners, their cooperative staff, extension officers and admins.
+// Farm owners see their own farms; administrators see all farms.
 // Writing (observations, harvests, actions) stays owner-only to keep farmer-reported data authored by farmers.
-const farmViewers = authorize('FARMER', 'COOPERATIVE_ADMIN', 'EXTENSION_OFFICER', 'ADMIN');
+const farmViewers = authorize('FARMER', 'ADMIN');
 const recorders = authorize('FARMER', 'ADMIN');
 
 r.get('/', farmViewers, c.listFarms);

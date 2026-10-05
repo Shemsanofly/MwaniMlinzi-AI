@@ -91,8 +91,8 @@ export async function routeQuestion(message) {
 }
 
 const SAFETY = {
-  en: 'I can help you record the symptoms and show approved farm guidance. For treatment decisions, contact an extension officer.',
-  sw: 'Ninaweza kukusaidia kurekodi dalili na kukuonyesha ushauri ulioidhinishwa. Kwa maamuzi ya matibabu, wasiliana na afisa ugani.',
+  en: 'I can help you record the symptoms and show approved farm guidance. For treatment decisions, contact an administrator.',
+  sw: 'Ninaweza kukusaidia kurekodi dalili na kukuonyesha ushauri ulioidhinishwa. Kwa maamuzi ya matibabu, wasiliana na msimamizi.',
 };
 
 async function resolveFarm(user, farmId) {

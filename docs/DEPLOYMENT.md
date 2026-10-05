@@ -72,9 +72,9 @@ pm2 logs mwanimlinzi-api
 `npm start` (`node src/server.js`) works too; PM2 adds restarts, logs and startup scripts. Run **one** instance with
 `ENABLE_JOBS=true` (scheduled jobs); extra instances should set `ENABLE_JOBS=false`.
 
-> `npm run seed` never deletes anything and creates no farmers, farms or readings, so it is safe to run on every deploy.
-> It leaves existing Action Library entries (and their expert validations) untouched. If `ADMIN_PASSWORD` is empty the
-> generated admin password is printed once and saved to `backend/ADMIN_CREDENTIALS.local.txt` — note it, delete the file,
+> `npm run seed` never deletes anything and ensures only two demo logins (Farmer/Admin) and creates no farms or readings, so it is safe to run on every deploy.
+> It preserves expert edits and validations; unchanged, unvalidated starter support labels are updated to Admin. If `ADMIN_PASSWORD` is empty the
+> generated admin password is printed once and saved to `backend/DEMO_CREDENTIALS.local.txt` — note it, delete the file,
 > and change the password after the first login.
 
 The API server must be able to reach the environmental providers over HTTPS (`api.open-meteo.com` and
@@ -141,6 +141,7 @@ case `VITE_API_URL` can stay empty (defaults to `/api`).
 | Weather | `WEATHER_PROVIDER` empty = `open-meteo` (free, no key) | `openweathermap` + `WEATHER_API_KEY`; `none` disables |
 | Ocean | `OCEAN_PROVIDER` empty = `open-meteo-marine` (free, no key; no salinity/chlorophyll) | `stormglass` + `OCEAN_API_KEY`; `none` disables |
 | SMS | not configured: every attempt is logged `NOT_CONFIGURED` | `AT_USERNAME`, `AT_API_KEY`, `AT_ENVIRONMENT` (`sandbox` first, then `production`), optional `AT_SMS_SENDER_ID` |
+| Password reset email | unavailable until SMTP is configured | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_REQUIRE_TLS`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`; see [EMAIL.md](EMAIL.md) |
 | USSD | callbacks are refused without a secret | `AT_CALLBACK_SECRET`, `AT_USSD_SERVICE_CODE`; register `https://api.example.org/api/integrations/africastalking/ussd?secret=<AT_CALLBACK_SECRET>` in AT (plus `/sms` and `/sms/delivery`, see [AFRICASTALKING.md](AFRICASTALKING.md)) |
 | LLM | deterministic templates | `LLM_PROVIDER=anthropic` (or `openai`), `LLM_API_KEY`, optional `LLM_MODEL` |
 

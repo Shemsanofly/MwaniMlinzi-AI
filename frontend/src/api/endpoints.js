@@ -9,14 +9,28 @@ const qs = (params = {}) => {
   return p.length ? `?${new URLSearchParams(p).toString()}` : '';
 };
 
+async function loginWithRecovery(identifier, password) {
+  // Reconnect briefly after server startup/restart. Never replay writes such
+  // as registration, payments or password changes, or rejected credentials.
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await unwrap(http.post('/auth/login', { identifier, password }, { timeout: 10000 }));
+    } catch (err) {
+      const temporary = err.code === 'NETWORK_ERROR' || err.code === 'DATABASE_UNAVAILABLE';
+      if (!temporary || attempt >= 2) throw err;
+      await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
+    }
+  }
+}
+
 export const authApi = {
-  login: (identifier, password) => unwrap(http.post('/auth/login', { identifier, password })),
+  login: loginWithRecovery,
   changePassword: (currentPassword, newPassword) => unwrap(http.post('/auth/change-password', { currentPassword, newPassword })),
   register: (body) => unwrap(http.post('/auth/register', body)),
   me: () => unwrap(http.get('/auth/me')),
   updateMe: (body) => unwrap(http.patch('/auth/me', body)),
   logout: () => unwrap(http.post('/auth/logout')),
-  forgotPassword: (phone) => unwrap(http.post('/auth/forgot-password', { phone })),
+  forgotPassword: (email) => unwrap(http.post('/auth/forgot-password', { email })),
   resetPassword: (body) => unwrap(http.post('/auth/reset-password', body)),
 };
 

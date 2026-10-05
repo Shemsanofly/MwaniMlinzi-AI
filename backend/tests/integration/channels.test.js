@@ -495,7 +495,7 @@ describe('AI assistant', () => {
     const t = await login('farmer');
     const res = await api().post('/api/ai/chat').set(auth(t)).send({ message: 'What medicine should I use?' });
     expect(res.body.data.intent).toBe('TREATMENT');
-    expect(res.body.data.reply).toMatch(/contact an extension officer/);
+    expect(res.body.data.reply).toMatch(/contact an administrator/);
   });
   test('cannot ask about a farm you do not own', async () => {
     const admin = await login('admin');

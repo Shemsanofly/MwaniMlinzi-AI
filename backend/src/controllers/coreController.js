@@ -12,6 +12,7 @@ import { HarvestForecastService } from '../services/harvestForecastService.js';
 import { AssistantService, getLLMProvider } from '../services/assistantService.js';
 import { MLRiskProvider } from '../ai/mlRiskProvider.js';
 import { atConfig } from '../providers/africastalking/config.js';
+import { getEmailProvider } from '../services/emailService.js';
 import { getSetting } from '../services/settingsService.js';
 import { addDays } from '../utils/dates.js';
 import { getGeocodingService } from '../services/geocodingService.js';
@@ -198,7 +199,7 @@ export async function health(_req, res) {
     data: {
       status: database === 'ok' ? 'ok' : 'degraded',
       database,
-      providers: { ...EnvironmentService.providerStatus(), llm: getLLMProvider().name, sms: atConfig().smsConfigured ? `africastalking-${atConfig().environment}` : 'NOT_CONFIGURED', ussd: atConfig().ussdConfigured ? `africastalking-${atConfig().environment}` : 'NOT_CONFIGURED' },
+      providers: { ...EnvironmentService.providerStatus(), llm: getLLMProvider().name, email: getEmailProvider().configured ? getEmailProvider().name : 'NOT_CONFIGURED', sms: atConfig().smsConfigured ? `africastalking-${atConfig().environment}` : 'NOT_CONFIGURED', ussd: atConfig().ussdConfigured ? `africastalking-${atConfig().environment}` : 'NOT_CONFIGURED' },
       time: new Date().toISOString(),
     },
     message: database === 'ok' ? 'Healthy' : 'Database unavailable',

@@ -59,7 +59,7 @@ function ModelCard({ m, aiMode }) {
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('admin.models.confusionTest')}</p>
             <ConfusionMatrix cm={m.confusionMatrix} />
           </div>
-          <div className="min-w-[12rem] flex-1">
+          <div className="min-w-0 flex-[1_1_12rem]">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('admin.models.fieldMetrics')}</p>
             {hasField ? (
               <div className="grid grid-cols-2 gap-2">

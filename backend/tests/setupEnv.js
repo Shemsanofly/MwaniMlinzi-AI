@@ -7,6 +7,11 @@ process.env.WEATHER_PROVIDER = 'none';
 process.env.OCEAN_PROVIDER = 'none';
 process.env.ENABLE_JOBS = 'false';
 process.env.LLM_API_KEY = '';
+// Tests inject an email provider and never send live email.
+process.env.SMTP_HOST = '';
+process.env.SMTP_USER = '';
+process.env.SMTP_PASSWORD = '';
+process.env.SMTP_FROM = '';
 process.env.FIXTURE_PASSWORD = TEST_PASSWORD;
 process.env.JWT_SECRET ||= 'test-secret';
 // Africa's Talking: never call the real API from tests (a fake client is injected where needed).

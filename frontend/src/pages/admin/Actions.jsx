@@ -45,7 +45,7 @@ function ConditionsEditor({ rows, onChange }) {
   const update = (i, k, v) => onChange(rows.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between">
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <p className="label mb-0">{t('admin.actions.conditions')}</p>
         <Button size="sm" variant="ghost" icon={Plus} disabled={rows.length >= 10} onClick={() => onChange([...rows, { feature: '', op: 'gte', value: '' }])}>{t('admin.actions.addCondition')}</Button>
       </div>
@@ -53,13 +53,13 @@ function ConditionsEditor({ rows, onChange }) {
       {rows.length === 0 && <p className="rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-500">{t('admin.actions.noConditions')}</p>}
       <ul className="space-y-2">
         {rows.map((r, i) => (
-          <li key={i} className="grid grid-cols-[1fr_5.5rem_1fr_auto] gap-2">
-            <input aria-label={t('admin.actions.feature')} list="feature-suggestions" className="input font-mono text-sm" placeholder="sstAnomalyC" value={r.feature} onChange={(e) => update(i, 'feature', e.target.value)} />
+          <li key={i} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.75rem] gap-2 rounded-xl border border-slate-200 p-2 sm:grid-cols-[minmax(0,1fr)_5.5rem_minmax(0,1fr)_2.75rem]">
+            <input aria-label={t('admin.actions.feature')} list="feature-suggestions" className="input col-span-3 font-mono text-sm sm:col-span-1" placeholder="sstAnomalyC" value={r.feature} onChange={(e) => update(i, 'feature', e.target.value)} />
             <select aria-label={t('admin.actions.operator')} className="input text-sm" value={r.op} onChange={(e) => update(i, 'op', e.target.value)}>
               {OPS.map((o) => <option key={o} value={o}>{OP_SYMBOL[o]} {o}</option>)}
             </select>
             <input aria-label={t('admin.actions.value')} className="input font-mono text-sm" placeholder="1.0" value={r.value} onChange={(e) => update(i, 'value', e.target.value)} />
-            <button type="button" onClick={() => onChange(rows.filter((_, j) => j !== i))} className="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-700" aria-label={t('actions.delete')}>
+            <button type="button" onClick={() => onChange(rows.filter((_, j) => j !== i))} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-700" aria-label={t('actions.delete')}>
               <Trash2 className="h-4 w-4" />
             </button>
           </li>

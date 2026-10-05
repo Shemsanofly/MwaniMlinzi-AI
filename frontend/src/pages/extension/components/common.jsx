@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, CheckCircle2, FlaskConical } from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nProvider.jsx';
@@ -8,12 +8,8 @@ import { Badge, Button, Card, CardHeader, Field, FormError, Modal, Notice, RiskB
 import { RISK_TYPES, riskStyle } from '../../../utils/risk.js';
 import { dateTime, num, pct, timeAgo } from '../../../utils/format.js';
 
-/** '/admin', '/cooperative' or '/extension' depending on which staff area the page is rendered in. */
-export function useStaffBase() {
-  const { pathname } = useLocation();
-  if (pathname.startsWith('/admin')) return '/admin';
-  return pathname.startsWith('/cooperative') ? '/cooperative' : '/extension';
-}
+/** Field screens are part of the administrator console. */
+export function useStaffBase() { return '/admin'; }
 
 /** Card with a header and padded body. */
 export function Section({ title, subtitle, icon, action, children, className, bodyClassName }) {

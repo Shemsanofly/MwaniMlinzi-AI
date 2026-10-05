@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, ChevronDown, CloudOff, Database, Eye, EyeOff, FlaskConical, Inbox, Loader2, RefreshCw, X } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { usePhone } from '../../hooks/useMediaQuery.js';
@@ -45,10 +46,10 @@ export function Button({ variant = 'primary', size = 'md', loading = false, icon
       type="button"
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={cx('inline-flex select-none items-center justify-center gap-2 rounded-xl font-semibold transition duration-200 ease-out focus-visible:outline-none focus-visible:ring-4 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100', BUTTON[variant], SIZE[size], className)}
+      className={cx('inline-flex min-w-0 max-w-full select-none items-center justify-center gap-2 rounded-xl text-center font-semibold transition duration-200 ease-out focus-visible:outline-none focus-visible:ring-4 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100', BUTTON[variant], SIZE[size], className)}
       {...props}
     >
-      {loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : Icon ? <Icon className="h-4 w-4 shrink-0" aria-hidden /> : null}
+      {loading ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden /> : Icon ? <Icon className="h-4 w-4 shrink-0" aria-hidden /> : null}
       {children}
     </button>
   );
@@ -60,15 +61,15 @@ export function Card({ className, children, ...props }) {
 
 export function CardHeader({ title, subtitle, action, icon: Icon, className }) {
   return (
-    <div className={cx('flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3.5 sm:px-5', className)}>
-      <div className="flex min-w-0 items-start gap-3">
+    <div className={cx('flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-3.5 sm:px-5', className)}>
+      <div className="flex min-w-0 flex-[1_1_12rem] items-start gap-3">
         {Icon && <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-700 ring-1 ring-inset ring-ocean-100"><Icon className="h-[18px] w-[18px]" aria-hidden /></span>}
         <div className="min-w-0 self-center">
           <h3 className="font-bold tracking-tight text-slate-900">{title}</h3>
           {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
         </div>
       </div>
-      {action}
+      {action && <div className="min-w-0 max-w-full">{action}</div>}
     </div>
   );
 }
@@ -192,10 +193,10 @@ export function StatCard({ label, value, sub, icon: Icon, tone = 'ocean', onClic
   const Comp = onClick ? 'button' : 'div';
   return (
     <Comp onClick={onClick} className={cx('surface group flex w-full items-start gap-3.5 p-4 text-left', onClick && 'lift hover:border-ocean-200')}>
-      {Icon && <span className={cx('rounded-xl p-2.5 ring-1 ring-inset transition-transform duration-300 group-hover:scale-105', tones[tone])}><Icon className="h-5 w-5" aria-hidden /></span>}
+      {Icon && <span className={cx('shrink-0 rounded-xl p-2.5 ring-1 ring-inset transition-transform duration-300 group-hover:scale-105', tones[tone])}><Icon className="h-5 w-5" aria-hidden /></span>}
       <div className="min-w-0">
         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">{label}</p>
-        <p className="mt-1 text-2xl font-extrabold tabular-nums tracking-tight text-slate-900">{value}</p>
+        <p className="mt-1 text-xl font-extrabold tabular-nums tracking-tight text-slate-900 sm:text-2xl">{value}</p>
         {sub && <p className="mt-0.5 text-xs text-slate-500">{sub}</p>}
       </div>
     </Comp>
@@ -223,25 +224,28 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
   useDialog(open, panel, onClose);
   if (!open) return null;
   const width = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' }[size];
-  return (
+  // Animated/filtered ancestors establish a containing block for position: fixed.
+  // Mount at the document level so the dialog always uses the device viewport.
+  return createPortal(
     <div className="fixed inset-0 z-[1000] flex animate-fade items-end justify-center bg-ocean-950/45 p-0 backdrop-blur-[2px] sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={title} onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div ref={panel} tabIndex={-1} className={cx('flex max-h-[92dvh] w-full animate-sheet flex-col rounded-t-3xl bg-white shadow-[var(--shadow-float)] outline-none sm:animate-pop sm:rounded-2xl', width)}>
+      <div ref={panel} tabIndex={-1} className={cx('flex max-h-[calc(100dvh-1rem-env(safe-area-inset-top))] min-w-0 w-full animate-sheet flex-col rounded-t-3xl bg-white shadow-[var(--shadow-float)] outline-none sm:max-h-[calc(100dvh-2rem)] sm:animate-pop sm:rounded-2xl', width)}>
         <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-slate-200 sm:hidden" aria-hidden />
         <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-100 px-5 py-3.5">
           <h2 className="min-w-0 text-lg font-bold tracking-tight text-slate-900 [overflow-wrap:anywhere]">{title}</h2>
           <button type="button" onClick={onClose} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100" aria-label={t('actions.close')}><X className="h-5 w-5" /></button>
         </div>
-        <div className="min-h-0 overflow-y-auto overscroll-contain px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">{children}</div>
+        <div className="min-h-0 min-w-0 overflow-y-auto overscroll-contain px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-5">{children}</div>
         {footer && <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-slate-100 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
 export function Field({ label, hint, error, children, required, htmlFor }) {
   const { t } = useI18n();
   return (
-    <div>
+    <div className="min-w-0">
       {label && (
         <label className="label" htmlFor={htmlFor}>
           {label} {!required && <span className="font-normal text-slate-400">({t('common.optional')})</span>}
@@ -322,7 +326,7 @@ export function PasswordInput({ className, ...props }) {
 
 export function Toggle({ checked, onChange, label, id }) {
   return (
-    <label htmlFor={id} className="inline-flex cursor-pointer items-center gap-2">
+    <label htmlFor={id} className="inline-flex min-h-11 cursor-pointer items-center gap-2">
       <span className="relative inline-flex">
         <input id={id} type="checkbox" className="peer sr-only" checked={!!checked} onChange={(e) => onChange(e.target.checked)} />
         <span className="h-6 w-11 rounded-full bg-slate-300 transition-colors duration-300 peer-checked:bg-ocean-600 peer-focus-visible:ring-4 peer-focus-visible:ring-ocean-500/25" />
@@ -351,13 +355,13 @@ export function Table({ columns, rows, rowKey = 'id', empty, onRowClick }) {
         {rows.map((r) => {
           const body = (
             <>
-              <div className="min-w-0 font-semibold text-slate-900 [overflow-wrap:anywhere]">{cell(primary, r)}</div>
+              <div className="table-card-value min-w-0 font-semibold text-slate-900 [overflow-wrap:anywhere]">{cell(primary, r)}</div>
               {rest.length > 0 && (
-                <dl className="mt-1.5 grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-x-3 gap-y-1 text-sm">
+                <dl className="mt-2 grid grid-cols-1 gap-x-3 gap-y-1 text-sm min-[480px]:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
                   {rest.map((c) => (
                     <div key={c.key} className="contents">
-                      <dt className="text-slate-500 [overflow-wrap:anywhere]">{c.header}</dt>
-                      <dd className="min-w-0 text-right text-slate-800 [overflow-wrap:anywhere]">{cell(c, r)}</dd>
+                      <dt className="pt-2 text-xs text-slate-500 [overflow-wrap:anywhere] min-[480px]:pt-0 min-[480px]:text-sm">{c.header}</dt>
+                      <dd className="table-card-value min-w-0 text-slate-800 [overflow-wrap:anywhere] min-[480px]:text-right">{cell(c, r)}</dd>
                     </div>
                   ))}
                 </dl>

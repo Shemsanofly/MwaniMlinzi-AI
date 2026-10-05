@@ -4,6 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node scripts/dev.mjs"
+    "dev": "node scripts/dev.mjs",
+    "start": "node scripts/dev.mjs",
+    "build": "npm --prefix frontend run build",
+    "test": "node --test --test-concurrency=1 scripts/tests/*.test.mjs",
+    "test:dev": "node --test scripts/tests/dev.test.mjs",
+    "start:local": "node scripts/always-on.mjs",
+    "stop:local": "node scripts/always-on.mjs --stop",
+    "autostart:install": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/install-autostart.ps1",
+    "autostart:remove": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/install-autostart.ps1 -Remove",
+    "test:always-on": "node --test scripts/tests/always-on.test.mjs"
   }
 }

@@ -186,8 +186,8 @@ function Workbench({ farm, env }) {
   const preset = (p) => setValues((v) => ({ ...v, ...PRESETS[p] }));
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[22rem_1fr]">
-      <Card className="h-fit xl:sticky xl:top-4">
+    <div className="grid gap-6 xl:grid-cols-[22rem_minmax(0,1fr)]">
+      <Card className="h-fit xl:sticky xl:top-24">
         <CardHeader title={t('tools.whatIf.controlsTitle')} subtitle={t('tools.whatIf.controlsSubtitle')} action={<SimLabel />} />
         <div className="space-y-4 p-4 sm:p-5">
           <div>

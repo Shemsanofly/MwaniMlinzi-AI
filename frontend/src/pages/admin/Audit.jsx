@@ -58,7 +58,7 @@ function AuditTab() {
                     <Fragment key={l.id}>
                       <tr className="hover:bg-slate-50">
                         <td className="w-10 px-3 py-2">
-                          <button type="button" onClick={() => setOpen(isOpen ? null : l.id)} disabled={!l.details} aria-expanded={isOpen} aria-label={t('admin.audit.details')} className="rounded p-1 text-slate-500 hover:bg-slate-200 disabled:opacity-30">
+                          <button type="button" onClick={() => setOpen(isOpen ? null : l.id)} disabled={!l.details} aria-expanded={isOpen} aria-label={t('admin.audit.details')} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-200 disabled:opacity-30">
                             {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                           </button>
                         </td>

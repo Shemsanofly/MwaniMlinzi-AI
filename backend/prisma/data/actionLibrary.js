@@ -19,10 +19,10 @@ export const ACTION_LIBRARY = [
     explanation: 'Sea temperature or farm signs suggest a moderate chance of heat stress. Early detection limits spread.', explanationSw: 'Joto la bahari au dalili za shamba zinaonyesha uwezekano wa wastani wa msongo wa joto. Kugundua mapema kunapunguza kuenea.' },
   { code: 'HEAT_HIGH_INSPECT_24H', riskType: 'HEAT_ICE_ICE', minimumRiskLevel: 'HIGH', maximumRiskLevel: 'HIGH', urgency: 'URGENT', urgencyHours: 24,
     action: 'Inspect lines within 24 hours and record whitening or breakage.', actionSw: 'Kagua mistari ya mwani ndani ya saa 24 na rekodi dalili za kubadilika rangi au kukatika.',
-    explanation: 'High heat / ice-ice risk. Recording symptoms quickly lets the system and your extension officer respond.', explanationSw: 'Hatari kubwa ya joto / ice-ice. Kurekodi dalili haraka kunasaidia mfumo na afisa ugani kuchukua hatua.' },
+    explanation: 'High heat / ice-ice risk. Recording symptoms quickly lets the system and your administrator respond.', explanationSw: 'Hatari kubwa ya joto / ice-ice. Kurekodi dalili haraka kunasaidia mfumo na msimamizi kuchukua hatua.' },
   { code: 'HEAT_CRITICAL_ESCALATE', riskType: 'HEAT_ICE_ICE', minimumRiskLevel: 'CRITICAL', urgency: 'IMMEDIATE', urgencyHours: 12, escalateToExtension: true,
-    action: 'Escalate to an extension officer and follow approved emergency farm guidance.', actionSw: 'Wasiliana na afisa ugani mara moja na fuata mwongozo wa dharura ulioidhinishwa.',
-    explanation: 'Critical heat / ice-ice risk. An extension officer should confirm the situation and advise on approved measures.', explanationSw: 'Hatari muhimu ya joto / ice-ice. Afisa ugani anapaswa kuthibitisha hali na kushauri hatua zilizoidhinishwa.' },
+    action: 'Escalate to an administrator and follow approved emergency farm guidance.', actionSw: 'Wasiliana na msimamizi mara moja na fuata mwongozo wa dharura ulioidhinishwa.',
+    explanation: 'Critical heat / ice-ice risk. An administrator should confirm the situation and advise on approved measures.', explanationSw: 'Hatari muhimu ya joto / ice-ice. Msimamizi anapaswa kuthibitisha hali na kushauri hatua zilizoidhinishwa.' },
 
   // ── Storm / line damage ──
   { code: 'STORM_LOW_REPORTED_DAMAGE', riskType: 'STORM_LINE_DAMAGE', minimumRiskLevel: 'LOW', maximumRiskLevel: 'LOW', urgency: 'SOON', urgencyHours: 24, priority: 5,
@@ -52,8 +52,8 @@ export const ACTION_LIBRARY = [
     action: 'Check seedlings and remove epiphytes during the next visit, then record growth.', actionSw: 'Kagua mbegu na ondoa uchafu (epiphytes) katika ziara ijayo, kisha rekodi ukuaji.',
     explanation: 'Some signs of slower growth. Clean lines help seaweed get light and nutrients.', explanationSw: 'Kuna dalili za ukuaji wa polepole. Mistari safi husaidia mwani kupata mwanga na virutubisho.' },
   { code: 'GROWTH_HIGH_REVIEW', riskType: 'POOR_GROWTH', minimumRiskLevel: 'HIGH', urgency: 'SOON', urgencyHours: 72, escalateToExtension: true,
-    action: 'Record growth on sample lines and ask an extension officer to review your seedlings and farm site.', actionSw: 'Rekodi ukuaji kwenye mistari ya sampuli na muombe afisa ugani akague mbegu na eneo la shamba lako.',
-    explanation: 'Growth is likely to be poor this cycle. An officer can check seedling quality and site conditions.', explanationSw: 'Ukuaji unaweza kuwa hafifu msimu huu. Afisa ugani anaweza kukagua ubora wa mbegu na hali ya eneo.' },
+    action: 'Record growth on sample lines and ask an administrator to review your seedlings and farm site.', actionSw: 'Rekodi ukuaji kwenye mistari ya sampuli na muombe msimamizi akague mbegu na eneo la shamba lako.',
+    explanation: 'Growth is likely to be poor this cycle. An administrator can arrange a check of seedling quality and site conditions.', explanationSw: 'Ukuaji unaweza kuwa hafifu msimu huu. Msimamizi anaweza kukagua ubora wa mbegu na hali ya eneo.' },
 
   // ── Harvest window ──
   { code: 'HARVEST_NOT_READY', riskType: 'HARVEST_WINDOW', minimumRiskLevel: 'LOW', conditions: [lt('maturityRatio', 0.85)], urgency: 'ROUTINE', urgencyHours: 168, priority: 1,

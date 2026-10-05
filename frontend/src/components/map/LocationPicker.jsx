@@ -1,4 +1,5 @@
-import { CircleMarker, MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
+import { CircleMarker, MapContainer, useMapEvents } from 'react-leaflet';
+import BaseMapTiles from './BaseMapTiles.jsx';
 
 const ZANZIBAR_CENTER = [-5.9, 39.45];
 
@@ -12,7 +13,7 @@ export default function LocationPicker({ lat, lng, onPick, height = 260 }) {
   const has = Number.isFinite(lat) && Number.isFinite(lng);
   return (
     <MapContainer center={has ? [lat, lng] : ZANZIBAR_CENTER} zoom={has ? 13 : 9} style={{ height, width: '100%' }} scrollWheelZoom={false} className="rounded-xl">
-      <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      <BaseMapTiles />
       <ClickToPick onPick={onPick} />
       {has && <CircleMarker center={[lat, lng]} radius={9} pathOptions={{ color: '#ffffff', weight: 2, fillColor: '#16718c', fillOpacity: 0.95 }} />}
     </MapContainer>

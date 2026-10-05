@@ -220,7 +220,7 @@ export default function AdminSettings() {
   return (
     <div className="space-y-6">
       <PageHeader title={t('admin.settings.title')} subtitle={t('admin.settings.subtitle')} />
-      <div className="grid gap-6 xl:grid-cols-[1fr_22rem]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-6">
           {GROUPS.map((g) => (
             <Card key={g.id}>

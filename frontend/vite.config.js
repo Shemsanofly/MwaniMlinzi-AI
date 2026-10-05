@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => {
   plugins: [react(), tailwindcss()],
   server: {
     port: 5173,
+    strictPort: true,
     // In development the frontend calls /api on the same origin; Vite forwards it to the backend.
     proxy: { '/api': { target: env.VITE_PROXY_TARGET || 'http://127.0.0.1:5000', changeOrigin: true } },
   },
@@ -25,6 +26,8 @@ export default defineConfig(({ mode }) => {
     },
   },
   test: {
+    // Keep Windows test workers within the available memory during local development.
+    maxWorkers: 1,
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.js',

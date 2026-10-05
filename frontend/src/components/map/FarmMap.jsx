@@ -1,4 +1,5 @@
-import { CircleMarker, MapContainer, Popup, TileLayer, Tooltip } from 'react-leaflet';
+import { CircleMarker, MapContainer, Popup, Tooltip } from 'react-leaflet';
+import BaseMapTiles from './BaseMapTiles.jsx';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { riskStyle } from '../../utils/risk.js';
@@ -22,7 +23,7 @@ export default function FarmMap({ farms = [], height = 480, renderPopup, linkTo,
         style={{ height, width: '100%' }}
         scrollWheelZoom={false}
       >
-        <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <BaseMapTiles />
         {located.map((f) => {
           const level = colorBy ? colorBy(f) : f.overallRiskLevel;
           const style = riskStyle(level);

@@ -133,7 +133,7 @@ Configured with `LLM_PROVIDER=anthropic|openai`, `LLM_API_KEY`, `LLM_MODEL` (def
   Generated prose never becomes a displayed farm fact. Answers use farm records and structured risk factors;
   only validated guidance is returned as `approvedAction`.
 - Treatment questions ("What medicine should I use?", "Nitumie dawa gani?") never reach the LLM: the safety policy answers
-  *"I can help you record the symptoms and show approved farm guidance. For treatment decisions, contact an extension officer."*
+  *"I can help you record the symptoms and show approved farm guidance. For treatment decisions, contact an administrator."*
 - Natural language like *"I see whitening on 20% of my lines"* is parsed into a structured observation **draft** the farmer
   confirms before it is saved.
 - No key, a timeout or an error → deterministic templates (`generatedBy: "TEMPLATE"`). The app is fully functional without an LLM.

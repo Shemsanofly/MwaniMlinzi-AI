@@ -17,7 +17,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   useFarmerFarm.mockReturnValue(farmerFarm());
   farmApi.risks.mockResolvedValue(riskResult('HIGH', 0.72));
-  const fresh = { ...riskResult('CRITICAL', 0.93), alerts: [{ id: 'al9', severity: 'CRITICAL', title: 'CRITICAL heat risk — FARM001', titleSw: 'Hatari muhimu', message: 'Contact extension officer', messageSw: 'Wasiliana na afisa ugani' }] };
+  const fresh = { ...riskResult('CRITICAL', 0.93), alerts: [{ id: 'al9', severity: 'CRITICAL', title: 'CRITICAL heat risk — FARM001', titleSw: 'Hatari muhimu', message: 'Contact administrator', messageSw: 'Wasiliana na msimamizi' }] };
   farmApi.addObservation.mockResolvedValue({ observation: { id: 'o1' }, risk: fresh });
   uploadApi.image.mockResolvedValue({ file: { id: IMAGE_ID } });
   globalThis.URL.createObjectURL = vi.fn(() => 'blob:preview');

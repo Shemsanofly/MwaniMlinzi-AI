@@ -56,7 +56,7 @@ mwanimlinzi/
 │       ├── components/        ui kit, risk components, Leaflet map
 │       ├── hooks/             useFarmerFarm …
 │       ├── i18n/              I18nProvider + locales/{en,sw}/<namespace>.js
-│       ├── layouts/           Public, Farmer (mobile bottom nav), App (staff sidebar), ProtectedRoute
+│       ├── layouts/           Public, Farmer (mobile bottom nav), App (admin sidebar), ProtectedRoute
 │       ├── pages/             public · farmer · admin (field operations reuse extension/cooperative screens) · tools (what-if)
 │       ├── stores/            AuthContext
 │       ├── utils/             formatting, risk styles
@@ -96,3 +96,9 @@ mwanimlinzi/
 - **Persisted USSD sessions** — the menu position, language, selected farm and temporary input are stored in `ussd_sessions`,
   so each Africa's Talking request consumes only the newest input; retries return the stored reply (no duplicate records).
 - **No Docker** — plain `npm` scripts, PostgreSQL and PM2.
+
+## Account roles and recovery
+
+Only `FARMER` and `ADMIN` are stored in `RoleName`, seeded or assignable. Farmer API access is limited to owned farms. Admins manage field operations and all cooperatives through `/admin`. The shared field/cooperative components and `/api/extension/*` endpoint namespace are Admin tools, not additional account roles. Public partner tokens grant limited aggregate read access without creating user accounts.
+
+Password recovery uses `EmailService` and the configured SMTP provider to send a six-digit code to the email saved on the user. Recovery is unavailable until a real sender is configured; see [EMAIL.md](EMAIL.md).

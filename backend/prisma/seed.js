@@ -7,8 +7,6 @@
  * then ensures one login per role so the whole system is usable right after `npm run seed`:
  *
  *   - admin@mwanimlinzi.local       — ADMIN
- *   - officer@mwanimlinzi.local     — EXTENSION_OFFICER
- *   - coop@mwanimlinzi.local        — COOPERATIVE_ADMIN (linked to the "Pwani Jipya" demo coop)
  *   - farmer@mwanimlinzi.local      — FARMER
  *
  * ADMIN_EMAIL / ADMIN_PASSWORD override the admin's email/password (min. 12 chars). Any missing
@@ -32,8 +30,33 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const DEMO_COOP = { code: 'PWANI_JIPYA', name: 'Pwani Jipya Cooperative', district: 'North Unguja', region: 'Unguja', description: 'Demo cooperative for the pilot — real cooperatives replace it in production.' };
 const randomPassword = () => `Mw-${crypto.randomBytes(9).toString('base64url')}7`;
 
+// Update only untouched, unvalidated starter support labels; preserve expert edits.
+const adminSupportText = (text) => text
+  .replaceAll('your extension officer', 'your administrator')
+  .replaceAll('an extension officer', 'an administrator')
+  .replaceAll('An extension officer', 'An administrator')
+  .replaceAll('An officer can check', 'An administrator can arrange a check of')
+  .replaceAll('afisa ugani', 'msimamizi').replaceAll('Afisa ugani', 'Msimamizi');
+
 async function ensureCooperative() {
   return prisma.cooperative.upsert({ where: { code: DEMO_COOP.code }, update: {}, create: DEMO_COOP });
+}
+
+/** A FARMER role also needs its profile before it can create farms or records. */
+async function ensureDemoFarmerProfile(email, cooperativeId) {
+  const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+  await prisma.$transaction(async (tx) => {
+    const farmer = await tx.farmer.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: { userId: user.id, farmerCode: `FMR-${user.id.slice(0, 8).toUpperCase()}` },
+    });
+    await tx.cooperativeMember.upsert({
+      where: { cooperativeId_farmerId: { cooperativeId, farmerId: farmer.id } },
+      update: {},
+      create: { cooperativeId, farmerId: farmer.id },
+    });
+  });
 }
 
 /** Create a user if the email is not already taken. Returns { email, password | null } for the credentials file. */
@@ -79,7 +102,7 @@ async function main() {
   for (const r of ROLES) roles[r.name] = await prisma.role.upsert({ where: { name: r.name }, update: { description: r.description }, create: r });
   for (const role of Object.values(roles)) {
     const keys = Object.entries(PERMISSIONS).filter(([, names]) => names.includes(role.name)).map(([key]) => key);
-    await prisma.role.update({ where: { id: role.id }, data: { permissions: [...new Set([...role.permissions, ...keys])] } });
+    await prisma.role.update({ where: { id: role.id }, data: { permissions: keys } });
   }
   for (const s of SPECIES) await prisma.seaweedSpecies.upsert({ where: { code: s.code }, update: {}, create: s });
   await ensureDefaultSettings();
@@ -87,14 +110,20 @@ async function main() {
   for (const a of ACTION_LIBRARY) {
     const exists = await prisma.actionLibrary.findUnique({ where: { code: a.code } });
     if (!exists) { await prisma.actionLibrary.create({ data: a }); added += 1; }
+    else if (!exists.validated && exists.source === a.source) {
+      const data = {};
+      for (const key of ['action', 'actionSw', 'explanation', 'explanationSw']) {
+        if (exists[key] !== a[key] && adminSupportText(exists[key]) === a[key]) data[key] = a[key];
+      }
+      if (Object.keys(data).length) await prisma.actionLibrary.update({ where: { id: exists.id }, data });
+    }
   }
 
   const coop = await ensureCooperative();
   const demo = [];
   demo.push({ role: 'ADMIN', ...await ensureUser({ email: process.env.ADMIN_EMAIL || 'admin@mwanimlinzi.local', fullName: 'System Administrator', roleId: roles.ADMIN.id, preferredLanguage: 'en', envVar: 'ADMIN_PASSWORD' }) });
-  demo.push({ role: 'EXTENSION_OFFICER', ...await ensureUser({ email: 'officer@mwanimlinzi.local', fullName: 'Demo Extension Officer', roleId: roles.EXTENSION_OFFICER.id, preferredLanguage: 'en' }) });
-  demo.push({ role: 'COOPERATIVE_ADMIN', ...await ensureUser({ email: 'coop@mwanimlinzi.local', fullName: 'Demo Cooperative Lead', roleId: roles.COOPERATIVE_ADMIN.id, cooperativeId: coop.id, preferredLanguage: 'sw' }), notes: `Linked to cooperative "${coop.name}" (${coop.code}).` });
   demo.push({ role: 'FARMER', ...await ensureUser({ email: 'farmer@mwanimlinzi.local', fullName: 'Demo Farmer', roleId: roles.FARMER.id, preferredLanguage: 'sw' }), notes: 'A FARMER needs to add a farm after first login.' });
+  await ensureDemoFarmerProfile('farmer@mwanimlinzi.local', coop.id);
 
   const freshlyCreated = demo.filter((d) => !d.alreadyExisted && d.password);
   if (freshlyCreated.length) {

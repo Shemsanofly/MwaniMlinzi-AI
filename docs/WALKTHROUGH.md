@@ -1,7 +1,7 @@
 # Walkthrough (≈10 minutes)
 
 Everything below runs against the real backend and PostgreSQL, with live weather and ocean data. The system starts
-empty: there are no prepared farmers, farms or histories. You create them in the steps below.
+with only Farmer and Admin demo logins and reference data; there are no prepared farms or histories. You create them in the steps below.
 
 ## Setup (once)
 
@@ -10,9 +10,9 @@ cd backend && npm install && npx prisma migrate dev && npm run seed && npm run d
 cd frontend && npm install && npm run dev        # http://localhost:5173
 ```
 
-`npm run seed` loads reference data only and creates the first admin. The admin email is `ADMIN_EMAIL`
+`npm run seed` loads reference data and ensures the Admin and Farmer demo logins. The admin email is `ADMIN_EMAIL`
 (default `admin@mwanimlinzi.local`). The password is `ADMIN_PASSWORD` from `backend/.env`, or a generated one that
-the seed prints once and saves to `backend/ADMIN_CREDENTIALS.local.txt`.
+the seed prints once and saves to `backend/DEMO_CREDENTIALS.local.txt`.
 
 The backend must be able to reach `api.open-meteo.com` and `marine-api.open-meteo.com` (free, no key) for live readings.
 
@@ -70,3 +70,7 @@ The backend must be able to reach `api.open-meteo.com` and `marine-api.open-mete
 13. **pgAdmin** — open `mwanimlinzi` → `environmental_observations` (the live reading with `source` and provider),
     `risk_predictions`, `action_recommendations`, `farmer_actions`, `farm_records` (OUTCOME), `event_logs` (FEEDBACK)
     to see the stored loop (queries in [DATABASE.md](DATABASE.md)).
+
+## Email recovery
+
+Configure a real SMTP sender in `backend/.env`, run `npm run email:verify` from `backend`, and restart the API. Use **Forgot password** with the real email saved on the account; retrieve the six-digit code from that inbox, enter a new password and log in. The `.local` demo addresses cannot receive real email. See [EMAIL.md](EMAIL.md).

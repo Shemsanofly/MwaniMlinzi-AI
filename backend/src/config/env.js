@@ -31,6 +31,15 @@ export const env = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   corsOrigins: (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',').map((s) => s.trim()).filter(Boolean),
   enableJobs: bool(process.env.ENABLE_JOBS, true) && nodeEnv !== 'test',
+  email: {
+    host: (process.env.SMTP_HOST || '').trim(),
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: bool(process.env.SMTP_SECURE, Number(process.env.SMTP_PORT || 587) === 465),
+    requireTLS: bool(process.env.SMTP_REQUIRE_TLS, true),
+    user: process.env.SMTP_USER || '',
+    password: process.env.SMTP_PASSWORD || '',
+    from: (process.env.SMTP_FROM || '').trim(),
+  },
   llm: {
     provider: (process.env.LLM_PROVIDER || '').toLowerCase(),
     apiKey: process.env.LLM_API_KEY || '',

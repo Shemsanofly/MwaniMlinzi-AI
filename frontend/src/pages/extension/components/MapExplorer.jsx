@@ -57,7 +57,7 @@ export default function MapExplorer({ base, title, subtitle, showCooperative = f
       </div>
 
       {q.isLoading ? <PageLoader /> : q.error ? <ErrorState error={q.error} onRetry={q.refetch} /> : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
           <Card className="relative min-w-0 overflow-hidden p-2">
             {!(q.data?.farms || []).length && (
               <div className="pointer-events-none absolute inset-x-0 top-6 z-[1000] flex justify-center px-4" role="status">
@@ -67,12 +67,12 @@ export default function MapExplorer({ base, title, subtitle, showCooperative = f
                 </div>
               </div>
             )}
-            <FarmMap key={`${cooperativeId}-${level}`} farms={farms} height="min(70vh, 640px)" linkTo={(f) => `${base}/farms/${f.id}`} colorBy={colorBy === 'OVERALL' ? undefined : levelOf} />
+            <FarmMap key={`${cooperativeId}-${level}`} farms={farms} height="clamp(240px, 60dvh, 640px)" linkTo={(f) => `${base}/farms/${f.id}`} colorBy={colorBy === 'OVERALL' ? undefined : levelOf} />
             <p className="px-1 pt-1 text-xs text-slate-500">
               {t('extension.shared.map.coloredBy', { what: colorBy === 'OVERALL' ? t('extension.shared.filters.overall') : t(`risk.type.${colorBy}`) })}
             </p>
           </Card>
-          <Card className="flex min-w-0 max-h-[min(78vh,720px)] flex-col">
+          <Card className="flex min-w-0 max-h-[min(78dvh,720px)] flex-col">
             <div className="border-b border-slate-100 px-4 py-3">
               <h2 className="font-semibold text-slate-900">{t('extension.shared.map.listTitle')}</h2>
               <p className="text-xs text-slate-500">{t('extension.shared.farmsCount', { n: farms.length })}</p>

@@ -17,6 +17,7 @@ import { JOBS, runJob } from '../jobs/jobs.js';
 import { EnvironmentService } from '../services/environmentService.js';
 import { getLLMProvider } from '../services/assistantService.js';
 import { SMSService } from '../services/smsService.js';
+import { getEmailProvider } from '../services/emailService.js';
 import { atConfig, atPublicStatus } from '../providers/africastalking/config.js';
 import { maskPhone } from '../utils/phone.js';
 import { assertFarmAccess, isUuid } from '../services/accessService.js';
@@ -31,6 +32,7 @@ const userSelect = {
 const flatUser = (u) => ({ ...u, roles: u.roles.map((r) => r.role.name).filter((r) => ACTIVE_ROLE_NAMES.includes(r)) });
 
 export async function listUsers(req, res) {
+  if (req.query.role && !ACTIVE_ROLE_NAMES.includes(String(req.query.role))) throw badRequest('Role must be FARMER or ADMIN');
   const { take, skip, page, limit } = pageParams(req.query);
   const where = {
     ...(req.query.role ? { roles: { some: { role: { name: String(req.query.role) } } } } : {}),
@@ -138,7 +140,7 @@ export async function getSettings(_req, res) {
     settings,
     system: {
       jobsEnabled: env.enableJobs,
-      providers: { ...EnvironmentService.providerStatus(), llm: getLLMProvider().name, sms: SMSService.status().configured ? SMSService.status().provider : 'NOT_CONFIGURED', ussd: atConfig().ussdConfigured ? 'africastalking' : 'NOT_CONFIGURED' },
+      providers: { ...EnvironmentService.providerStatus(), llm: getLLMProvider().name, email: getEmailProvider().configured ? getEmailProvider().name : 'NOT_CONFIGURED', sms: SMSService.status().configured ? SMSService.status().provider : 'NOT_CONFIGURED', ussd: atConfig().ussdConfigured ? 'africastalking' : 'NOT_CONFIGURED' },
       note: 'Provider selection and credentials are set in backend/.env (never stored in the database).',
     },
   });

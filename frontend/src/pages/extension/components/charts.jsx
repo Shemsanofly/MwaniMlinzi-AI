@@ -15,7 +15,7 @@ const TOOLTIP_STYLE = { contentStyle: { borderRadius: 8, border: '1px solid #e2e
 /** Fixed-height chart frame; ResponsiveContainer handles the width. */
 export function ChartFrame({ height = 260, label, children }) {
   return (
-    <div style={{ width: '100%', height }} aria-label={label}>
+    <div className="min-w-0 max-w-full" style={{ width: '100%', height }} aria-label={label}>
       <ResponsiveContainer width="100%" height="100%">{children}</ResponsiveContainer>
     </div>
   );

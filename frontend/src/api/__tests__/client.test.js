@@ -5,7 +5,7 @@ const reject = (err) => http.interceptors.response.handlers[0].rejected(err);
 const axiosError = (status, data) => ({ response: { status, data }, config: { url: '/auth/login' } });
 
 describe('API error normalisation', () => {
-  test.each([502, 503, 504])('a %i from a proxy/gateway (no API body) is reported as "server unreachable"', async (status) => {
+  test.each([500, 502, 503, 504])('a %i from a proxy/gateway (no API body) is reported as "server unreachable"', async (status) => {
     await expect(reject(axiosError(status, ''))).rejects.toMatchObject({ status: 0, code: 'NETWORK_ERROR' });
   });
 

@@ -4,14 +4,12 @@ import { forbidden, notFound } from '../utils/errors.js';
 
 /**
  * Prisma `where` fragment restricting farms to what the user may see.
- *  - ADMIN, EXTENSION_OFFICER: all farms
- *  - COOPERATIVE_ADMIN: farms registered under their own cooperative
+ *  - ADMIN: all farms
  *  - FARMER: their own farms only
  */
 export function farmScope(user) {
   if (hasRole(user, ...CROSS_COOP_STAFF)) return {};
   const or = [];
-  if (hasRole(user, ROLES.COOPERATIVE_ADMIN) && user.cooperativeId) or.push({ cooperativeId: user.cooperativeId });
   if (hasRole(user, ROLES.FARMER) && user.farmerId) or.push({ farmerId: user.farmerId });
   if (!or.length) return { id: '00000000-0000-0000-0000-000000000000' }; // matches nothing
   return or.length === 1 ? or[0] : { OR: or };
