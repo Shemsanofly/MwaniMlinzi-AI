@@ -5,8 +5,8 @@ Two model paths ship with MwaniMlinzi; both are optional and the rule-based risk
 | Tier | Framework | Lives in | Required? |
 |---|---|---|---|
 | **1. Remote GBM service** | LightGBM (or XGBoost) via FastAPI | [`ai/ml-service/`](./ml-service/) | Optional — Python runtime |
-| **2. Local baseline** | Dependency-free JavaScript logistic regression | `backend/src/ai/ml/` | Zero deps — ships in Node backend |
-| **3. Baseline fallback** | Rule-based risk engine | `backend/src/rules/` | Always on |
+| **2. Local baseline** | Dependency-free JavaScript logistic regression | `src/server/ai/ml/` | Zero deps — ships in Node backend |
+| **3. Baseline fallback** | Rule-based risk engine | `src/server/rules/` | Always on |
 
 `MLRiskProvider.predict()` tries tier 1 first (deck slide 7 — "LightGBM or XGBoost"), falls through to tier 2
 when the service is unreachable or has no model for the risk type, then to tier 3. Every prediction is labelled

@@ -5,7 +5,7 @@ default, XGBoost supported) for the four risk types. Pitch-deck slide 7: *"Outco
 LightGBM or XGBoost models."*
 
 The service is **optional**. The Node backend already ships with a dependency-free JavaScript
-logistic-regression baseline (see `backend/src/ai/ml/logisticRegression.js`); if this service
+logistic-regression baseline (see `src/server/ai/ml/logisticRegression.js`); if this service
 is not reachable, the backend transparently falls back to that baseline — the rule-based engine
 is always on either way.
 

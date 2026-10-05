@@ -1,5 +1,5 @@
 /**
- * Tanzanian mobile numbers — mirrors backend/src/utils/phone.js.
+ * Tanzanian mobile numbers — mirrors src/server/utils/phone.js.
  * Accepts +255…, 255…, 00255…, 07…/06… and 7…/6… with spaces, dashes or brackets.
  * @returns '+255XXXXXXXXX' or null
  */

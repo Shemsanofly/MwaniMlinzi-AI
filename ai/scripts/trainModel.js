@@ -5,7 +5,7 @@ import { loadFieldRecords } from '../../src/server/ai/fieldTrainingData.js';
  * Trains one logistic-regression model per risk type from REAL field outcomes only.
  *
  *   node ai/scripts/trainModel.js [--activate]
- *   (or from backend/: npm run ai:train -- --activate)
+ *   (or from the repo root: npm run ai:train -- --activate)
  *
  * Training data = stored risk predictions (their input features) labelled by what farmers later
  * reported (action outcomes: did the risk materialise?). Nothing is generated or invented.
@@ -31,7 +31,7 @@ const RISK_TYPES = ['HEAT_ICE_ICE', 'STORM_LINE_DAMAGE', 'POOR_GROWTH', 'HARVEST
 const flag = (n) => process.argv.includes(`--${n}`);
 
 async function loadDb() {
-  process.chdir(path.join(REPO, 'backend')); // so backend/.env is found
+  process.chdir(REPO); // so .env is found at the repo root
   const { prisma } = await import('../../src/server/config/prisma.js');
   await prisma.$queryRaw`SELECT 1`;
   return prisma;
