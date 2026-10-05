@@ -38,27 +38,25 @@ export async function loadUser(userId) {
   };
 }
 
-export async function authenticate(req, _res, next) {
+export async function authenticate(req) {
   const header = req.headers.authorization || '';
   const [scheme, token] = header.split(' ');
-  if (scheme !== 'Bearer' || !token) return next(unauthorized());
+  if (scheme !== 'Bearer' || !token) throw unauthorized();
   let payload;
   try {
     payload = jwt.verify(token, env.jwtSecret);
   } catch {
-    return next(unauthorized('Invalid or expired token'));
+    throw unauthorized('Invalid or expired token');
   }
   const user = await loadUser(payload.sub);
-  if (!user || !user.isActive) return next(unauthorized('Account not found or disabled'));
+  if (!user || !user.isActive) throw unauthorized('Account not found or disabled');
   req.user = user;
-  return next();
 }
 
 export const hasRole = (user, ...roles) => !!user && user.roles.some((r) => roles.includes(r));
 
 /** authorize('ADMIN') or authorize('FARMER', 'ADMIN') — any matching active role passes. */
-export const authorize = (...roles) => (req, _res, next) => {
-  if (!req.user) return next(unauthorized());
-  if (!hasRole(req.user, ...roles)) return next(forbidden());
-  return next();
+export const authorize = (...roles) => (req) => {
+  if (!req.user) throw unauthorized();
+  if (!hasRole(req.user, ...roles)) throw forbidden();
 };
