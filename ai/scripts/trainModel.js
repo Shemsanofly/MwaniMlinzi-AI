@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { events } from '../../backend/src/db/records.js';
-import { loadFieldRecords } from '../../backend/src/ai/fieldTrainingData.js';
+import { events } from '../../src/server/db/records.js';
+import { loadFieldRecords } from '../../src/server/ai/fieldTrainingData.js';
 /**
  * Trains one logistic-regression model per risk type from REAL field outcomes only.
  *
@@ -19,10 +19,10 @@ import { loadFieldRecords } from '../../backend/src/ai/fieldTrainingData.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ML_FEATURES, toVector } from '../../backend/src/ai/ml/featureVector.js';
-import { train, predictProba } from '../../backend/src/ai/ml/logisticRegression.js';
-import { evaluate } from '../../backend/src/ai/ml/metrics.js';
-import { mulberry32 } from '../../backend/src/utils/random.js';
+import { ML_FEATURES, toVector } from '../../src/server/ai/ml/featureVector.js';
+import { train, predictProba } from '../../src/server/ai/ml/logisticRegression.js';
+import { evaluate } from '../../src/server/ai/ml/metrics.js';
+import { mulberry32 } from '../../src/server/utils/random.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(here, '..', '..');
@@ -32,7 +32,7 @@ const flag = (n) => process.argv.includes(`--${n}`);
 
 async function loadDb() {
   process.chdir(path.join(REPO, 'backend')); // so backend/.env is found
-  const { prisma } = await import('../../backend/src/config/prisma.js');
+  const { prisma } = await import('../../src/server/config/prisma.js');
   await prisma.$queryRaw`SELECT 1`;
   return prisma;
 }

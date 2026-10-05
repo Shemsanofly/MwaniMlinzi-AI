@@ -4,8 +4,8 @@ coverage/
 .env
 .env.*
 !.env.example
-backend/uploads/*
-!backend/uploads/.gitkeep
+uploads/*
+!uploads/.gitkeep
 *.log
 .DS_Store
 .vscode/
@@ -17,6 +17,8 @@ ai/datasets/*.csv
 !ai/datasets/.gitkeep
 ADMIN_CREDENTIALS.local.txt
 DEMO_CREDENTIALS.local.txt
-backend/backups/
-frontend/.ui-audit/
+backups/
+.ui-audit/
 .local/
+.next/
+next-env.d.ts
