@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { createConnection, createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
@@ -47,20 +47,11 @@ async function portIsFree({ port, host }) {
   });
 }
 
-// `next start` serves a production build; build once if none exists yet.
-if (!existsSync(new URL('../.next/BUILD_ID', import.meta.url))) {
-  log('No production build found; running next build once.');
-  const build = spawnSync(process.execPath, ['node_modules/next/dist/bin/next', 'build'], { cwd: root, stdio: 'inherit' });
-  if (build.status !== 0) {
-    lock.close();
-    console.error('[always-on] next build failed; not starting the app.');
-    process.exit(1);
-  }
-}
-
 let stopping = false;
 let checking = false;
 let timer;
+let building = false;
+let buildChild = null;
 const connections = new Set();
 lock.on('connection', (socket) => {
   connections.add(socket);
@@ -71,7 +62,7 @@ lock.on('connection', (socket) => {
   socket.on('data', (chunk) => {
     message += chunk.toString();
     if (message.trim() === 'status') {
-      socket.end(`${JSON.stringify({ name: 'MwaniMlinzi AI runner', appPort: services[0].port })}\n`);
+      socket.end(`${JSON.stringify({ name: 'MwaniMlinzi AI runner', appPort: services[0].port, ...(building ? { building: true } : {}) })}\n`);
     } else if (message.trim() === 'stop') stop();
     else if (message.length > 32) socket.destroy();
   });
@@ -116,6 +107,17 @@ async function stop() {
   stopping = true;
   clearInterval(timer);
   log('Stopping background runner.');
+  if (buildChild && buildChild.exitCode === null && buildChild.signalCode === null) {
+    const child = buildChild;
+    const exited = new Promise((resolve) => child.once('exit', resolve));
+    if (process.platform === 'win32') {
+      // Stop the whole build tree, not just the node process that started it.
+      spawn('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true }).on('error', () => child.kill());
+    } else {
+      try { process.kill(-child.pid, 'SIGTERM'); } catch { child.kill(); }
+    }
+    await exited;
+  }
   await Promise.all(services.map(({ child }) => new Promise((resolve) => {
     if (!child || child.exitCode !== null || child.signalCode !== null) return resolve();
     child.once('exit', resolve);
@@ -130,6 +132,32 @@ process.on('SIGINT', stop);
 process.on('SIGTERM', stop);
 process.on('message', (message) => { if (message === 'stop') stop(); });
 process.on('disconnect', stop);
-log(`Monitoring the app server. Open http://localhost:${services[0].port}/login`);
-timer = setInterval(ensureServices, 2000);
-await ensureServices();
+// `next start` serves a production build; build once if none exists yet. The
+// build runs asynchronously so status, stop and signals keep working meanwhile.
+// MWANI_BUILD_CMD (a node script path) is a test-only override.
+const buildScript = process.env.MWANI_BUILD_CMD;
+if (buildScript || !existsSync(new URL('../.next/BUILD_ID', import.meta.url))) {
+  log('No production build found; running next build once.');
+  building = true;
+  buildChild = spawn(process.execPath, buildScript ? [buildScript] : ['node_modules/next/dist/bin/next', 'build'], {
+    cwd: root, stdio: 'inherit', windowsHide: true, detached: process.platform !== 'win32',
+  });
+  const result = await new Promise((resolve) => {
+    buildChild.once('error', () => resolve({ code: 1 }));
+    buildChild.once('exit', (code) => resolve({ code }));
+  });
+  building = false;
+  buildChild = null;
+  if (!stopping && result.code !== 0) {
+    stopping = true;
+    console.error('[always-on] next build failed; not starting the app.');
+    lock.close();
+    for (const socket of connections) socket.end();
+    process.exit(1);
+  }
+}
+if (!stopping) {
+  log(`Monitoring the app server. Open http://localhost:${services[0].port}/login`);
+  timer = setInterval(ensureServices, 2000);
+  await ensureServices();
+}

@@ -49,7 +49,7 @@ The database has **29 application tables (30 including Prisma migration history)
 
 ## Quick start (development)
 
-Prerequisites: **Node.js 20+ (22 recommended)**, **PostgreSQL 14+**, **pgAdmin 4** (optional but recommended). Email password recovery requires an SMTP sender; see [EMAIL.md](docs/EMAIL.md).
+Prerequisites: **Node.js 20.9+ (22 recommended)**, **PostgreSQL 14+**, **pgAdmin 4** (optional but recommended). Email password recovery requires an SMTP sender; see [EMAIL.md](docs/EMAIL.md).
 The server needs outbound internet access for live weather and ocean data.
 
 ```bash

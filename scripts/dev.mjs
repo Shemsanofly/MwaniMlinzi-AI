@@ -24,6 +24,7 @@ try {
   for (const service of services) {
     const monitored = background?.appPort === service.port;
     if (monitored) {
+      if (background.building) throw new Error('The background runner is still building the app. Try again when it finishes, or run npm run stop:local.');
       service.reused = true;
       continue;
     }
