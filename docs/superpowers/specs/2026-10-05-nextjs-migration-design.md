@@ -48,7 +48,7 @@ MwaniMlinzi-AI/
 │   ├── (staff)/layout.jsx       Protected(ADMIN) + AppLayout; admin/* (16 pages incl. farms/[id]),
 │   │                            tools/scenarios; /admin → /admin/dashboard
 │   ├── account/layout.jsx       Protected(any) + AppLayout; settings, notifications
-│   └── api/**/route.js          one Route Handler file per API path (104 endpoints)
+│   └── api/**/route.js          one Route Handler file per API path (114 endpoints)
 ├── src/
 │   ├── client/                  former frontend/src minus main.jsx/App.jsx (components, hooks, i18n,
 │   │                            layouts, pages bodies, api client, stores, utils, test setup)
