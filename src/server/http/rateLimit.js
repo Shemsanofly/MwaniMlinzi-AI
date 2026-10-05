@@ -3,9 +3,14 @@ import { env } from '../config/env.js';
 /** Fixed-window in-memory limiter, equivalent to express-rate-limit's MemoryStore with draft-7 headers. */
 export function createLimiter({ windowMs, limit, text, now = Date.now, isTest = env.isTest }) {
   const hits = new Map();
+  let nextSweep = 0;
   const max = isTest ? 100000 : limit;
-  return function rateLimitStep(ctx) {
+  function rateLimitStep(ctx) {
     const t = now();
+    if (t >= nextSweep) {
+      for (const [ip, e] of hits) if (e.resetAt <= t) hits.delete(ip);
+      nextSweep = t + windowMs;
+    }
     let entry = hits.get(ctx.ip);
     if (!entry || t >= entry.resetAt) { entry = { count: 0, resetAt: t + windowMs }; hits.set(ctx.ip, entry); }
     entry.count += 1;
@@ -22,7 +27,9 @@ export function createLimiter({ windowMs, limit, text, now = Date.now, isTest = 
     }
     for (const [k, v] of Object.entries(headers)) ctx.responseHeaders.set(k, v);
     return undefined;
-  };
+  }
+  rateLimitStep.size = () => hits.size; // test-only
+  return rateLimitStep;
 }
 
 export const limiters = {

@@ -24,3 +24,33 @@ describe('parseBody', () => {
   test('multipart is left for the upload step', async () => { const c = ctxFor('--x--', 'multipart/form-data; boundary=x'); await parseBody(c); expect(c.body).toBeUndefined(); });
   test('GET is not parsed', async () => { const c = createContext(new Request('http://l/api/x'), {}); await parseBody(c); expect(c.body).toBeUndefined(); });
 });
+
+// Streams with no Content-Length: the limit must trip while reading, not after buffering everything.
+const countingStream = (chunks, chunk) => {
+  const state = { pulled: 0, cancelled: false };
+  const stream = new ReadableStream({
+    pull(controller) {
+      if (state.pulled >= chunks) { controller.close(); return; }
+      state.pulled += 1;
+      controller.enqueue(chunk);
+    },
+    cancel() { state.cancelled = true; },
+  });
+  return { state, stream };
+};
+const streamCtx = (stream, type) => createContext(new Request('http://l/api/x', { method: 'POST', body: stream, duplex: 'half', headers: { 'content-type': type } }), {});
+
+describe('parseBody streaming limits', () => {
+  test('oversized JSON stream is cancelled early', async () => {
+    const { state, stream } = countingStream(100, new TextEncoder().encode(`${'x'.repeat(10000)}`));
+    await expect(parseBody(streamCtx(stream, 'application/json'))).rejects.toMatchObject({ type: 'entity.too.large' });
+    expect(state.pulled).toBeLessThan(100);
+    expect(state.cancelled).toBe(true);
+  });
+  test('oversized urlencoded stream is cancelled early', async () => {
+    const { state, stream } = countingStream(100, new TextEncoder().encode(`a=${'x'.repeat(5000)}&`));
+    await expect(parseBody(streamCtx(stream, 'application/x-www-form-urlencoded'))).rejects.toMatchObject({ type: 'entity.too.large' });
+    expect(state.pulled).toBeLessThan(100);
+    expect(state.cancelled).toBe(true);
+  });
+});

@@ -6,13 +6,28 @@ const parseError = (type) => Object.assign(new Error(type), { type });
 
 const mediaType = (request) => (request.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
 
-async function readLimited(request, limit) {
+/** Reads the raw body, aborting the stream as soon as `limit` bytes are exceeded (like raw-body). Returns a Buffer. */
+export async function readLimitedBuffer(request, limit, onTooLarge = () => parseError('entity.too.large')) {
   const declared = Number(request.headers.get('content-length'));
-  if (Number.isFinite(declared) && declared > limit) throw parseError('entity.too.large');
-  const buf = Buffer.from(await request.arrayBuffer());
-  if (buf.length > limit) throw parseError('entity.too.large');
-  return buf.toString('utf8');
+  if (Number.isFinite(declared) && declared > limit) throw onTooLarge();
+  if (!request.body) return Buffer.alloc(0);
+  const reader = request.body.getReader();
+  const chunks = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > limit) {
+      await reader.cancel().catch(() => {});
+      throw onTooLarge();
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks);
 }
+
+const readLimited = async (request, limit) => (await readLimitedBuffer(request, limit)).toString('utf8');
 
 /** Same behaviour as Express 5's json + urlencoded parsers: unmatched content types leave body undefined. */
 export async function parseBody(ctx) {

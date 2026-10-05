@@ -28,3 +28,16 @@ describe('createLimiter', () => {
     expect(await r.text()).toBe('END Too many requests. Please try again later.');
   });
 });
+
+describe('createLimiter eviction', () => {
+  test('expired entries for other IPs are swept', () => {
+    let now = 0;
+    const step = createLimiter({ windowMs: 1000, limit: 5, now: () => now, isTest: false });
+    step(ctx('3.3.3.3'));
+    step(ctx('4.4.4.4'));
+    expect(step.size()).toBe(2);
+    now = 1500;
+    step(ctx('5.5.5.5'));
+    expect(step.size()).toBe(1);
+  });
+});
