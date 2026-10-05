@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { env } from './config/env.js';
 import prisma from './config/prisma.js';
-import { createApp } from './app.js';
 import { startScheduler } from './jobs/scheduler.js';
 
 /** The code expects the latest schema; an unapplied migration shows up as 500s on many pages, so say so loudly. */
@@ -25,30 +24,16 @@ async function main() {
     // Keep serving: /api/health reports the outage and requests get a clear 503 instead of a crash.
     console.error('[db] could not connect to PostgreSQL — check DATABASE_URL and that the server is running:', err.message);
   }
-  const app = createApp();
-  let tasks = [];
+  // TEMPORARY (Task 3): the Express listen block was removed; Task 4 replaces this file with the Next bootstrap.
+  // Jest never imports this file.
+  const tasks = [];
+  if (env.enableJobs) tasks.push(...startScheduler());
   let stopping = false;
-  const server = app.listen(env.port, (err) => {
-    // Express 5 passes listen failures to this callback, including EADDRINUSE.
-    if (err) {
-      console.error(err.code === 'EADDRINUSE'
-        ? `[api] Port ${env.port} is already in use. Stop the previous dev terminal before restarting.`
-        : `[api] Could not start: ${err.message}`);
-      shutdown('startup failure', 1);
-      return;
-    }
-    console.log(`[api] MwaniMlinzi AI API on http://localhost:${env.port}  (docs: /api/docs)`);
-    if (env.enableJobs) tasks = startScheduler();
-  });
-
   const shutdown = async (signal, code = 0) => {
     if (stopping) return;
     stopping = true;
     console.log(`[api] ${signal} received, shutting down`);
-    const deadline = setTimeout(() => process.exit(code), 5000);
-    deadline.unref();
     await Promise.allSettled(tasks.map((task) => task.destroy()));
-    await new Promise((resolve) => server.close(resolve));
     try {
       await prisma.$disconnect();
     } finally {
