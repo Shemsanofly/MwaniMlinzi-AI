@@ -16,7 +16,11 @@ const migrationsDir = () => {
 };
 const quiet = { log: jest.fn(), error: jest.fn() };
 
-beforeEach(() => { delete globalThis.__mwaniBoot; });
+beforeEach(() => {
+  delete globalThis.__mwaniBoot;
+  quiet.log.mockClear();
+  quiet.error.mockClear();
+});
 
 test('pendingMigrations lists folders not yet applied', async () => {
   expect(await pendingMigrations(fakePrisma(['001_init']), migrationsDir())).toEqual(['002_more']);
@@ -40,4 +44,31 @@ test('boot is idempotent and keeps serving when the database is down', async () 
   expect(second).toBe(first);
   expect(start).not.toHaveBeenCalled();
   expect(quiet.error).toHaveBeenCalledWith(expect.stringContaining('could not connect to PostgreSQL'), 'down');
+});
+
+test('graceful shutdown destroys tasks and disconnects from database', async () => {
+  const task1 = { destroy: jest.fn() };
+  const task2 = { destroy: jest.fn() };
+  const start = jest.fn(() => [task1, task2]);
+  const prismaClient = fakePrisma();
+  const { shutdown } = await boot({ startScheduler: start, prismaClient, logger: quiet, migrationsDir: migrationsDir(), enableJobs: true });
+
+  await shutdown('SIGTERM');
+  expect(task1.destroy).toHaveBeenCalledTimes(1);
+  expect(task2.destroy).toHaveBeenCalledTimes(1);
+  expect(prismaClient.$disconnect).toHaveBeenCalledTimes(1);
+  expect(quiet.log).toHaveBeenCalledWith('[api] SIGTERM received, shutting down');
+
+  // Second shutdown should not call destroy/disconnect again
+  await shutdown('SIGTERM');
+  expect(task1.destroy).toHaveBeenCalledTimes(1);
+  expect(task2.destroy).toHaveBeenCalledTimes(1);
+  expect(prismaClient.$disconnect).toHaveBeenCalledTimes(1);
+});
+
+test('enableJobs false never calls startScheduler', async () => {
+  const start = jest.fn(() => []);
+  const prismaClient = fakePrisma();
+  await boot({ startScheduler: start, prismaClient, logger: quiet, migrationsDir: migrationsDir(), enableJobs: false });
+  expect(start).not.toHaveBeenCalled();
 });
