@@ -91,6 +91,33 @@ export const env = {
     webhookSecret: cleanSecret(process.env.SARUFI_WEBHOOK_SECRET),
     botPhone: cleanSecret(process.env.SARUFI_BOT_PHONE),
   },
+  // Voice-call AI assistant. See docs/superpowers/specs/2026-10-03-voice-call-assistant-design.md.
+  voice: {
+    stt: {
+      provider: (process.env.VOICE_STT_PROVIDER || 'openai').toLowerCase(),
+      langHint: (process.env.VOICE_STT_LANG_HINT || 'sw').toLowerCase(),
+      maxSeconds: Number(process.env.VOICE_STT_MAX_SECONDS || 30),
+      openaiApiKey: cleanSecret(process.env.VOICE_OPENAI_API_KEY) || cleanSecret(process.env.LLM_API_KEY),
+      googleApiKey: cleanSecret(process.env.GOOGLE_STT_API_KEY),
+    },
+    tts: {
+      provider: (process.env.VOICE_TTS_PROVIDER || 'google').toLowerCase(),
+      voiceSw: process.env.VOICE_TTS_VOICE_SW || 'sw-KE-Standard-A',
+      voiceEn: process.env.VOICE_TTS_VOICE_EN || 'en-US-Neural2-C',
+      googleApiKey: cleanSecret(process.env.GOOGLE_TTS_API_KEY),
+      googleCredentialsPath: process.env.GOOGLE_APPLICATION_CREDENTIALS || '',
+      elevenLabsApiKey: cleanSecret(process.env.ELEVENLABS_API_KEY),
+      elevenLabsVoiceId: cleanSecret(process.env.ELEVENLABS_VOICE_ID),
+    },
+    audio: {
+      dir: process.env.VOICE_AUDIO_DIR || 'uploads/voice',
+      retentionDays: Number(process.env.VOICE_AUDIO_RETENTION_DAYS || 7),
+      urlExpiryMinutes: Number(process.env.VOICE_AUDIO_URL_EXPIRY_MINUTES || 10),
+    },
+    maxTurnsPerCall: Number(process.env.VOICE_MAX_TURNS || 10),
+    maxCallDurationSeconds: Number(process.env.VOICE_MAX_CALL_SECONDS || 600),
+    pipelineBudgetMs: Number(process.env.VOICE_PIPELINE_BUDGET_MS || 15000),
+  },
   // Public HTTPS base URL of this API (used to show the callback URLs to admins), e.g. https://api.example.org
   publicApiUrl: (process.env.PUBLIC_API_URL || '').replace(/\/$/, ''),
   uploadDir: process.env.UPLOAD_DIR || 'uploads',
