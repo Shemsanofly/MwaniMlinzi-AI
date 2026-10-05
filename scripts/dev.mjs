@@ -5,23 +5,15 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { appStatus, backgroundStatus, portIsFree } from './app-status.mjs';
 
 const root = new URL('../', import.meta.url);
-const backendOnly = process.argv[2] === 'backend';
-const frontendArgs = process.argv.slice(2);
-const { env } = await import('../backend/src/config/env.js');
-const services = [
-  { name: 'backend', port: env.port },
-  ...(!backendOnly ? [{ name: 'frontend', port: Number(process.env.MWANI_FRONTEND_PORT || 5173), host: 'localhost' }] : []),
-];
+const port = Number(process.env.MWANI_PORT || process.env.PORT || 5173);
+const services = [{ name: 'app', port, host: 'localhost' }];
 
-// Check both installations before starting either service.
-for (const { name } of services) {
-  if (!existsSync(new URL(`${name}/node_modules/`, root))) {
-    console.error(`[dev] Missing ${name} dependencies. Run: npm --prefix ${name} install`);
-    process.exit(1);
-  }
+if (!existsSync(new URL('node_modules/', root))) {
+  console.error('[dev] Missing dependencies. Run: npm install');
+  process.exit(1);
 }
-if (!existsSync(new URL('backend/.env', root))) {
-  console.error('[dev] Create backend/.env from backend/.env.example and configure DATABASE_URL and JWT_SECRET.');
+if (!existsSync(new URL('.env', root))) {
+  console.error('[dev] Create .env from .env.example and configure DATABASE_URL and JWT_SECRET.');
   process.exit(1);
 }
 
@@ -30,7 +22,7 @@ if (!existsSync(new URL('backend/.env', root))) {
 try {
   const background = await backgroundStatus();
   for (const service of services) {
-    const monitored = background?.[`${service.name}Port`] === service.port;
+    const monitored = background?.appPort === service.port;
     if (monitored) {
       service.reused = true;
       continue;
@@ -76,9 +68,9 @@ for (const { name, reused } of services) {
   }
   // Each supervisor owns a process tree and watches this IPC connection. Even if the
   // terminal/launcher is killed without a signal, disconnect tears down its service.
-  const child = spawn(process.execPath, [fileURLToPath(new URL('./dev-service.mjs', import.meta.url)), name, ...(name === 'frontend' ? frontendArgs : [])], {
+  const child = spawn(process.execPath, [fileURLToPath(new URL('./dev-service.mjs', import.meta.url)), 'app', ...process.argv.slice(2)], {
     cwd: fileURLToPath(root),
-    env: { ...process.env, VITE_PROXY_TARGET: process.env.VITE_PROXY_TARGET || `http://127.0.0.1:${env.port}` },
+    env: { ...process.env, MWANI_PORT: String(port) },
     stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
     windowsHide: true,
   });
@@ -89,7 +81,7 @@ for (const { name, reused } of services) {
   });
   child.on('exit', (code) => {
     if (!stopping) {
-      console.error(`[dev] ${name} stopped; shutting down the other service.`);
+      console.error(`[dev] ${name} stopped.`);
       stop(code || 1);
     }
   });
@@ -99,11 +91,10 @@ const deadline = Date.now() + 90000;
 while (!stopping) {
   const statuses = await Promise.all(services.map(appStatus));
   if (statuses.every((status) => status.healthy)) {
-    console.log(`[dev] SUCCESS: ${services.map(({ name }) => name).join(' and ')} ready; database connected.`);
-    if (!backendOnly) console.log(`[dev] Login: http://localhost:${services.find(({ name }) => name === 'frontend').port}/login`);
-    else console.log(`[dev] API: http://localhost:${env.port}/api`);
+    console.log('[dev] SUCCESS: app ready; database connected.');
+    console.log(`[dev] Login: http://localhost:${port}/login`);
     if (services.every(({ reused }) => reused)) {
-      console.log('[dev] Existing servers keep running in the background.');
+      console.log('[dev] The existing app keeps running in the background.');
       if (process.connected) process.disconnect();
     }
     break;

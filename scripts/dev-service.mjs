@@ -2,9 +2,13 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const name = process.argv[2];
+const port = process.env.MWANI_PORT || process.env.PORT || '5173';
 const commands = {
-  backend: process.env.MWANI_ALWAYS_ON === '1' ? ['src/server.js'] : ['--watch', '--watch-preserve-output', 'src/server.js'],
-  frontend: ['node_modules/vite/bin/vite.js', ...(process.env.MWANI_FRONTEND_PORT ? ['--port', process.env.MWANI_FRONTEND_PORT] : [])],
+  app: [
+    'node_modules/next/dist/bin/next',
+    ...(process.env.MWANI_ALWAYS_ON === '1' ? ['start'] : ['dev']),
+    '--port', port, '--hostname', 'localhost',
+  ],
 };
 if (!Object.hasOwn(commands, name) || !process.connected) {
   console.error('[dev] Service supervisors must be started by scripts/dev.mjs.');
@@ -12,7 +16,7 @@ if (!Object.hasOwn(commands, name) || !process.connected) {
 }
 
 const child = spawn(process.execPath, [...commands[name], ...process.argv.slice(3)], {
-  cwd: fileURLToPath(new URL(`../${name}/`, import.meta.url)),
+  cwd: fileURLToPath(new URL('../', import.meta.url)),
   stdio: 'inherit',
   // A separate group lets POSIX stop the watcher and its server together.
   detached: process.platform !== 'win32',
@@ -29,7 +33,7 @@ function stop(code = 0) {
   }
 
   if (process.platform === 'win32') {
-    // child.kill() only stops Node's watcher on Windows, orphaning the API.
+    // child.kill() only stops Node's watcher on Windows, orphaning the server.
     // Target only the process tree created by this supervisor.
     const killer = spawn('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], {
       stdio: 'ignore', windowsHide: true,

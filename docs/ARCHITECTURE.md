@@ -1,16 +1,17 @@
 # Architecture
 
 ```
-┌──────────────────────────── Browser (mobile-first React SPA) ────────────────────────────┐
+┌──────────────────────── Browser (mobile-first, Next.js App Router) ─────────────────────┐
+│ Next.js App Router (client components)                                                   │
 │ Farmer app · Admin (console + field operations) · What-if planner                        │
-│ React Router · TanStack Query · Axios · Tailwind · Recharts · Leaflet/OpenStreetMap        │
+│ TanStack Query · fetch client · Tailwind · Recharts · Leaflet/OpenStreetMap               │
 │ i18n (Kiswahili default / English)                                                         │
 └───────────────────────────────▲──────────────────────────────────────────────────────────┘
                                 │ HTTPS  JSON  { success, data, message } · JWT bearer
-┌───────────────────────────────┴──────── Node.js / Express API ───────────────────────────┐
-│ middleware: helmet · CORS allow-list · rate limits · JSON limits · authenticate ·         │
-│             authorize(role) · zod validate · error handler (no leaks)                      │
-│ routes → controllers → services                                                            │
+┌───────────────────────────────┴────── Same Next.js process (Node.js runtime) ────────────┐
+│ Next.js Route Handlers (`app/api/**`) → `defineRoute` pipeline                            │
+│ (rate limit · body · authenticate · authorize · zod validate · errors)                    │
+│ handlers → controllers → services                                                          │
 │                                                                                            │
 │  FarmService  RecordService  FarmContextService  EnvironmentService  RiskService           │
 │  AlertService NotificationService  HarvestForecastService  AssistantService                │
@@ -21,7 +22,8 @@
 │                                                                                            │
 │  Providers (live): Weather · Ocean · EnvironmentalProvider (LIVE→CACHED→no reading)        │
 │                           LLM · SMS · USSD · Email                                          │
-│  Jobs: node-cron (environment, risk, forecasts, missing reports, monitoring) + Run now     │
+│  Jobs: node-cron started from instrumentation.js (environment, risk, forecasts,           │
+│        missing reports, monitoring) + Run now                                              │
 └───────────────┬───────────────────────────────┬─────────────────────────────┬─────────────┘
                 │ Prisma (parameterised SQL)    │ fetch (timeouts)            │ fs
         ┌───────▼────────┐          Open-Meteo / OpenWeatherMap /       ai/models/*.json
@@ -50,43 +52,42 @@
 
 ```
 mwanimlinzi/
-├── frontend/                  React + Vite app
-│   └── src/
-│       ├── api/               axios client + endpoints (all API calls)
-│       ├── components/        ui kit, risk components, Leaflet map
-│       ├── hooks/             useFarmerFarm …
-│       ├── i18n/              I18nProvider + locales/{en,sw}/<namespace>.js
-│       ├── layouts/           Public, Farmer (mobile bottom nav), App (admin sidebar), ProtectedRoute
-│       ├── pages/             public · farmer · admin (field operations reuse extension/cooperative screens) · tools (what-if)
-│       ├── stores/            AuthContext
-│       ├── utils/             formatting, risk styles
-│       └── App.jsx            routes (lazy-loaded)
-├── backend/                   Express API
-│   ├── prisma/                schema.prisma · migrations/ · seed.js (reference data + first admin) · data/
-│   ├── src/
-│   │   ├── ai/                riskEngine, riskRuleEngine, mlRiskProvider, actionEngine, explanationEngine, ml/
-│   │   ├── rules/             riskRules.js (named, explainable rule terms)
-│   │   ├── providers/         weather, ocean, environmental (fallback), climatology, llm, africastalking/ (SMS client), email
-│   │   ├── services/          business logic
-│   │   ├── controllers/       HTTP handlers
-│   │   ├── routes/            routers + role guards
-│   │   ├── middleware/        auth, validate, rate limit, errors
-│   │   ├── validators/        zod schemas
-│   │   ├── jobs/              job definitions + node-cron scheduler
-│   │   ├── config/            env, prisma client, OpenAPI
-│   │   ├── utils/             errors, responses, dates, audit, pagination
-│   │   ├── app.js             express app factory (used by tests)
-│   │   └── server.js          entry point
-│   └── tests/                 Jest unit + Supertest integration tests; fixtures/ (test-only data + fake environmental provider)
+├── app/                       Next.js App Router: pages (thin wrappers) and API
+│   ├── layout.jsx · providers.jsx · not-found.jsx
+│   ├── (public)/ · farmer/ · (admin)/ · account/   page routes (same URLs as before)
+│   └── api/**/route.js        Route Handlers, one per endpoint (same /api paths)
+├── src/
+│   ├── client/                browser code (client components)
+│   │   ├── api/               fetch client + endpoints (all API calls)
+│   │   ├── components/        ui kit, risk components, Leaflet map
+│   │   ├── hooks/ · stores/ · utils/
+│   │   ├── i18n/              I18nProvider + locales/{en,sw}/<namespace>.js
+│   │   ├── layouts/           Public, Farmer (mobile bottom nav), App (admin sidebar), ProtectedRoute
+│   │   ├── pages/             public · farmer · admin · cooperative · extension · tools
+│   │   └── __tests__/         Vitest tests
+│   └── server/                server-only code
+│       ├── ai/                riskEngine, riskRuleEngine, mlRiskProvider, actionEngine, explanationEngine, ml/
+│       ├── rules/             riskRules.js (named, explainable rule terms)
+│       ├── providers/         weather, ocean, environmental (fallback), climatology, llm, africastalking/, email
+│       ├── services/          business logic
+│       ├── controllers/       request handlers
+│       ├── http/              defineRoute pipeline, rate limits, body parsing, errors, route table
+│       ├── middleware/ · validators/ (zod) · db/ · utils/
+│       ├── jobs/              job definitions + node-cron scheduler
+│       ├── config/            env, prisma client, OpenAPI
+│       └── boot.js            starts jobs and shuts down cleanly
+├── instrumentation.js         runs boot() once when the Next.js server starts
+├── prisma/                    schema.prisma · migrations/ · seed.js · data/
+├── tests/                     Jest unit + integration tests; fixtures/ and fakes/ (test-only data)
+├── scripts/                   dev supervisor, background runner, utilities (and their tests)
 ├── ai/                        models/ · scripts/trainModel.js (trains from recorded field outcomes)
 └── docs/
 ```
 
 ## Design decisions
 
-- **JavaScript (ES modules) rather than TypeScript** — matches the requested file layout (`server.js`, `seed.js`, `App.jsx`)
-  and keeps the toolchain minimal (no build step for the API). Runtime validation is done with Zod at every boundary.
-- **Express 5** — native async error propagation, so controllers throw `AppError` and the central handler formats responses.
+- **JavaScript (ES modules) rather than TypeScript** — keeps the toolchain minimal. Runtime validation is done with Zod at every boundary.
+- **One Next.js app** — pages and the API share one process and one origin, so there is no proxy or CORS setup; controllers throw `AppError` and `defineRoute` formats responses.
 - **Prisma** — typed, parameterised queries (SQL-injection safe), readable migrations, and pgAdmin-friendly snake_case tables.
 - **Rules first, ML optional** — the rule engine is always available and explainable; ML is only blended in when an admin
   activates a trained model, and every prediction records which model produced it.
@@ -95,7 +96,7 @@ mwanimlinzi/
 - **Simulations are first-class but isolated** — what-if runs are stored and auditable as `SIMULATION`, never shown as real risk or sent to farmers.
 - **Persisted USSD sessions** — the menu position, language, selected farm and temporary input are stored in `ussd_sessions`,
   so each Africa's Talking request consumes only the newest input; retries return the stored reply (no duplicate records).
-- **No Docker** — plain `npm` scripts, PostgreSQL and PM2.
+- **No Docker** — plain `npm` scripts and PostgreSQL.
 
 ## Account roles and recovery
 

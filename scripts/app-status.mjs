@@ -16,12 +16,10 @@ export async function appStatus(service) {
   // conflicting server immediately closes its connection.
   const deadline = setTimeout(() => controller.abort(), 5000);
   try {
-    const origin = service.name === 'backend' ? `http://127.0.0.1:${service.port}` : `http://localhost:${service.port}`;
-    const response = await fetch(origin, { signal: controller.signal });
+    const origin = `http://localhost:${service.port}`;
+    const response = await fetch(`${origin}/api`, { signal: controller.signal });
     if (!response.ok) return { owned: false, healthy: false };
-    owned = service.name === 'backend'
-      ? (await response.json()).data?.name === 'MwaniMlinzi AI API'
-      : (await response.text()).includes('<title>MwaniMlinzi AI</title>');
+    owned = (await response.json()).data?.name === 'MwaniMlinzi AI API';
     if (!owned) return { owned: false, healthy: false };
     const health = await fetch(`${origin}/api/health`, { signal: controller.signal });
     return { owned: true, healthy: health.ok && (await health.json()).data?.database === 'ok' };

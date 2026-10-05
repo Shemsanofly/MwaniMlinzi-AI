@@ -25,13 +25,11 @@ async function waitFor(check, description, logs) {
   assert.fail(`Timed out waiting for ${description}\n${logs()}`);
 }
 
-test('background app proxies login, avoids duplicates, and restores stopped API and frontend', { timeout: 240000 }, async (t) => {
-  const backendPort = await unusedPort();
-  const frontendPort = await unusedPort('localhost');
+test('background app serves login, avoids duplicates, and restores the stopped app', { timeout: 240000 }, async (t) => {
+  const appPort = await unusedPort('localhost');
   const lockPort = await unusedPort('127.0.0.1');
   const environment = {
-    ...process.env, PORT: String(backendPort), MWANI_FRONTEND_PORT: String(frontendPort),
-    MWANI_SUPERVISOR_PORT: String(lockPort), VITE_PROXY_TARGET: `http://127.0.0.1:${backendPort}`,
+    ...process.env, MWANI_PORT: String(appPort), MWANI_SUPERVISOR_PORT: String(lockPort),
     ENABLE_JOBS: 'false', NO_COLOR: '1',
   };
   const launch = (args = []) => spawn(process.execPath, ['scripts/always-on.mjs', ...args], {
@@ -51,12 +49,12 @@ test('background app proxies login, avoids duplicates, and restores stopped API 
   async function healthy() {
     assert.equal(runner.exitCode, null, logs());
     try {
-      const res = await fetch(`http://localhost:${frontendPort}/api/health`, { signal: AbortSignal.timeout(2000) });
+      const res = await fetch(`http://localhost:${appPort}/api/health`, { signal: AbortSignal.timeout(2000) });
       return res.ok && (await res.json()).data.database === 'ok';
     } catch { return false; }
   }
-  await waitFor(healthy, 'working frontend proxy and database', logs);
-  const login = await fetch(`http://localhost:${frontendPort}/api/auth/login`, {
+  await waitFor(healthy, 'working app and database', logs);
+  const login = await fetch(`http://localhost:${appPort}/api/auth/login`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ identifier: 'connection-check@example.invalid', password: 'test-check-only' }),
   });
@@ -79,26 +77,26 @@ test('background app proxies login, avoids duplicates, and restores stopped API 
   dev.stderr.on('data', (chunk) => { devOutput += chunk; });
   assert.equal((await once(dev, 'exit'))[0], 0, devOutput);
   assert.match(devOutput, /SUCCESS:/);
-  assert.match(devOutput, /Reusing the running frontend/);
+  assert.match(devOutput, /Reusing the running app/);
   assert.equal(await healthy(), true);
 
-  for (const name of ['backend', 'frontend']) {
+  for (const name of ['app']) {
     const pids = () => [...output.matchAll(new RegExp(`\\[dev\\] ${name} process PID (\\d+)`, 'g'))].map((match) => Number(match[1]));
     const before = pids();
     assert.ok(before.length, logs());
     process.kill(before.at(-1), 'SIGKILL');
     await waitFor(() => pids().length > before.length, `${name} to restart`, logs);
-    await waitFor(healthy, 'proxy recovery after restart', logs);
+    await waitFor(healthy, 'app recovery after restart', logs);
   }
 
   const stop = launch(['--stop']);
   assert.equal((await once(stop, 'exit'))[0], 0);
   assert.equal((await exited)[0], 0, logs());
-  for (const port of [backendPort, frontendPort, lockPort]) {
+  for (const port of [appPort, lockPort]) {
     const probe = createServer();
     await new Promise((resolve, reject) => {
       probe.once('error', reject);
-      probe.listen(port, port === frontendPort ? 'localhost' : port === lockPort ? '127.0.0.1' : undefined, resolve);
+      probe.listen(port, port === appPort ? 'localhost' : '127.0.0.1', resolve);
     });
     await new Promise((resolve) => probe.close(resolve));
   }

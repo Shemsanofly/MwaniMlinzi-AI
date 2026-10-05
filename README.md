@@ -17,11 +17,11 @@ Everything in that loop is real backend logic stored in PostgreSQL — no mock U
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 19, Vite, React Router, TanStack Query, Axios, Tailwind CSS, Recharts, Leaflet + OpenStreetMap |
-| Backend | Node.js (≥20), Express 5, JavaScript (ES modules), Prisma ORM, Zod, JWT, bcryptjs, Helmet, rate limiting, node-cron, SMTP email |
+| App | One Next.js 16 app (App Router): React 19 client components, TanStack Query, Tailwind CSS, Recharts, Leaflet + OpenStreetMap |
+| API | Next.js Route Handlers (`app/api/**`) on Node.js (≥20.9), JavaScript (ES modules), Prisma ORM, Zod, JWT, bcryptjs, rate limiting, node-cron, SMTP email |
 | Database | PostgreSQL (managed with pgAdmin) |
-| AI | Rule-based risk engine (always on) + optional dependency-free JavaScript logistic regression, with an optional Python LightGBM / XGBoost microservice (`ai/ml-service/`) that the Node backend prefers when it is reachable; Action Engine; optional LLM for explanation/translation only |
-| Deployment | No Docker. `npm` + PostgreSQL on Windows, Linux or macOS; PM2 for production |
+| AI | Rule-based risk engine (always on) + optional dependency-free JavaScript logistic regression, with an optional Python LightGBM / XGBoost microservice (`ai/ml-service/`) that the server prefers when it is reachable; Action Engine; optional LLM for explanation/translation only |
+| Runtime | No Docker. `npm` + PostgreSQL on Windows, Linux or macOS |
 
 The database has **29 application tables (30 including Prisma migration history)**. See [the database guide](docs/DATABASE.md#schema-overview) for the consolidated schema and data-preserving migration.
 
@@ -50,39 +50,32 @@ The database has **29 application tables (30 including Prisma migration history)
 ## Quick start (development)
 
 Prerequisites: **Node.js 20+ (22 recommended)**, **PostgreSQL 14+**, **pgAdmin 4** (optional but recommended). Email password recovery requires an SMTP sender; see [EMAIL.md](docs/EMAIL.md).
-The backend needs outbound internet access for live weather and ocean data.
+The server needs outbound internet access for live weather and ocean data.
 
 ```bash
 # 1. Database — create an empty database called `mwanimlinzi` (pgAdmin steps: docs/DATABASE.md)
 
-# 2. Backend
-cd backend
+# 2. Install, configure, migrate, seed
+npm install
 cp .env.example .env            # Windows: copy .env.example .env
 #    edit .env → set DATABASE_URL and a long random JWT_SECRET
-npm install
-npx prisma generate
-npx prisma migrate dev          # creates all tables
+npx prisma migrate deploy       # creates all tables
 npm run seed                    # reference data + first admin (non-destructive)
 
-# 3. Frontend dependencies
-cd ../frontend
-npm install
-
-# 4. Start both servers from the project root
-cd ..
-npm run dev                     # API on :5000 and app on :5173; Ctrl+C stops both
+# 3. Start the app
+npm run dev                     # one Next.js process on :5173; Ctrl+C stops it
 ```
 
-Use `npm.cmd run dev` in either `MwaniMvuvi AI` or `MwaniMlinzi-AI` for everyday development.
+Then open http://localhost:5173. Use `npm.cmd run dev` in either `MwaniMvuvi AI` or `MwaniMlinzi-AI` for everyday development.
 The command checks server and database health, reuses an already running app, and prints `SUCCESS`
-with the login URL. Repeating it while automatic startup is active does not launch duplicate servers.
-Running it in `frontend` also ensures the API is available; running it in `backend` starts or reuses
-only the API. Unrelated programs occupying an app port still produce a clear error.
+with the login URL. Repeating it while automatic startup is active does not launch a duplicate server.
+An unrelated program occupying the app port still produces a clear error. Set `MWANI_PORT` (or `PORT`)
+to use a different port.
 
 After closing the dev terminal or restarting your computer, open a terminal in `MwaniMlinzi-AI` and run
-`npm run dev` again before opening http://localhost:5173. The launcher stops both process trees on
-Ctrl+C and also cleans them up if its terminal is closed abruptly. It reports occupied ports instead
-of silently moving the frontend to a different URL. Keep the PostgreSQL service running.
+`npm run dev` again before opening http://localhost:5173. The launcher stops the server's process tree on
+Ctrl+C and also cleans it up if its terminal is closed abruptly. It reports an occupied port instead
+of silently moving to a different URL. Keep the PostgreSQL service running.
 If PowerShell blocks `npm.ps1`, use `npm.cmd run dev` (no execution-policy change needed).
 
 For everyday use on Windows, enable background startup once from the project root:
@@ -92,26 +85,27 @@ npm.cmd run autostart:install
 ```
 
 The app starts immediately and at each Windows sign-in, independently of development terminals.
-The background runner restarts the API or frontend within a few seconds if either exits. It leaves
-separately started servers alone and takes over when their ports become free. PostgreSQL must
+The background runner serves a production build (`next start`), building it once if none exists,
+and restarts the app within a few seconds if it exits. It leaves a separately started server
+alone and takes over when its port becomes free. PostgreSQL must
 remain running (set its Windows service to Automatic). Open http://localhost:5173/login.
 Logs are saved in `.local/server.log` and `.local/server-error.log`. To disable automatic startup,
 run `npm.cmd run autostart:remove`. Use `npm.cmd run stop:local` to stop the runner without removing
-automatic startup, for example before switching to `npm run dev` for backend code changes.
+automatic startup, for example before switching to `npm run dev` for code changes.
+After code changes, run `npm run build` before restarting the background runner so it serves the new build.
 The app retries login briefly during temporary server or database interruptions; incorrect passwords
 are reported immediately. An ongoing outage still shows an error after the bounded retries.
 
 To verify startup, repeated commands, shutdown, abrupt-close recovery and occupied-port handling,
-run `npm run test:dev`. These checks use separate ports and leave the running app available.
-They check the existing database's health without changing its data. Frontend tests use one worker
-to avoid worker startup failures and timeouts on Windows under heavy memory pressure.
+run `npm run test:dev`. These checks use a separate port and leave the running app available.
+They check the existing database's health without changing its data.
 
 | | URL |
 |---|---|
-| Frontend | http://localhost:5173 |
-| Backend API | http://localhost:5000/api |
-| API documentation (Swagger UI) | http://localhost:5000/api/docs |
-| Health check | http://localhost:5000/api/health |
+| App | http://localhost:5173 |
+| API | http://localhost:5173/api |
+| API documentation (Swagger UI) | http://localhost:5173/api/docs |
+| Health check | http://localhost:5173/api/health |
 
 ### What `npm run seed` does
 
@@ -121,7 +115,7 @@ each of the two roles:
 
 - email: `ADMIN_EMAIL` (default `admin@mwanimlinzi.local`)
 - password: `ADMIN_PASSWORD` (at least 12 characters), or — if empty — a generated password printed once and saved to
-  `backend/DEMO_CREDENTIALS.local.txt` (git-ignored). Change it after the first login.
+  `DEMO_CREDENTIALS.local.txt` (git-ignored). Change it after the first login.
 - farmer: `farmer@mwanimlinzi.local`, with a generated password and an initialized farmer profile linked to the demo cooperative. Existing passwords are preserved. These `.local` demo addresses cannot receive real email; use a real account email to test recovery.
 
 The seed updates unchanged, unvalidated starter support labels to refer to Admin. No farms, observations, sales or environmental readings are created by the seed. Other farmers register themselves.
@@ -140,7 +134,7 @@ The full judge walkthrough is in [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md).
 
 ### Existing development database
 
-Run `npx prisma migrate deploy` and `npm run seed` from `backend` to apply the two-role model. The migration preserves accounts, passwords, existing Admin access and farm records. Accounts with removed roles become Farmer accounts with profiles; it does not grant Admin access. The database enum and available role choices contain only `FARMER` and `ADMIN`. Historical migration files remain unchanged.
+Run `npx prisma migrate deploy` and `npm run seed` to apply the two-role model. The migration preserves accounts, passwords, existing Admin access and farm records. Accounts with removed roles become Farmer accounts with profiles; it does not grant Admin access. The database enum and available role choices contain only `FARMER` and `ADMIN`. Historical migration files remain unchanged.
 
 A database created before the switch to real data may still hold old demo readings. `npx prisma migrate deploy`
 applies the migration that removes them (and the old demo columns). For a completely clean start:
@@ -150,19 +144,55 @@ applies the migration that removes them (and the old demo columns). For a comple
 
 | Task | Command |
 |---|---|
-| Start backend and frontend together | `npm run dev` (from the project root) |
-| Backend dev server / production | `cd backend && npm run dev` / `npm start` |
-| Backend tests (separate `<db>_test` database, test-only fixtures, no live API calls) | `cd backend && npm test` |
-| Backend lint | `cd backend && npm run lint` |
+| Start the app (dev) | `npm run dev` |
+| Production build / start | `npm run build` · `npm start` |
+| All tests | `npm test` (server, then client, then scripts) |
+| Server tests (separate `<db>_test` database, test-only fixtures, no live API calls) | `npm run test:server` |
+| Client tests | `npm run test:client` |
+| Lint | `npm run lint` |
 | Prisma client / migrations / studio | `npm run prisma:generate` · `npm run prisma:migrate` · `npx prisma studio` |
-| Reference data + first admin (non-destructive) | `cd backend && npm run seed` |
-| Train ML models from recorded field outcomes | `cd backend && npm run ai:train` (add `-- --activate` to activate) |
-| Frontend dev / build / preview | `cd frontend && npm run dev` · `npm run build` · `npm run preview` |
-| Frontend tests / lint | `cd frontend && npm test` · `npm run lint` |
+| Reference data + first admin (non-destructive) | `npm run seed` |
+| Train ML models from recorded field outcomes | `npm run ai:train` (add `-- --activate` to activate) |
+
+## Project layout
+
+```
+mwanimlinzi/
+├── app/                       Next.js App Router: pages (thin wrappers) and API
+│   ├── layout.jsx · providers.jsx · not-found.jsx
+│   ├── (public)/ · farmer/ · (admin)/ · account/   page routes (same URLs as before)
+│   └── api/**/route.js        Route Handlers, one per endpoint (same /api paths)
+├── src/
+│   ├── client/                browser code (client components)
+│   │   ├── api/               fetch client + endpoints (all API calls)
+│   │   ├── components/        ui kit, risk components, Leaflet map
+│   │   ├── hooks/ · stores/ · utils/
+│   │   ├── i18n/              I18nProvider + locales/{en,sw}/<namespace>.js
+│   │   ├── layouts/           Public, Farmer (mobile bottom nav), App (admin sidebar), ProtectedRoute
+│   │   ├── pages/             public · farmer · admin · cooperative · extension · tools
+│   │   └── __tests__/         Vitest tests
+│   └── server/                server-only code
+│       ├── ai/                riskEngine, riskRuleEngine, mlRiskProvider, actionEngine, explanationEngine, ml/
+│       ├── rules/             riskRules.js (named, explainable rule terms)
+│       ├── providers/         weather, ocean, environmental (fallback), climatology, llm, africastalking/, email
+│       ├── services/          business logic
+│       ├── controllers/       request handlers
+│       ├── http/              defineRoute pipeline, rate limits, body parsing, errors, route table
+│       ├── middleware/ · validators/ (zod) · db/ · utils/
+│       ├── jobs/              job definitions + node-cron scheduler
+│       ├── config/            env, prisma client, OpenAPI
+│       └── boot.js            starts jobs and shuts down cleanly
+├── instrumentation.js         runs boot() once when the Next.js server starts
+├── prisma/                    schema.prisma · migrations/ · seed.js · data/
+├── tests/                     Jest unit + integration tests; fixtures/ and fakes/ (test-only data)
+├── scripts/                   dev supervisor, background runner, utilities (and their tests)
+├── ai/                        models/ · scripts/trainModel.js (trains from recorded field outcomes)
+└── docs/
+```
 
 ## Providers and configuration
 
-Password recovery sends a six-digit code only to the real email saved on the user account. Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` and `SMTP_FROM` in `backend/.env`, then run `npm run email:verify` from `backend` to check the sender connection. Codes expire after 15 minutes and cannot be reused. See [docs/EMAIL.md](docs/EMAIL.md).
+Password recovery sends a six-digit code only to the real email saved on the user account. Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` and `SMTP_FROM` in `.env`, then run `npm run email:verify` to check the sender connection. Codes expire after 15 minutes and cannot be reused. See [docs/EMAIL.md](docs/EMAIL.md).
 
 Environmental data is always live. With the defaults no key is needed:
 
@@ -190,11 +220,11 @@ AT_USSD_SERVICE_CODE=*384*1234#
 AT_CALLBACK_SECRET=<long random string>
 ```
 
-If a live provider fails, the backend uses the last live reading near the farm (within ±0.05° and
+If a live provider fails, the server uses the last live reading near the farm (within ±0.05° and
 `environment.maxCacheAgeHours`, default 48 h) and labels it **CACHED**. If there is none, there is no reading: the risk
 is still computed from the farm data and farmer reports, stored with data source `UNAVAILABLE` and a lower confidence.
 SMS and USSD are never simulated: without Africa's Talking credentials every SMS attempt is logged as `NOT_CONFIGURED`.
-Details: [docs/AI.md](docs/AI.md) and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+Details: [docs/AI.md](docs/AI.md).
 
 ### Giving external partners read access (no additional account roles)
 
@@ -207,9 +237,9 @@ Admins issue signed, revocable access tokens in **Admin → Access tokens**:
 
 ### Optional LightGBM / XGBoost microservice
 
-The Node backend ships with a logistic-regression baseline. For gradient-boosted models (deck slide 7), run the small
-Python service in [`ai/ml-service/`](ai/ml-service/README.md) and set `ML_SERVICE_URL` on the backend. If the service
-is unreachable or has no model for a given risk type, the backend transparently falls back to the JS baseline, which
+The Node server ships with a logistic-regression baseline. For gradient-boosted models (deck slide 7), run the small
+Python service in [`ai/ml-service/`](ai/ml-service/README.md) and set `ML_SERVICE_URL` in `.env`. If the service
+is unreachable or has no model for a given risk type, the server transparently falls back to the JS baseline, which
 in turn falls back to the rule-based engine. The system is never dependent on the Python service being up.
 
 ## Documentation
@@ -220,7 +250,7 @@ in turn falls back to the rule-based engine. The system is never dependent on th
 - [docs/API.md](docs/API.md) — REST endpoints, auth, response format
 - [docs/AI.md](docs/AI.md) — risk engine, ML pipeline, action engine, LLM, explainability, data honesty
 - [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md) — step-by-step walkthrough for judges and reviewers
-- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — deployment without Docker (Vercel/static + Node/PM2 + PostgreSQL)
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — deployment notes
 - [docs/SECURITY.md](docs/SECURITY.md) — security and privacy controls
 - [ai/README.md](ai/README.md) — model training from field outcomes
 

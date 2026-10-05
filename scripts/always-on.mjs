@@ -1,14 +1,12 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createConnection, createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
-import { env } from '../backend/src/config/env.js';
+import { existsSync } from 'node:fs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const frontendPort = Number(process.env.MWANI_FRONTEND_PORT || 5173);
 const supervisorPort = Number(process.env.MWANI_SUPERVISOR_PORT || 5172);
 const services = [
-  { name: 'backend', port: env.port },
-  { name: 'frontend', port: frontendPort, host: 'localhost' },
+  { name: 'app', port: Number(process.env.MWANI_PORT || process.env.PORT || 5173), host: 'localhost' },
 ];
 const log = (message) => console.log(`[always-on] ${message}`);
 
@@ -49,6 +47,17 @@ async function portIsFree({ port, host }) {
   });
 }
 
+// `next start` serves a production build; build once if none exists yet.
+if (!existsSync(new URL('../.next/BUILD_ID', import.meta.url))) {
+  log('No production build found; running next build once.');
+  const build = spawnSync(process.execPath, ['node_modules/next/dist/bin/next', 'build'], { cwd: root, stdio: 'inherit' });
+  if (build.status !== 0) {
+    lock.close();
+    console.error('[always-on] next build failed; not starting the app.');
+    process.exit(1);
+  }
+}
+
 let stopping = false;
 let checking = false;
 let timer;
@@ -62,7 +71,7 @@ lock.on('connection', (socket) => {
   socket.on('data', (chunk) => {
     message += chunk.toString();
     if (message.trim() === 'status') {
-      socket.end(`${JSON.stringify({ name: 'MwaniMlinzi AI runner', backendPort: env.port, frontendPort })}\n`);
+      socket.end(`${JSON.stringify({ name: 'MwaniMlinzi AI runner', appPort: services[0].port })}\n`);
     } else if (message.trim() === 'stop') stop();
     else if (message.length > 32) socket.destroy();
   });
@@ -82,8 +91,7 @@ async function ensureServices() {
         env: {
           ...process.env,
           MWANI_ALWAYS_ON: '1',
-          MWANI_FRONTEND_PORT: String(frontendPort),
-          VITE_PROXY_TARGET: process.env.VITE_PROXY_TARGET || `http://127.0.0.1:${env.port}`,
+          MWANI_PORT: String(services[0].port),
         },
         stdio: ['ignore', 'inherit', 'inherit', 'ipc'],
         windowsHide: true,
@@ -122,6 +130,6 @@ process.on('SIGINT', stop);
 process.on('SIGTERM', stop);
 process.on('message', (message) => { if (message === 'stop') stop(); });
 process.on('disconnect', stop);
-log(`Monitoring app servers. Open http://localhost:${frontendPort}/login`);
+log(`Monitoring the app server. Open http://localhost:${services[0].port}/login`);
 timer = setInterval(ensureServices, 2000);
 await ensureServices();
