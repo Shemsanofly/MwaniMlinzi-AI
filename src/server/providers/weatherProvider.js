@@ -96,7 +96,7 @@ export class TMAWeatherProvider {
   }
   async fetch({ latitude, longitude }) {
     if (!this.bulletinPath) return null;
-    const abs = path.isAbsolute(this.bulletinPath) ? this.bulletinPath : path.resolve(process.cwd(), this.bulletinPath);
+    const abs = path.isAbsolute(this.bulletinPath) ? this.bulletinPath : path.resolve(/* turbopackIgnore: true */ process.cwd(), this.bulletinPath);
     let text;
     try { text = await fs.readFile(abs, 'utf8'); } catch { return null; }
     let payload;

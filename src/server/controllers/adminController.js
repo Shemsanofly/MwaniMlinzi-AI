@@ -324,7 +324,7 @@ const MAGIC = {
   'image/webp': (b) => b.slice(0, 4).toString('ascii') === 'RIFF' && b.slice(8, 12).toString('ascii') === 'WEBP',
 };
 const EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
-export const uploadRoot = () => path.resolve(process.cwd(), env.uploadDir);
+export const uploadRoot = () => path.resolve(/* turbopackIgnore: true */ process.cwd(), env.uploadDir);
 
 /**
  * Local storage implementation of the file-storage abstraction: files are validated by
@@ -336,7 +336,7 @@ export async function uploadImage(req, res) {
   if (!MAGIC[file.mimetype] || !MAGIC[file.mimetype](file.buffer)) throw badRequest('Only JPEG, PNG or WebP images are allowed');
   const storedName = `${crypto.randomUUID()}.${EXT[file.mimetype]}`;
   await fs.mkdir(uploadRoot(), { recursive: true });
-  await fs.writeFile(path.join(uploadRoot(), storedName), file.buffer, { flag: 'wx' });
+  await fs.writeFile(path.join(/* turbopackIgnore: true */ uploadRoot(), storedName), file.buffer, { flag: 'wx' });
   const row = await events(prisma, 'UPLOAD').create({ data: { originalName: path.basename(file.originalname).slice(0, 200), storedName, mimeType: file.mimetype, sizeBytes: file.size, uploadedById: req.user.id } });
   await audit(req, 'UPLOAD', 'UploadedFile', row.id, { sizeBytes: file.size, mimeType: file.mimetype });
   return created(res, { file: { id: row.id, mimeType: row.mimeType, sizeBytes: row.sizeBytes } }, 'Image uploaded');
@@ -399,8 +399,8 @@ export async function getTmaBulletin(_req, res) {
   const maxAgeHours = Number(process.env.TMA_BULLETIN_MAX_HOURS || 24);
   if (!configuredPath) return ok(res, { configured: false, path: null });
   try {
-    const stat = await fs.stat(configuredPath);
-    const text = await fs.readFile(configuredPath, 'utf8');
+    const stat = await fs.stat(/* turbopackIgnore: true */ configuredPath);
+    const text = await fs.readFile(/* turbopackIgnore: true */ configuredPath, 'utf8');
     const payload = JSON.parse(text);
     const issuedAt = payload?.issuedAt ? new Date(payload.issuedAt) : null;
     const ageHours = issuedAt ? Math.round((Date.now() - +issuedAt) / 3600 / 1000 * 10) / 10 : null;
