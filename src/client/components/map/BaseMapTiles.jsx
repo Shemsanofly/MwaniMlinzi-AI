@@ -1,13 +1,5 @@
-import { TileLayer } from 'react-leaflet';
+'use client';
+import dynamic from 'next/dynamic';
 
-// Use the canonical OSM endpoint and send the real page origin, even when a
-// hosting platform supplies a restrictive document-wide referrer policy.
-export default function BaseMapTiles() {
-  return (
-    <TileLayer
-      url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      referrerPolicy="strict-origin-when-cross-origin"
-    />
-  );
-}
+/** Leaflet touches `window` at import time, so the map loads only in the browser. */
+export default dynamic(() => import('./BaseMapTiles.client.jsx'), { ssr: false });
