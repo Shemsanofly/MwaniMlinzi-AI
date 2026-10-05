@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'node:path';
+import { readEnvFileNodeEnv, resolveNodeEnv, runtimeNodeEnv } from './nodeEnv.js';
 
 dotenv.config({ path: path.join(process.cwd(), '.env'), quiet: true });
 
@@ -14,7 +15,8 @@ const bool = (v, def = false) => (v === undefined || v === '' ? def : ['1', 'tru
 // eslint-disable-next-line no-control-regex -- Intentionally remove ASCII control characters from credentials.
 const cleanSecret = (v) => String(v ?? '').replace(/[\u0000-\u001f\u007f\s]+/g, '').replace(/^["']|["']$/g, '');
 
-const nodeEnv = process.env.NODE_ENV || 'development';
+// Never read process.env.NODE_ENV directly on the server: Next inlines it at build time (see nodeEnv.js).
+const nodeEnv = resolveNodeEnv({ runtime: runtimeNodeEnv(), fileValue: readEnvFileNodeEnv() });
 
 if (!process.env.JWT_SECRET && nodeEnv !== 'test') {
   // Fail fast: never run with an implicit/weak signing secret.

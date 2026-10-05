@@ -83,7 +83,9 @@ export const JOBS = {
   },
 };
 
-const running = new Set();
+// Process-wide lock: instrumentation-node.js (cron) and the route handlers (admin "Run now") are separate
+// module graphs in Next, each with its own copy of this module, so the Set lives on globalThis.
+const running = (globalThis.__mwaniRunningJobs ??= new Set());
 
 export async function runJob(name, trigger = 'MANUAL') {
   const job = JOBS[name];

@@ -17,16 +17,17 @@ import { hasFieldEvidence } from './modelEvidence.js';
  * It never fabricates a probability: every network error, missing model or malformed file
  * drops down one tier, and the UI shows which model actually produced the prediction.
  */
-const loaded = new Map(); // modelId -> parsed model json
-let activeCache = null;
-let activeCacheAt = 0;
+// Process-wide (globalThis): the admin model routes call clearCache(), and the scheduled risk job runs in
+// the separate instrumentation-node.js module graph, which must see the same invalidation.
+const store = (globalThis.__mwaniMlModelCache ??= { loaded: new Map(), activeCache: null, activeCacheAt: 0 });
+const { loaded } = store; // modelId -> parsed model json
 
 async function activeModels() {
-  if (activeCache && Date.now() - activeCacheAt < 10000) return activeCache;
+  if (store.activeCache && Date.now() - store.activeCacheAt < 10000) return store.activeCache;
   const rows = await prisma.mlModel.findMany({ where: { status: 'ACTIVE', syntheticData: false, testRecords: { gt: 0 }, trainingRecords: { gt: 0 } } });
-  activeCache = Object.fromEntries(rows.map((r) => [r.riskType, r]));
-  activeCacheAt = Date.now();
-  return activeCache;
+  store.activeCache = Object.fromEntries(rows.map((r) => [r.riskType, r]));
+  store.activeCacheAt = Date.now();
+  return store.activeCache;
 }
 
 async function loadModel(row) {
@@ -45,7 +46,7 @@ async function loadModel(row) {
 
 export const MLRiskProvider = {
   clearCache() {
-    activeCache = null;
+    store.activeCache = null;
     loaded.clear();
   },
 

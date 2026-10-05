@@ -26,17 +26,18 @@ export const DEFAULT_SETTINGS = {
   'notifications.smsEnabled': { value: true, description: "Master switch for SMS notifications (sent through Africa's Talking when AT_USERNAME and AT_API_KEY are set; otherwise logged as NOT_CONFIGURED)." },
 };
 
-let cache = null;
-let cacheAt = 0;
+// Process-wide (globalThis): admin route handlers clear it, and the cron jobs started from
+// instrumentation-node.js run in a separate module graph that must see the same invalidation.
+const store = (globalThis.__mwaniSettingsCache ??= { cache: null, cacheAt: 0 });
 const TTL_MS = 5000;
 
 export async function getAllSettings() {
-  if (cache && Date.now() - cacheAt < TTL_MS) return cache;
+  if (store.cache && Date.now() - store.cacheAt < TTL_MS) return store.cache;
   const rows = await prisma.systemSetting.findMany();
   const merged = Object.fromEntries(Object.entries(DEFAULT_SETTINGS).map(([k, v]) => [k, v.value]));
   for (const r of rows) merged[r.key] = r.value;
-  cache = merged;
-  cacheAt = Date.now();
+  store.cache = merged;
+  store.cacheAt = Date.now();
   return merged;
 }
 
@@ -51,17 +52,17 @@ export async function setSetting(key, value, userId) {
     update: { value, updatedById: userId || null },
     create: { key, value, description: DEFAULT_SETTINGS[key]?.description || null, updatedById: userId || null },
   });
-  cache = null;
+  store.cache = null;
   return row;
 }
 
 export function clearSettingsCache() {
-  cache = null;
+  store.cache = null;
 }
 
 export async function ensureDefaultSettings() {
   for (const [key, { value, description }] of Object.entries(DEFAULT_SETTINGS)) {
     await prisma.systemSetting.upsert({ where: { key }, update: {}, create: { key, value, description } });
   }
-  cache = null;
+  store.cache = null;
 }

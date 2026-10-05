@@ -97,6 +97,8 @@ mwanimlinzi/
 - **Persisted USSD sessions** — the menu position, language, selected farm and temporary input are stored in `ussd_sessions`,
   so each Africa's Talking request consumes only the newest input; retries return the stored reply (no duplicate records).
 - **No Docker** — plain `npm` scripts and PostgreSQL.
+- **Process-wide state lives on `globalThis`** — Next compiles `instrumentation-node.js` (boot + node-cron scheduler) into a separate module graph from the `app/api/**` route handlers, so module-level variables are NOT shared between them: each graph gets its own copy of every server module. State that must be one per process is therefore kept on `globalThis` — the Prisma client (`__mwaniPrisma`), the boot state (`__mwaniBoot`), the running-job lock (`__mwaniRunningJobs`, so a cron run and an admin "Run now" of the same job cannot overlap) and the settings and ML-model caches that admin routes invalidate (`__mwaniSettingsCache`, `__mwaniMlModelCache`).
+- **Server mode comes from `.env`** — `next build` inlines `process.env.NODE_ENV` and `next start` forces it to `production`, so server code never reads it directly. `src/server/config/nodeEnv.js` resolves `env.nodeEnv`: a runtime `test` wins, then `NODE_ENV` in the root `.env`, then the runtime value (default `development`).
 
 ## Account roles and recovery
 
