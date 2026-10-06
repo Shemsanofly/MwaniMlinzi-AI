@@ -239,6 +239,12 @@ function echoSms(user, message) {
   runInBackground(SMSService.sendToUser(user, { type: 'SMS_REPLY', text: message }));
 }
 
+/** Keep a full SMS copy of a completed result; only the USSD screen is shortened. */
+function endWithSms(user, message) {
+  echoSms(user, `MWANIMLINZI: ${message}`);
+  return end(fitScreen(message));
+}
+
 async function findUser(phone) {
   if (!phone) return null;
   return prisma.user.findFirst({
@@ -277,7 +283,7 @@ const riskLine = (main, lang) => `${T[lang].riskLabel}: ${T[lang].levelShort[mai
 function riskScreen(farm, risk, lang, user) {
   const t = T[lang];
   const main = mainRisk(risk);
-  if (!main) return end(`${farm.farmCode}: ${t.insufficient}`);
+  if (!main) return endWithSms(user, `${farm.farmCode}: ${t.insufficient}`);
   const lines = [farm.farmCode, riskLine(main, lang)];
   const reason = reasonFor(main, lang);
   if (reason) lines.push(`${t.reason}: ${reason}.`);
@@ -294,8 +300,8 @@ function adviceScreen(farm, risk, lang, user) {
     echoSms(user, t.smsAdvice(farm.farmCode, action));
     return end(fitScreen(`${farm.farmCode}\n${t.action}: ${action}`));
   }
-  if (risk.insufficientDataMessage || !mainRisk(risk)) return end(`${farm.farmCode}: ${t.insufficient}`);
-  return end(`${farm.farmCode}: ${t.noAction}`);
+  if (risk.insufficientDataMessage || !mainRisk(risk)) return endWithSms(user, `${farm.farmCode}: ${t.insufficient}`);
+  return endWithSms(user, `${farm.farmCode}: ${t.noAction}`);
 }
 
 /** "Maji kupwa: leo 11:00 (kazi 10:00-13:00)" + today's drying verdict and approved advice, from the stored forecast. */
@@ -303,7 +309,7 @@ async function outlookScreen(farmRow, lang, user) {
   const t = T[lang];
   const farm = await prisma.farm.findUnique({ where: { id: farmRow.id } });
   const o = await SeaOutlookService.currentForFarm(farm, { refresh: false }); // stored result only: never wait on a live fetch
-  if (!o) return end(`${farmRow.farmCode}: ${t.noOutlook}`);
+  if (!o) return endWithSms(user, `${farmRow.farmCode}: ${t.noOutlook}`);
   const lines = [farmRow.farmCode];
   const w = o.today.nextWorkWindow;
   if (w) {
@@ -316,7 +322,7 @@ async function outlookScreen(farmRow, lang, user) {
     const advice = o.today.advice;
     if (advice) lines.push(lang === 'en' ? advice.action : advice.actionSw);
   }
-  if (lines.length === 1) return end(`${farmRow.farmCode}: ${t.noOutlook}`);
+  if (lines.length === 1) return endWithSms(user, `${farmRow.farmCode}: ${t.noOutlook}`);
   echoSms(user, t.smsOutlook(farmRow.farmCode, lines.slice(1).join('\n')));
   return end(fitScreen(lines.join('\n')));
 }
@@ -346,7 +352,7 @@ async function alertsScreen(farms, lang, user) {
     return main ? { farm: f, main } : null;
   }));
   const usable = rows.filter(Boolean);
-  if (!usable.length) return end(t.noAlerts);
+  if (!usable.length) return endWithSms(user, t.noAlerts);
   const line = ({ farm, main }) => `- ${farm.farmCode}: ${t.levelShort[main.riskLevel]} (${t.type[main.riskType]})`;
   echoSms(user, [t.smsAlertsHeader, ...usable.map(line)].join('\n'));
   return end(fitScreen([t.alertsTitle, ...usable.map(line)].join('\n')));
@@ -585,11 +591,11 @@ export function parseTzs(input, max) {
   return n >= 1 && n <= max ? n : null;
 }
 
-async function seasonScreen(farm, lang) {
+async function seasonScreen(farm, lang, user) {
   const { summary } = await RecordBookService.summary(farm.id);
   const c = summary.counts;
-  if (!c.sales && !c.costs) return end(T[lang].noRecords(farm.farmCode));
-  return end(fitScreen(T[lang].season(farm.farmCode, summary)));
+  if (!c.sales && !c.costs) return endWithSms(user, T[lang].noRecords(farm.farmCode));
+  return endWithSms(user, T[lang].season(farm.farmCode, summary));
 }
 
 /** Parse a kg amount: digits with an optional decimal part (',' or '.'). */
@@ -617,7 +623,7 @@ async function step(user, farms, state, input) {
       case 'REPORT': return { reply: con(t().symptoms), state: next('SYMPTOM', { farmId: farm.id }) };
       case 'HARVEST': return { reply: con(t().enterKg), state: next('HARVEST_KG', { farmId: farm.id, temp: { attempts: 0 } }) };
       case 'ADVICE': return { reply: adviceScreen(farm, await currentRisk(farm.id), lang, user), state: next('DONE', { farmId: farm.id }) };
-      case 'SEASON': return { reply: await seasonScreen(farm, lang), state: next('DONE', { farmId: farm.id }) };
+      case 'SEASON': return { reply: await seasonScreen(farm, lang, user), state: next('DONE', { farmId: farm.id }) };
       case 'SALE': return { reply: con(t().enterSaleKg), state: next('SALE_KG', { farmId: farm.id, temp: { attempts: 0 } }) };
       case 'COST': return { reply: con(t().costMenu), state: next('COST_CATEGORY', { farmId: farm.id, temp: {} }) };
       case 'WORK': return { reply: con(t().workMenu), state: next('WORK_ACTIVITY', { farmId: farm.id, temp: {} }) };
@@ -666,7 +672,7 @@ async function step(user, farms, state, input) {
       const farm = farmById(state.farmId);
       if (input === '1' && farm && state.temp?.kg && state.temp?.price) {
         const sale = await RecordBookService.createSale(farm.id, user, { saleDate: new Date(), quantityKg: state.temp.kg, pricePerKg: state.temp.price, paymentStatus: 'PAID' }, { channel: 'USSD' });
-        return { reply: end(t().saleSaved(sale.totalTzs, farm.farmCode)), state: next('DONE') };
+        return { reply: endWithSms(user, t().saleSaved(sale.totalTzs, farm.farmCode)), state: next('DONE') };
       }
       if (input === '2') return { reply: end(t().saleCancelled), state: next('DONE') };
       return { reply: con(`${t().invalid}\n${t().confirmSale(state.temp?.kg, state.temp?.price, farm?.farmCode || '')}`), state };
@@ -685,7 +691,7 @@ async function step(user, farms, state, input) {
       const farm = farmById(state.farmId);
       if (input === '1' && farm && state.temp?.amount && state.temp?.category) {
         await RecordBookService.createCost(farm.id, user, { costDate: new Date(), category: state.temp.category, amountTzs: state.temp.amount }, { channel: 'USSD' });
-        return { reply: end(t().costSaved(state.temp.amount, farm.farmCode)), state: next('DONE') };
+        return { reply: endWithSms(user, t().costSaved(state.temp.amount, farm.farmCode)), state: next('DONE') };
       }
       if (input === '2') return { reply: end(t().costCancelled), state: next('DONE') };
       return { reply: con(`${t().invalid}\n${t().confirmCost(state.temp?.amount, t().costNames[state.temp?.category], farm?.farmCode || '')}`), state };
@@ -695,7 +701,7 @@ async function step(user, farms, state, input) {
       const activity = WORK_ACTIVITIES[Number(input) - 1];
       if (!/^\d$/.test(input) || !activity || !farm) return { reply: con(`${t().invalid}\n${t().workMenu}`), state };
       await RecordBookService.createWork(farm.id, user, { workDate: new Date(), activity }, { channel: 'USSD' });
-      return { reply: end(t().workSaved(t().workNames[activity], farm.farmCode)), state: next('DONE') };
+      return { reply: endWithSms(user, t().workSaved(t().workNames[activity], farm.farmCode)), state: next('DONE') };
     }
     case 'HELP_MENU': {
       if (input === '1') return pickFarmFor('ADVICE');

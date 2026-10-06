@@ -8,6 +8,7 @@ import { flushBackground } from '../../src/server/utils/background.js';
 import { FakeSMSClient } from '../fakes/smsClient.js';
 import { setOutlookProvider, getOutlookProvider, SeaOutlookService } from '../../src/server/services/seaOutlookService.js';
 import { localDate } from '../../src/server/ai/seaOutlook.js';
+import { RiskService } from '../../src/server/services/riskService.js';
 
 afterAll(() => prisma.$disconnect());
 const PHONE = '+255777000001';
@@ -214,11 +215,12 @@ describe("Africa's Talking USSD callback", () => {
     expect(await prisma.harvestRecord.count({ where: { channel: 'USSD' } })).toBe(before + 1);
   });
 
-  test('4 → 2 → record a sale: kg → price → confirm total; bad prices re-prompt; nothing sent by SMS', async () => {
+  test('4 → 2 → a confirmed sale sends one SMS receipt, including when AT retries', async () => {
     const farm = await prisma.farm.findUnique({ where: { farmCode: 'FARM002' } });
     const before = await farmRecords(prisma, 'SALE').count({ where: { farmId: farm.id, channel: 'USSD' } });
+    await flushBackground();
     const smsBefore = fake.to(PHONE).length;
-    const { replies, last } = await walk(['4', '2', '2', '120', '1,000', '00', '1000', '1']); // '0' alone always means 'back to the main menu'
+    const { sessionId, replies, last } = await walk(['4', '2', '2', '120', '1,000', '00', '1000', '1']); // '0' alone always means 'back to the main menu'
     expect(replies[3]).toMatch(/^CON Ingiza kiasi ulichouza kwa kilo/);
     expect(replies[4]).toMatch(/^CON Ingiza bei kwa kilo \(TSh\)/);
     expect(replies[5]).toMatch(/Bei si sahihi/);
@@ -228,23 +230,39 @@ describe("Africa's Talking USSD callback", () => {
     const sale = await farmRecords(prisma, 'SALE').findFirst({ where: { farmId: farm.id, channel: 'USSD' }, orderBy: { createdAt: 'desc' } });
     expect(sale).toMatchObject({ quantityKg: 120, pricePerKg: 1000, totalTzs: 120000, paymentStatus: 'PAID' });
     expect(await farmRecords(prisma, 'SALE').count({ where: { farmId: farm.id, channel: 'USSD' } })).toBe(before + 1);
-    expect(fake.to(PHONE).length).toBe(smsBefore);
+    await flushBackground();
+    expect(fake.to(PHONE).length).toBe(smsBefore + 1);
+    expect(fake.to(PHONE).at(-1).message).toBe(`MWANIMLINZI: ${last.slice(4)}`);
+    expect((await ussd(sessionId, '4*2*2*120*1,000*00*1000*1')).text).toBe(last);
+    await flushBackground();
+    expect(fake.to(PHONE).length).toBe(smsBefore + 1);
+    expect(await farmRecords(prisma, 'SALE').count({ where: { farmId: farm.id, channel: 'USSD' } })).toBe(before + 1);
   });
 
   test('4 → 3 → record a cost (category → amount → confirm); 4 → 4 → work done today', async () => {
     const farm = await prisma.farm.findUnique({ where: { farmCode: 'FARM002' } });
+    await flushBackground();
+    const smsBefore = fake.to(PHONE).length;
     const cost = await walk(['4', '3', '2', '1', '25000', '1']);
     expect(cost.replies[3]).toMatch(/^CON Aina ya gharama\n1\. Mbegu\n2\. Kamba/);
     expect(cost.replies[5]).toBe('CON Thibitisha gharama ya TSh 25,000 (Mbegu) kwa FARM002?\n1. Ndiyo\n2. Hapana');
     expect(cost.last).toBe('END Asante. Gharama ya TSh 25,000 imerekodiwa kwa FARM002.');
     expect(await farmRecords(prisma, 'COST').findFirst({ where: { farmId: farm.id, channel: 'USSD' }, orderBy: { createdAt: 'desc' } })).toMatchObject({ category: 'SEEDLINGS', amountTzs: 25000 });
+    await flushBackground();
+    expect(fake.to(PHONE).length).toBe(smsBefore + 1);
+    expect(fake.to(PHONE).at(-1).message).toBe(`MWANIMLINZI: ${cost.last.slice(4)}`);
     const cancelled = await walk(['4', '3', '2', '1', '9000', '2']);
     expect(cancelled.last).toBe('END Gharama haijarekodiwa.');
+    await flushBackground();
+    expect(fake.to(PHONE).length).toBe(smsBefore + 1);
 
     const work = await walk(['4', '4', '2', '3']);
     expect(work.replies[3]).toMatch(/^CON Kazi gani\?\n1\. Kupanda/);
     expect(work.last).toBe('END Asante. Kazi ya leo imerekodiwa kwa FARM002: Kusafisha mistari.');
     expect(await farmRecords(prisma, 'WORK').findFirst({ where: { farmId: farm.id, channel: 'USSD' }, orderBy: { createdAt: 'desc' } })).toMatchObject({ activity: 'CLEANING_LINES' });
+    await flushBackground();
+    expect(fake.to(PHONE).length).toBe(smsBefore + 2);
+    expect(fake.to(PHONE).at(-1).message).toBe(`MWANIMLINZI: ${work.last.slice(4)}`);
   });
 
   test('4 → 2 → a sale total too large to store re-prompts for the price (never half-saved)', async () => {
@@ -262,9 +280,14 @@ describe("Africa's Talking USSD callback", () => {
   });
 
   test('1 → 3 → season profit from the farmer\'s own records', async () => {
+    await flushBackground();
+    const smsBefore = fake.to(PHONE).length;
     const { last } = await walk(['1', '3', '2']);
     expect(last).toMatch(/^END FARM002 msimu huu\nMapato: TSh [\d,]+\nGharama: TSh [\d,]+\nFaida: -?TSh [\d,]+/);
     expect(last.length).toBeLessThanOrEqual(186);
+    await flushBackground();
+    expect(fake.to(PHONE).length).toBe(smsBefore + 1);
+    expect(fake.to(PHONE).at(-1).message).toMatch(/^MWANIMLINZI: FARM002 msimu huu\nMapato: TSh [\d,]+\nGharama: TSh [\d,]+\nFaida: /);
   });
 
   test('5 → help → approved advice; about the service', async () => {
@@ -370,8 +393,8 @@ describe("Africa's Talking USSD callback", () => {
       expect(last).toMatch(/^END FARM001/);
       await flushBackground();
       const echo = fake.to(PHONE).slice(before).at(-1);
-      // Only fires when there was an action to show; when there is none, no SMS is sent.
       if (/Hatua: /.test(last)) expect(echo?.message).toMatch(/^MWANIMLINZI: Ushauri kwa FARM001\. Hatua: /);
+      else expect(echo?.message).toBe(`MWANIMLINZI: ${last.slice(4)}`);
     });
 
     test('USSD registration confirms the number with a welcome SMS carrying the farm code', async () => {
@@ -382,6 +405,39 @@ describe("Africa's Talking USSD callback", () => {
       const welcome = fake.sent.slice(beforeAll).find((m) => m.to === phoneNumber);
       expect(welcome).toBeTruthy();
       expect(welcome.message).toMatch(/^Karibu MwaniMlinzi\. Umesajiliwa\. Shamba lako ni FARM\d+\./);
+    });
+
+    test('completed screens send an English SMS even when a new farm has no data', async () => {
+      const { phoneNumber } = await onboardUssdFarmer(unknownPhone(), ['2', '1', '', 'New Farmer', '4', 'Unmapped place', '1', '120']);
+      await flushBackground();
+      const latest = jest.spyOn(RiskService, 'latestForFarm').mockResolvedValue({
+        predictions: [{ riskType: 'HEAT_ICE_ICE', insufficientData: true }], nextAction: null,
+      });
+      try {
+        for (const inputs of [['2'], ['1', '1'], ['1', '2'], ['1', '3'], ['5', '1']]) {
+          const before = fake.to(phoneNumber).length;
+          const { sessionId, last } = await walk(inputs, { phoneNumber });
+          expect(last).toMatch(/^END /);
+          await flushBackground();
+          const messages = fake.to(phoneNumber).slice(before);
+          expect(messages).toHaveLength(1);
+          expect(messages[0].message).toBe(`MWANIMLINZI: ${last.slice(4)}`);
+          expect((await ussd(sessionId, inputs.join('*'), { phoneNumber })).text).toBe(last);
+          await flushBackground();
+          expect(fake.to(phoneNumber).length).toBe(before + 1);
+        }
+      } finally {
+        latest.mockRestore();
+      }
+    });
+
+    test('navigation and cancelled sales send no SMS receipt', async () => {
+      await flushBackground();
+      const before = fake.to(PHONE).length;
+      await walk(['1']);
+      await walk(['4', '2', '2', '10', '1000', '2']);
+      await flushBackground();
+      expect(fake.to(PHONE).length).toBe(before);
     });
 
     test('menu 2 falls back to the current risk summary when there are no alert rows yet', async () => {

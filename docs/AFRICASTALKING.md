@@ -25,7 +25,7 @@ Africa's Talking ──POST delivery report──▶ /api/integrations/africasta
 | Incoming SMS commands | `backend/src/services/channelService.js` |
 | Callback endpoints: secret, validation, duplicates, logging | `backend/src/controllers/integrationController.js` |
 
-## 2. Environment variables (`backend/.env`, never committed)
+## 2. Environment variables (`MwaniMlinzi-AI/.env`, never committed)
 
 | Variable | Sandbox value | Meaning |
 |---|---|---|
@@ -44,7 +44,7 @@ Restart the API after changing `.env`.
 
 1. **Create an AT account** and open the **Sandbox** app. Its username is `sandbox`.
 2. **API key:** in the sandbox, open *Settings → API Key*, generate a key, and put it in `AT_API_KEY`.
-3. **Public HTTPS URL:** AT must reach your API from the internet. Deploy the API (see `DEPLOYMENT.md`) or run a tunnel to your local port 5000, for example `cloudflared tunnel --url http://localhost:5000` or `ngrok http 5000`. Put that base URL in `PUBLIC_API_URL`.
+3. **Public HTTPS URL:** start the app with `npm run dev` (`npm.cmd run dev` in Windows PowerShell). AT must reach your API from the internet. Deploy the app (see `DEPLOYMENT.md`) or run a tunnel to its port, **5173 by default**, for example `cloudflared tunnel --url http://localhost:5173` or `ngrok http 5173`. Put the tunnel's HTTPS base URL in `PUBLIC_API_URL`. If you selected another port with `MWANI_PORT` or a shell `PORT` variable, use that port for the tunnel too; `PORT=5000` in `.env` does not choose the launcher's port.
 4. **USSD channel:** in the sandbox, go to *USSD → Create Channel*, choose a code (for example `*384*1234#`), and set the callback URL to
    `https://<PUBLIC_API_URL>/api/integrations/africastalking/ussd?secret=<AT_CALLBACK_SECRET>`.
    Put the same code in `AT_USSD_SERVICE_CODE`.
@@ -100,11 +100,11 @@ CON MWANIMLINZI
 4. Rekodi mavuno    → 1 Mavuno: "Ingiza kiasi cha mavuno kwa kilo" → kg (validated, 3 tries) → confirm 1/2
                         → saved (channel USSD) + SMS confirmation
                       2 Mauzo: kg sold → price per kg (TSh, digits only) → "Thibitisha mauzo ya kg 120 kwa TSh 1,000/kg
-                        = TSh 120,000 (FARM002)?" → saved to the record book (no SMS)
+                        = TSh 120,000 (FARM002)?" → saved to the record book + SMS receipt
                       3 Gharama: 1 Mbegu · 2 Kamba/mistari · 3 Vigingi · 4 Uzi wa kufungia · 5 Vibarua · 6 Usafiri
-                        · 7 Vifaa vya kuanikia · 8 Nyingine → amount (TSh) → confirm → saved (no SMS)
+                        · 7 Vifaa vya kuanikia · 8 Nyingine → amount (TSh) → confirm → saved + SMS receipt
                       4 Kazi: 1 Kupanda · 2 Kufunga mbegu · 3 Kusafisha mistari · 4 Kutengeneza mistari · 5 Kuvuna
-                        · 6 Kuanika · 7 Nyingine → saved for today
+                        · 6 Kuanika · 7 Nyingine → saved for today + SMS receipt
 5. Msaada           → 1 Ushauri (the next action from the Action Library) · 2 Lugha (1 Kiswahili · 2 English, saved
                       to the profile) · 3 Kuhusu huduma
 0 = back to the main menu (from any submenu)
@@ -119,6 +119,9 @@ the last 3 days, get one SMS when rain is likely today or tomorrow during drying
 without a smartphone cannot re-open them. So every read-only USSD screen also sends an SMS with the same
 information, kept on the phone: menu 2 (alerts) sends the alert messages, menu 1→1 (risk) sends the risk level
 and action, menu 1→2 (outlook) sends the tide/drying line, and menu 5→1 (advice) sends the recommended action.
+Season summaries (menu 1→3) and successful sale, cost and work entries also send SMS copies. A missing forecast,
+insufficient risk data, no advice or no new alerts still sends the same honest status by SMS. Navigating menus,
+invalid inputs and cancelled records do not send receipts; retrying the same completed request sends no extra SMS.
 USSD registration ends with a welcome SMS carrying the new farm code. All echoes use the `SMS_REPLY` type — like
 inbound-SMS command replies, they always send (the farmer explicitly asked by dialling), regardless of the SMS
 preference toggles. In the AT sandbox they appear in the phone simulator.
@@ -193,7 +196,9 @@ Automated tests (no AT account needed; a fake client replaces the network):
 ## 8. Troubleshooting
 
 - **Admin panel shows `ERROR`:** the last send failed with an authentication or network error. Check `AT_USERNAME`, `AT_API_KEY` and `AT_ENVIRONMENT`: a sandbox key only works with `sandbox`.
+- **USSD works but no SMS appears in the sandbox:** use the same phone number in the simulator and your farmer account, keep the simulator open, and check Admin → Africa's Talking for the SMS result. Set `AT_USERNAME=sandbox`, `AT_ENVIRONMENT=sandbox` and `AT_SMS_DEV_CAPTURE=false`. An HTTP 401 means AT rejected the key: generate a fresh sandbox API key, update `AT_API_KEY` in `MwaniMlinzi-AI/.env`, and restart the app. Dev capture only records messages locally; it does not send them to the simulator. The admin SMS setting must also be enabled.
 - **USSD shows "Access denied":** the `?secret=` in the AT callback URL does not match `AT_CALLBACK_SECRET`.
 - **USSD shows "Unknown service":** `AT_USSD_SERVICE_CODE` differs from the code AT sends. Fix the variable or leave it empty.
 - **Nothing arrives at the API:** AT cannot reach `PUBLIC_API_URL`. It must be public HTTPS, and a tunnel URL changes each time the tunnel restarts.
+- **The simulator reports network technical problems:** check the response in AT's USSD session logs or ngrok's inspector at `http://localhost:4040`. A `502` usually means the tunnel cannot reach the app: check `http://localhost:5173/api/health` and point ngrok at the same port (`ngrok http 5173` by default). The callback must be a form POST to the configured USSD route and return HTTP 200 with plain text beginning with `CON ` or `END `.
 - The API logs show `?secret=[REDACTED]`, never the secret itself.
