@@ -1,0 +1,116 @@
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { authApi } from '../api/endpoints.js';
+import { setUnauthorizedHandler, tokenStore } from '../api/client.js';
+import { useI18n } from '../i18n/I18nProvider.jsx';
+import { clearNavState } from '../navigation.jsx';
+
+const AuthContext = createContext(null);
+const USER_KEY = 'mwanimlinzi.user';
+const cachedUser = () => { try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); } catch { return null; } };
+const saveUser = (u) => { try { localStorage.setItem(USER_KEY, JSON.stringify(u)); } catch { /* storage unavailable */ } };
+
+export const HOME_FOR_ROLE = {
+  FARMER: '/farmer/dashboard',
+  ADMIN: '/admin/dashboard',
+};
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [extra, setExtra] = useState({ cooperative: null, memberships: [] });
+  const [loggedOut, setLoggedOut] = useState(false);
+  const [status, setStatus] = useState(tokenStore.get() ? 'loading' : 'anonymous');
+  const queryClient = useQueryClient();
+  const { setLang } = useI18n();
+
+  const clear = useCallback(() => {
+    tokenStore.clear();
+    setUser(null);
+    setStatus('anonymous');
+    queryClient.clear();
+    try { localStorage.removeItem('mwanimlinzi.cache'); localStorage.removeItem(USER_KEY); } catch { /* storage unavailable */ }
+  }, [queryClient]);
+
+  const loadMe = useCallback(async () => {
+    try {
+      const data = await authApi.me();
+      setUser(data.user);
+      saveUser({ user: data.user, cooperative: data.cooperative, memberships: data.memberships || [] });
+      setExtra({ cooperative: data.cooperative, memberships: data.memberships || [] });
+      setStatus('authenticated');
+    } catch (err) {
+      // Only an invalid/expired session logs the user out. With no connection (or a server error)
+      // the last known profile is kept so saved farm information stays usable offline.
+      const cached = cachedUser();
+      if (err?.status !== 401 && err?.status !== 403 && cached?.user) {
+        setUser((u) => u || cached.user);
+        setExtra((x) => (x.memberships.length || x.cooperative ? x : { cooperative: cached.cooperative, memberships: cached.memberships || [] }));
+        setStatus('authenticated');
+        return;
+      }
+      clear();
+    }
+  }, [clear]);
+
+  useEffect(() => {
+    setUnauthorizedHandler(clear);
+    if (tokenStore.get()) loadMe();
+  }, [clear, loadMe]);
+
+  const acceptSession = useCallback(async (data) => {
+    // Login/register already returned the authenticated profile. Save it
+    // before /me so a temporary outage cannot erase a newly valid session
+    // or restore the previous account's cached profile and memberships.
+    queryClient.clear();
+    try { localStorage.removeItem('mwanimlinzi.cache'); } catch { /* storage unavailable */ }
+    setLoggedOut(false);
+    tokenStore.set(data.token);
+    saveUser({ user: data.user, cooperative: null, memberships: [] });
+    setUser(data.user);
+    setExtra({ cooperative: null, memberships: [] });
+    if (data.user.preferredLanguage) setLang(data.user.preferredLanguage);
+    await loadMe();
+    return data.user;
+  }, [loadMe, queryClient, setLang]);
+
+  const login = useCallback(async (identifier, password) => {
+    return acceptSession(await authApi.login(identifier, password));
+  }, [acceptSession]);
+
+  const register = useCallback(async (body) => {
+    return acceptSession(await authApi.register(body));
+  }, [acceptSession]);
+
+  const logout = useCallback(async () => {
+    // Explicit logout: nothing may remember where the previous user was (ProtectedRoute checks this flag).
+    setLoggedOut(true);
+    clearNavState();
+    try { await authApi.logout(); } catch { /* token may already be invalid */ }
+    clear();
+    clearNavState();
+  }, [clear]);
+
+  const value = useMemo(() => ({
+    user,
+    status,
+    loggedOut,
+    cooperative: extra.cooperative,
+    memberships: extra.memberships,
+    isAuthenticated: status === 'authenticated',
+    hasRole: (...roles) => !!user && user.roles.some((r) => roles.includes(r)),
+    homePath: user ? HOME_FOR_ROLE[user.primaryRole] || '/' : '/login',
+    login,
+    register,
+    logout,
+    refresh: loadMe,
+  }), [user, status, loggedOut, extra, login, register, logout, loadMe]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+ 
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
+  return ctx;
+}

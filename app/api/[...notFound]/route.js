@@ -1,0 +1,12 @@
+import { handlersFor } from '../../../src/server/http/routeTable.js';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+const h = handlersFor('/__none__');
+export const GET = h.GET;
+export const POST = h.POST;
+export const PUT = h.PUT;
+export const PATCH = h.PATCH;
+export const DELETE = h.DELETE;
+export const OPTIONS = h.OPTIONS;
